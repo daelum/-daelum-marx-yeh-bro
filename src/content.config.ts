@@ -18,7 +18,7 @@ const blog = defineCollection({
 			eyebrow: z.string().optional(),
 			/**
 			 * When true, BlogPost renders the strong enhanced/PED education disclaimer
-			 * (medical + AU legal + no gear sourcing + culture-pattern dosing fence).
+			 * (medical + legal + no gear sourcing + culture-pattern dosing fence).
 			 */
 			enhancedEducation: z.boolean().optional(),
 		}),
