@@ -29,7 +29,11 @@ export default defineConfig({
 		'/guides/proprietary-blend-pre-workout': '/blog/proprietary-blend-pre-workout',
 		'/guides/creapure-vs-generic-creatine': '/blog/creapure-vs-generic-creatine',
 		'/guides/protein-per-scoop-australia': '/blog/protein-per-scoop-australia',
+		'/guides/best-creatine-for-beginners-australia': '/blog/best-creatine-for-beginners-australia',
+		'/guides/creatine-for-women': '/blog/creatine-for-women',
+		'/guides/caffeine-dose-training': '/blog/caffeine-dose-training',
 	},
 });
+
 
 
