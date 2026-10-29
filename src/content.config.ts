@@ -14,6 +14,8 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
+			/** Optional post eyebrow (e.g. education / harm reduction). */
+			eyebrow: z.string().optional(),
 		}),
 });
 

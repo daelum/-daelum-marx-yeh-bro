@@ -10,12 +10,15 @@ const posts = (await getCollection('blog')).sort(
 
 <BaseLayout
 	title="Guides"
-	description="Yeh Bro guides: creatine, protein scoop maths, and pre-workout without hype — Australia-first."
+	description="Yeh Bro guides: PED harm reduction, bodybuilding culture, creatine, protein, and pre — Australia-first."
 >
 	<section class="wrap blog-index">
 		<p class="eyebrow">Guides</p>
-		<h1>Evidence over hype</h1>
-		<p class="lede">AU-practical long-form. Affiliate links use /go/ redirects — see disclosure on each post.</p>
+		<h1>Culture first. Evidence always.</h1>
+		<p class="lede">
+			PED harm reduction and bodybuilding literacy, plus AU sports-nutrition maths. Affiliate
+			<code>/go/</code> links stay legal products only — see disclosure on each post.
+		</p>
 		<ul class="guide-links">
 			{
 				posts.map((post) => (

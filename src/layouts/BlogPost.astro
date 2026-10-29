@@ -8,7 +8,7 @@ import Header from '../components/Header.astro';
 
 type Props = CollectionEntry<'blog'>['data'];
 
-const { title, description, pubDate, updatedDate } = Astro.props;
+const { title, description, pubDate, updatedDate, eyebrow = 'Guide · Australia' } = Astro.props;
 ---
 
 <!doctype html>
@@ -21,7 +21,7 @@ const { title, description, pubDate, updatedDate } = Astro.props;
 		<main>
 			<article class="prose-wrap post">
 				<header class="post-header">
-					<p class="eyebrow">Guide · Australia</p>
+					<p class="eyebrow">{eyebrow}</p>
 					<h1>{title}</h1>
 					<p class="lede">{description}</p>
 					<p class="date muted">
@@ -41,8 +41,9 @@ const { title, description, pubDate, updatedDate } = Astro.props;
 					<slot />
 				</div>
 				<p class="post-foot muted">
-					Not medical advice. Yeh Bro does not sell or source illegal AAS, SARMs, unapproved
-					peptides, or grey-market gear. Affiliate picks stay legal sports nutrition.
+					Not medical advice or legal advice. Yeh Bro does not sell or source illegal AAS, SARMs,
+					unapproved peptides, or grey-market gear. Affiliate picks stay legal sports nutrition.
+					<a href="/blog/ped-harm-reduction-australia">PED education</a> ·
 					<a href="/about">About</a> · <a href="/disclosure">Disclosure</a> ·
 					<a href="/start-here">Start here</a>
 				</p>
