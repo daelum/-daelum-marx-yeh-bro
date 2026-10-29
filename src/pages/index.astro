@@ -1,9 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
 ---
 
-<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION} fullBleed>
+<BaseLayout title={SITE_TITLE_HOME} description={SITE_DESCRIPTION} fullBleed>
 	<section class="hero">
 		<div class="hero-grid" aria-hidden="true"></div>
 		<div class="wrap hero-inner">
@@ -55,20 +55,26 @@ import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE } from '../consts';
 		<ul class="guide-links">
 			<li>
 				<a href="/blog/best-creatine-australia">
-					Best creatine Australia
-					<span>Mono, dose, scoop maths — what actually matters in AU.</span>
+					Creatine monohydrate (AU)
+					<span>3–5 g/day, scoop maths, Creapure vs generic.</span>
 				</a>
 			</li>
 			<li>
-				<a href="/blog/protein-scoop-economics-australia">
-					Protein scoop economics
-					<span>$ per 25 g protein across common AU tubs. Who wins.</span>
+				<a href="/blog/whey-concentrate-vs-isolate-australia">
+					Whey concentrate vs isolate
+					<span>Lactose reality and AUD per 25 g protein.</span>
 				</a>
 			</li>
 			<li>
-				<a href="/blog/pre-workout-without-hype">
-					Pre-workout without hype
-					<span>Proprietary blends are a skip. Here’s what to look for.</span>
+				<a href="/blog/best-stim-free-pre-workout-australia">
+					Stim-free pre-workout
+					<span>Labelled doses, no proprietary blend guessing.</span>
+				</a>
+			</li>
+			<li>
+				<a href="/blog">
+					All guides
+					<span>Scoop economics, stim pre, and more.</span>
 				</a>
 			</li>
 		</ul>

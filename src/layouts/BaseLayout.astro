@@ -7,15 +7,17 @@ interface Props {
 	title: string;
 	description: string;
 	fullBleed?: boolean;
+	noindex?: boolean;
+	ogType?: 'website' | 'article';
 }
 
-const { title, description, fullBleed = false } = Astro.props;
+const { title, description, fullBleed = false, noindex = false, ogType = 'website' } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en-AU">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead title={title} description={description} noindex={noindex} ogType={ogType} />
 	</head>
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>

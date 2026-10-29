@@ -11,111 +11,53 @@ export type AffiliateEntry = {
 	active: boolean;
 };
 
+function todo(
+	slug: string,
+	label: string,
+	network: string,
+): AffiliateEntry {
+	return {
+		url: `https://example.com/TODO/${slug}`,
+		network,
+		rel: 'sponsored noopener noreferrer',
+		label,
+		lastVerified: null,
+		active: false,
+	};
+}
+
 export const affiliates: Record<string, AffiliateEntry> = {
-	'creatine-amz': {
-		url: 'https://example.com/TODO/creatine-amz',
-		network: 'amazon-au',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Amazon AU creatine mono pick',
-		lastVerified: null,
-		active: false,
-	},
-	'creatine-bulk': {
-		url: 'https://example.com/TODO/creatine-bulk',
-		network: 'bulk-nutrients',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Bulk Nutrients creatine',
-		lastVerified: null,
-		active: false,
-	},
-	'creatine-true': {
-		url: 'https://example.com/TODO/creatine-true',
-		network: 'true-protein',
-		rel: 'sponsored noopener noreferrer',
-		label: 'True Protein creatine',
-		lastVerified: null,
-		active: false,
-	},
-	'protein-true': {
-		url: 'https://example.com/TODO/protein-true',
-		network: 'true-protein',
-		rel: 'sponsored noopener noreferrer',
-		label: 'True Protein whey / WPI',
-		lastVerified: null,
-		active: false,
-	},
-	'protein-bulk': {
-		url: 'https://example.com/TODO/protein-bulk',
-		network: 'bulk-nutrients',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Bulk Nutrients protein',
-		lastVerified: null,
-		active: false,
-	},
-	'protein-mn': {
-		url: 'https://example.com/TODO/protein-mn',
-		network: 'muscle-nation',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Muscle Nation protein',
-		lastVerified: null,
-		active: false,
-	},
-	'protein-sm': {
-		url: 'https://example.com/TODO/protein-sm',
-		network: 'supplement-mart',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Supplement Mart protein pick',
-		lastVerified: null,
-		active: false,
-	},
-	'protein-mypro': {
-		url: 'https://example.com/TODO/protein-mypro',
-		network: 'myprotein-au',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Myprotein AU protein',
-		lastVerified: null,
-		active: false,
-	},
-	'pre-mn': {
-		url: 'https://example.com/TODO/pre-mn',
-		network: 'muscle-nation',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Muscle Nation pre-workout',
-		lastVerified: null,
-		active: false,
-	},
-	'pre-sm': {
-		url: 'https://example.com/TODO/pre-sm',
-		network: 'supplement-mart',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Supplement Mart pre pick',
-		lastVerified: null,
-		active: false,
-	},
-	'stack-beginner-sm': {
-		url: 'https://example.com/TODO/stack-beginner-sm',
-		network: 'supplement-mart',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Beginner stack @ Supplement Mart',
-		lastVerified: null,
-		active: false,
-	},
-	'omega-iherb': {
-		url: 'https://example.com/TODO/omega-iherb',
-		network: 'iherb',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Omega-3 via iHerb',
-		lastVerified: null,
-		active: false,
-	},
-	'mag-iherb': {
-		url: 'https://example.com/TODO/mag-iherb',
-		network: 'iherb',
-		rel: 'sponsored noopener noreferrer',
-		label: 'Magnesium via iHerb',
-		lastVerified: null,
-		active: false,
-	},
+	// Creatine
+	'creatine-amz': todo('creatine-amz', 'Amazon AU creatine mono pick', 'amazon-au'),
+	'creatine-amz-au': todo('creatine-amz-au', 'Amazon AU creatine backup', 'amazon-au'),
+	'creatine-bulk': todo('creatine-bulk', 'Bulk Nutrients creatine', 'bulk-nutrients'),
+	'creatine-bulk-mn': todo('creatine-bulk-mn', 'Default AU mono (Bulk-style)', 'bulk-nutrients'),
+	'creatine-true': todo('creatine-true', 'True Protein creatine', 'true-protein'),
+	'creatine-creapure-au': todo('creatine-creapure-au', 'Creapure mono AU option', 'au-retail'),
+
+	// Protein
+	'protein-true': todo('protein-true', 'True Protein whey / WPI', 'true-protein'),
+	'protein-bulk': todo('protein-bulk', 'Bulk Nutrients protein', 'bulk-nutrients'),
+	'protein-mn': todo('protein-mn', 'Muscle Nation protein', 'muscle-nation'),
+	'protein-sm': todo('protein-sm', 'Supplement Mart protein pick', 'supplement-mart'),
+	'protein-mypro': todo('protein-mypro', 'Myprotein AU protein', 'myprotein-au'),
+	'whey-conc-au': todo('whey-conc-au', 'AU whey concentrate workhorse', 'au-retail'),
+	'whey-isolate-au': todo('whey-isolate-au', 'AU whey isolate', 'au-retail'),
+	'whey-amz-au': todo('whey-amz-au', 'Amazon AU whey backup', 'amazon-au'),
+	'plant-protein-au': todo('plant-protein-au', 'AU plant protein option', 'au-retail'),
+
+	// Pre / intra
+	'pre-mn': todo('pre-mn', 'Muscle Nation pre-workout', 'muscle-nation'),
+	'pre-sm': todo('pre-sm', 'Supplement Mart pre pick', 'supplement-mart'),
+	'pre-stimfree-au': todo('pre-stimfree-au', 'Primary stim-free pre AU', 'au-retail'),
+	'pre-stimfree-budget': todo('pre-stimfree-budget', 'Budget stim-free pre', 'au-retail'),
+	'citrulline-au': todo('citrulline-au', 'Citrulline single-ingredient AU', 'au-retail'),
+	'electrolytes-au': todo('electrolytes-au', 'Electrolytes / intra AU', 'au-retail'),
+
+	// Stack / extras
+	'stack-beginner-sm': todo('stack-beginner-sm', 'Beginner stack @ Supplement Mart', 'supplement-mart'),
+	'omega-iherb': todo('omega-iherb', 'Omega-3 via iHerb', 'iherb'),
+	'mag-iherb': todo('mag-iherb', 'Magnesium via iHerb', 'iherb'),
 };
 
 export function getAffiliate(slug: string): AffiliateEntry | undefined {

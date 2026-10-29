@@ -1,18 +1,21 @@
 ---
 import { affiliates, getAffiliate } from '../../data/affiliates';
+import { UTM_KEYS } from '../../lib/utm';
 
 export function getStaticPaths() {
 	return Object.keys(affiliates).map((slug) => ({ params: { slug } }));
 }
 
-const slug = Astro.params.slug!;
-const entry = getAffiliate(slug);
+const slug = Astro.params.slug;
+const entry = slug ? getAffiliate(slug) : undefined;
 
-if (!entry) {
-	return Astro.redirect('/start-here');
+// Unknown slugs are not prerendered — host serves 404. Guard for safety.
+if (!slug || !entry) {
+	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
 const destination = entry.url;
+const utmKeys = [...UTM_KEYS];
 ---
 
 <!doctype html>
@@ -23,13 +26,13 @@ const destination = entry.url;
 		<meta name="robots" content="noindex, nofollow" />
 		<meta http-equiv="refresh" content={`0;url=${destination}`} />
 		<title>Redirecting · Yeh Bro</title>
-		<link rel="canonical" href={new URL(`/go/${slug}`, Astro.site)} />
+		{/* No self-canonical on outbound redirects — avoid indexing hop pages */}
 	</head>
 	<body>
 		<main>
 			<p>Taking you to the retailer…</p>
 			<p>
-				<a href={destination} rel={entry.rel}>{entry.label}</a>
+				<a id="continue" href={destination} rel={entry.rel}>{entry.label}</a>
 			</p>
 			<p>
 				<small
@@ -38,8 +41,19 @@ const destination = entry.url;
 				>
 			</p>
 		</main>
-		<script define:vars={{ destination }}>
-			window.location.replace(destination);
+		<script define:vars={{ destination, utmKeys }}>
+			const dest = new URL(destination);
+			const incoming = new URLSearchParams(window.location.search);
+			for (const key of utmKeys) {
+				const value = incoming.get(key);
+				if (value && !dest.searchParams.has(key)) {
+					dest.searchParams.set(key, value);
+				}
+			}
+			const finalUrl = dest.toString();
+			const link = document.getElementById('continue');
+			if (link) link.setAttribute('href', finalUrl);
+			window.location.replace(finalUrl);
 		</script>
 	</body>
 </html>

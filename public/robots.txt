@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 
+# Affiliate hop pages — noindex in HTML; keep out of crawl budget
 Disallow: /go/
 
 Sitemap: https://yehbro.com.au/sitemap-index.xml
