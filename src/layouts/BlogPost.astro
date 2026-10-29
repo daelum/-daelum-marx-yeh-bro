@@ -44,18 +44,25 @@ const {
 						}
 					</p>
 				</header>
-				{enhancedEducation ? <EnhancedContentDisclaimer /> : <DisclosureNote />}
-				{enhancedEducation && <DisclosureNote compact />}
+				{enhancedEducation ? <EnhancedContentDisclaimer /> : <DisclosureNote compact />}
 				<div class="post-body">
 					<slot />
 				</div>
 				<p class="post-foot muted">
-					Not medical advice or legal advice. Yeh Bro does not sell or source illegal AAS, SARMs,
-					unapproved peptides, or grey-market gear. Affiliate picks stay legal sports nutrition.
-					<a href="/blog/bodybuilding-blueprint">Bodybuilding blueprint</a> ·
-					<a href="/blog/ped-harm-reduction-australia">PED education</a> ·
-					<a href="/about">About</a> · <a href="/disclosure">Disclosure</a> ·
-					<a href="/start-here">Start here</a>
+					{enhancedEducation ? (
+						<>
+							Education, not a personal protocol.{' '}
+							<a href="/blog/ped-harm-reduction-australia">PED guide</a> ·
+							<a href="/start-here">Start here</a> ·
+							<a href="/disclosure">Disclosure</a>
+						</>
+					) : (
+						<>
+							Not medical advice.{' '}
+							<a href="/start-here">Start here</a> ·
+							<a href="/disclosure">Disclosure</a>
+						</>
+					)}
 				</p>
 			</article>
 		</main>
