@@ -44,6 +44,9 @@ export default defineConfig({
 		'/guides/intra-workout-electrolytes-australia': '/blog/intra-workout-electrolytes-australia',
 		'/guides/supplement-label-red-flags-australia': '/blog/supplement-label-red-flags-australia',
 		'/guides/vitamin-d-training-australia': '/blog/vitamin-d-training-australia',
+		'/guides/amazon-au-vs-supplement-shops': '/blog/amazon-au-vs-supplement-shops',
+		'/guides/yeh-bro-current-picks': '/blog/yeh-bro-current-picks',
+		'/guides/supplement-mistakes-beginners-australia': '/blog/supplement-mistakes-beginners-australia',
 	},
 });
 
