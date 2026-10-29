@@ -35,8 +35,12 @@ export default defineConfig({
 		'/guides/lactose-whey-isolate': '/blog/lactose-whey-isolate',
 		'/guides/creatine-loading-phase': '/blog/creatine-loading-phase',
 		'/guides/when-to-take-creatine': '/blog/when-to-take-creatine',
+		'/guides/beta-alanine-tingles': '/blog/beta-alanine-tingles',
+		'/guides/pre-workout-vs-coffee': '/blog/pre-workout-vs-coffee',
+		'/guides/casein-vs-whey': '/blog/casein-vs-whey',
 	},
 });
+
 
 
 
