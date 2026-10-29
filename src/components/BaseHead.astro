@@ -1,0 +1,72 @@
+---
+import '../styles/global.css';
+import { SITE_TITLE, SITE_URL } from '../consts';
+
+interface Props {
+	title: string;
+	description: string;
+	image?: string;
+	noindex?: boolean;
+	ogType?: 'website' | 'article';
+	canonicalPath?: string;
+}
+
+const {
+	title,
+	description,
+	image = '/og-default.svg',
+	noindex = false,
+	ogType = 'website',
+	canonicalPath,
+} = Astro.props;
+
+const path = canonicalPath ?? Astro.url.pathname;
+const canonicalURL = new URL(path, Astro.site ?? SITE_URL);
+const fullTitle = title === SITE_TITLE || title.startsWith(`${SITE_TITLE} `) || title.startsWith(`${SITE_TITLE}—`) || title.startsWith(`${SITE_TITLE} —`)
+	? title
+	: `${title} · ${SITE_TITLE}`;
+const ogImage = new URL(image, Astro.site ?? SITE_URL);
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+<link
+	rel="alternate"
+	type="application/rss+xml"
+	title={SITE_TITLE}
+	href={new URL('rss.xml', Astro.site ?? SITE_URL)}
+/>
+<meta name="generator" content={Astro.generator} />
+{noindex ? (
+	<meta name="robots" content="noindex, nofollow" />
+) : (
+	<meta name="robots" content="index, follow" />
+)}
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+	href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+	rel="stylesheet"
+/>
+
+<link rel="canonical" href={canonicalURL} />
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+
+<meta property="og:type" content={ogType} />
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:locale" content="en_AU" />
+<meta property="og:site_name" content={SITE_TITLE} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />

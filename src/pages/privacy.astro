@@ -1,0 +1,162 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+	title="Privacy Policy"
+	description="Yeh Bro privacy policy — what we collect on yehbro.com, analytics, email, affiliate clicks, and your choices under Australian privacy norms."
+>
+	<article class="prose-wrap">
+		<p class="eyebrow">Policy</p>
+		<h1>Privacy Policy</h1>
+		<p class="muted"><strong>Last updated:</strong> 2026-10-29</p>
+		<p class="lede">
+			Yeh Bro (“we”) respects your privacy. This page explains what we collect on yehbro.com, why,
+			and how to contact us. Plain-language summary for our Australia-first content site — not formal
+			legal advice. Confirm APP fit and processors before production scale.
+		</p>
+
+		<h2>Who we are</h2>
+		<p>
+			Yeh Bro is a fitness content and affiliate publishing project focused on Australian lifters.
+			Contact: <a href="mailto:hello@yehbro.com">hello@yehbro.com</a> ·
+			<a href="/contact">/contact</a>.
+		</p>
+
+		<h2>What we collect</h2>
+		<p>Depending on what you use:</p>
+		<table>
+			<thead>
+				<tr>
+					<th>Type</th>
+					<th>Examples</th>
+					<th>Why</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><strong>Site basics</strong></td>
+					<td>Pages visited, device/browser type, approximate region (via analytics)</td>
+					<td>Understand what guides help; improve the site</td>
+				</tr>
+				<tr>
+					<td><strong>Email</strong></td>
+					<td>Address + signup source if you join the list</td>
+					<td>Send the beginner stack checklist / updates you asked for</td>
+				</tr>
+				<tr>
+					<td><strong>Contact</strong></td>
+					<td>Name/email/message you submit</td>
+					<td>Reply to you</td>
+				</tr>
+				<tr>
+					<td><strong>Affiliate clicks</strong></td>
+					<td>That you clicked a <code>/go/</code> link (and merchant-site cookies)</td>
+					<td>Attribute referrals under affiliate program rules</td>
+				</tr>
+				<tr>
+					<td><strong>Host logs</strong></td>
+					<td>Standard request logs from Cloudflare or our host</td>
+					<td>Security and reliability</td>
+				</tr>
+			</tbody>
+		</table>
+		<p>
+			We aim to minimise collection. We do <strong>not</strong> ask for health diagnoses, bloodwork,
+			or cycle logs as a condition of using the site.
+		</p>
+
+		<h2>Analytics</h2>
+		<p>
+			We prefer privacy-friendly analytics (e.g. Plausible or Cloudflare Web Analytics) that avoids
+			invasive profiling where practical. If we later add tools such as GA4 or advertising pixels
+			(Meta, TikTok), we will update this page and use consent where required before non-essential
+			cookies/pixels fire.
+		</p>
+
+		<h2>Email &amp; processors</h2>
+		<p>
+			If you join our list, your email is stored by our email provider (e.g. Beehiiv / ConvertKit).
+			That provider may process data on servers outside Australia. We use it only to send the content
+			you signed up for and related Yeh Bro updates. Unsubscribe anytime via the link in each email.
+		</p>
+
+		<h2>What we don’t do (MVP)</h2>
+		<p>
+			No account system. No shop checkout on this domain. No Meta/TikTok pixels until paid ads are
+			scheduled — and then only with appropriate consent and an updated privacy notice.
+		</p>
+
+		<h2>Affiliate networks &amp; merchants</h2>
+		<p>
+			When you follow an affiliate link, the merchant and/or network (e.g. Amazon Associates, Awin,
+			Commission Factory, Impact) may set their own cookies and process purchase data under
+			<strong>their</strong> policies. We do not control those third-party pages.
+		</p>
+
+		<h2>Overseas disclosure</h2>
+		<p>
+			Some processors (hosting, email, analytics, affiliate networks) may be located outside
+			Australia (for example the US or EU). By using the site or signing up, you understand that may
+			occur. We choose common vendors used by similar publishers; ask us if you need current processor
+			names.
+		</p>
+
+		<h2>Security &amp; retention</h2>
+		<p>
+			We take reasonable steps to protect information we hold. Email and message data are kept only as
+			long as needed for the purpose you provided it (or as required by law), then deleted or
+			de-identified where practical.
+		</p>
+
+		<h2>Your choices (Australia)</h2>
+		<p>You can:</p>
+		<ul>
+			<li>Unsubscribe from email anytime</li>
+			<li>Request access to, or correction of, personal information we hold about you</li>
+			<li>Ask questions about this policy</li>
+		</ul>
+		<p>
+			Contact <a href="mailto:hello@yehbro.com">hello@yehbro.com</a>. If you are not satisfied
+			with our response, you may contact the Office of the Australian Information Commissioner (OAIC)
+			— see <a href="https://www.oaic.gov.au">oaic.gov.au</a> for current options.
+		</p>
+
+		<h2>Children</h2>
+		<p>
+			Yeh Bro content is aimed at adults interested in gym training and sports nutrition. We do not
+			knowingly collect personal information from children.
+		</p>
+
+		<h2>Changes</h2>
+		<p>
+			We may update this page as the site grows (shop, pixels, new tools). The “Last updated” date will
+			change; material changes will be reflected here.
+		</p>
+
+		<h2>Not medical advice</h2>
+		<p>
+			Site content remains general training / sports-nutrition information — see
+			<a href="/disclosure">/disclosure</a>.
+		</p>
+	</article>
+</BaseLayout>
+
+<style>
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95rem;
+		margin: 1rem 0 1.5rem;
+	}
+	th,
+	td {
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+		padding: 0.65rem 0.4rem;
+		text-align: left;
+		vertical-align: top;
+	}
+	th {
+		color: var(--yb-lime);
+	}
+</style>

@@ -1,0 +1,71 @@
+---
+import { AFFILIATE_REL, affiliatesBySlug, getAffiliate } from '../../data/affiliates';
+import { UTM_KEYS } from '../../lib/utm';
+
+export function getStaticPaths() {
+	return Object.keys(affiliatesBySlug).map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug;
+const entry = slug ? getAffiliate(slug) : undefined;
+
+// Unknown slugs are not prerendered — host serves 404. Guard for safety.
+if (!slug || !entry) {
+	return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const destination = entry.url;
+const utmKeys = [...UTM_KEYS];
+const rel = AFFILIATE_REL;
+---
+
+<!doctype html>
+<html lang="en-AU">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta http-equiv="refresh" content={`0;url=${destination}`} />
+		<title>Redirecting · Yeh Bro</title>
+	</head>
+	<body>
+		<main>
+			<p>Taking you to the retailer…</p>
+			<p>
+				<a id="continue" href={destination} rel={rel}>{entry.label}</a>
+			</p>
+			<p>
+				<small
+					>Affiliate redirect (<code>{slug}</code>). Yeh Bro may earn a commission.
+					<a href="/disclosure">Disclosure</a></small
+				>
+			</p>
+		</main>
+		<script define:vars={{ destination, utmKeys }}>
+			const dest = new URL(destination);
+			const incoming = new URLSearchParams(window.location.search);
+			for (const key of utmKeys) {
+				const value = incoming.get(key);
+				if (value && !dest.searchParams.has(key)) {
+					dest.searchParams.set(key, value);
+				}
+			}
+			const finalUrl = dest.toString();
+			const link = document.getElementById('continue');
+			if (link) link.setAttribute('href', finalUrl);
+			window.location.replace(finalUrl);
+		</script>
+	</body>
+</html>
+
+<style>
+	body {
+		font-family: system-ui, sans-serif;
+		background: #121212;
+		color: #f2f2f0;
+		padding: 2rem;
+	}
+	a {
+		color: #c8f135;
+	}
+</style>

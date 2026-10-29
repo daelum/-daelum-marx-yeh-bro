@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+	title="Page not found"
+	description="That page doesn’t exist on Yeh Bro. Head to Start here or the guides index."
+	noindex
+>
+	<article class="prose-wrap">
+		<p class="eyebrow">404</p>
+		<h1>Nothing here, mate</h1>
+		<p class="lede">
+			Broken link or a typo. Unknown <code>/go/</code> slugs also land here once the host serves a
+			404.
+		</p>
+		<div class="cta-row">
+			<a class="btn btn-primary" href="/start-here">Start here</a>
+			<a class="btn btn-secondary" href="/blog">Guides</a>
+		</div>
+	</article>
+</BaseLayout>

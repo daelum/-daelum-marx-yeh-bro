@@ -1,0 +1,40 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout
+	title="Guides"
+	description="Yeh Bro guides: creatine, protein scoop maths, and pre-workout without hype — Australia-first."
+>
+	<section class="wrap blog-index">
+		<p class="eyebrow">Guides</p>
+		<h1>Evidence over hype</h1>
+		<p class="lede">AU-practical long-form. Affiliate links use /go/ redirects — see disclosure on each post.</p>
+		<ul class="guide-links">
+			{
+				posts.map((post) => (
+					<li>
+						<a href={`/blog/${post.id}/`}>
+							{post.data.title}
+							<span>
+								<FormattedDate date={post.data.pubDate} /> — {post.data.description}
+							</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+</BaseLayout>
+
+<style>
+	.blog-index {
+		padding-bottom: 3rem;
+	}
+</style>

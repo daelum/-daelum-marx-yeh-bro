@@ -1,0 +1,70 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+	<div class="wrap footer-inner">
+		<p class="footer-brand">YEH BRO</p>
+		<p class="footer-disclosure">
+			Affiliate: Yeh Bro may earn a commission if you buy through our links, at no extra cost to you.
+			Not medical advice.
+			<a href="/disclosure">Disclosure</a>
+			·
+			<a href="/privacy">Privacy</a>
+		</p>
+		<nav class="footer-nav" aria-label="Footer">
+			<a href="/disclosure">Disclosure</a>
+			<a href="/privacy">Privacy</a>
+			<a href="/contact">Contact</a>
+			<a href="/start-here">Start here</a>
+			<a href="/blog">Guides</a>
+		</nav>
+		<p class="footer-meta muted">
+			© {year} Yeh Bro. Australia-focused sports nutrition content. Not medical advice.
+		</p>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		margin-top: 4rem;
+		padding: 3rem 0 4rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.1);
+		background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.35));
+	}
+	.footer-inner {
+		display: grid;
+		gap: 1rem;
+	}
+	.footer-brand {
+		font-family: var(--font-display);
+		letter-spacing: 0.1em;
+		margin: 0;
+		font-size: 1.1rem;
+	}
+	.footer-disclosure {
+		margin: 0;
+		max-width: 36rem;
+		color: rgba(242, 242, 240, 0.8);
+		font-size: 0.98rem;
+	}
+	.footer-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1.25rem;
+		margin-top: 0.5rem;
+	}
+	.footer-nav a {
+		color: var(--yb-muted);
+		text-decoration: none;
+		font-size: 0.92rem;
+		font-weight: 600;
+	}
+	.footer-nav a:hover {
+		color: var(--yb-lime);
+	}
+	.footer-meta {
+		margin: 0.75rem 0 0;
+		font-size: 0.85rem;
+	}
+</style>

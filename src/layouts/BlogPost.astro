@@ -1,0 +1,101 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import DisclosureNote from '../components/DisclosureNote.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+
+type Props = CollectionEntry<'blog'>['data'];
+
+const { title, description, pubDate, updatedDate } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en-AU">
+	<head>
+		<BaseHead title={title} description={description} ogType="article" />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<article class="prose-wrap post">
+				<header class="post-header">
+					<p class="eyebrow">Guide · Australia</p>
+					<h1>{title}</h1>
+					<p class="lede">{description}</p>
+					<p class="date muted">
+						Published <FormattedDate date={pubDate} />
+						{
+							updatedDate && (
+								<>
+									{' '}
+									· Updated <FormattedDate date={updatedDate} />
+								</>
+							)
+						}
+					</p>
+				</header>
+				<DisclosureNote />
+				<div class="post-body">
+					<slot />
+				</div>
+				<p class="post-foot muted">
+					Not medical advice. Yeh Bro does not promote illegal AAS, SARMs, unapproved peptides, or
+					cycle funnels. <a href="/disclosure">Disclosure</a> ·
+					<a href="/start-here">Start here</a>
+				</p>
+			</article>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.post {
+		padding: 2.5rem 0 4rem;
+	}
+	.post-header {
+		margin-bottom: 0.5rem;
+	}
+	.post-header h1 {
+		margin-bottom: 0.75rem;
+	}
+	.date {
+		font-size: 0.92rem;
+		margin-top: 0.75rem;
+	}
+	.post-body :global(h2) {
+		margin-top: 2.25rem;
+	}
+	.post-body :global(h3) {
+		margin-top: 1.5rem;
+		color: var(--yb-teal);
+	}
+	.post-body :global(table) {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95rem;
+		margin: 1.25rem 0 1.75rem;
+	}
+	.post-body :global(th),
+	.post-body :global(td) {
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+		padding: 0.65rem 0.4rem;
+		text-align: left;
+		vertical-align: top;
+	}
+	.post-body :global(th) {
+		color: var(--yb-lime);
+		font-weight: 700;
+	}
+	.post-body :global(a[href^='/go/']) {
+		font-weight: 600;
+	}
+	.post-foot {
+		margin-top: 3rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		font-size: 0.92rem;
+	}
+</style>
