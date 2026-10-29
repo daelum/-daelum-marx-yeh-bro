@@ -5,23 +5,57 @@ import DisclosureNote from '../components/DisclosureNote.astro';
 
 <BaseLayout
 	title="Start here"
-	description="Yeh Bro beginner path: creatine, protein, and pre guides plus tracked affiliate links for Australia."
+	description="Yeh Bro path: PED culture education with harm reduction, then legal creatine, protein, and pre guides."
 >
 	<article class="prose-wrap">
 		<p class="eyebrow">Hub</p>
 		<h1>Start here</h1>
 		<p class="lede">
-			New to the brand? Do this in order. Keep it boring: train, eat protein, take creatine if it fits
-			your budget — skip the hype tub. Yeh Bro is serious lifting education (including honest industry
-			talk) — affiliate product links stay on legal sports nutrition. Read
-			<a href="/about">About</a> for how we handle PED harm-reduction vs what we never sell.
+			Learn real bodybuilding and PED culture honestly — then buy legal sports nutrition if it helps
+			your food targets. We never sell or source gear.
 		</p>
 
 		<DisclosureNote compact />
 
+		<section class="hub-block">
+			<p class="eyebrow">1 · Culture &amp; harm reduction</p>
+			<h2>PED education hub</h2>
+			<p>
+				If you came for industry honesty: start with harm reduction, then culture context. Not a
+				doctor. Not a cycle guide. Not a pharmacy. Yeh Bro does not run labs or sell tests — see the
+				PED hub for independent bloodwork / testing peers (not affiliated).
+			</p>
+			<div class="path-links">
+				<a href="/blog/ped-harm-reduction-australia">PED harm reduction</a>
+				<a href="/blog/ped-harm-reduction-australia#au-resources--testing--harm-reduction-peers"
+					>Testing / HR resources</a
+				>
+				<a href="/blog/bodybuilding-culture-education">Bodybuilding culture</a>
+				<a href="/blog/bodybuilding-blueprint">Bodybuilding blueprint</a>
+				<a href="/about">About / what we never do</a>
+			</div>
+		</section>
+
+		<section class="hub-block">
+			<p class="eyebrow">1b · Phased lifting education</p>
+			<h2>Bodybuilding blueprint</h2>
+			<p>
+				Cut → health pivot (bloodwork gates) → lean bulk. Training and nutrition are actionable.
+				Testosterone amounts appear only as patterns discussed in enhanced culture — not a DIY
+				prescription from Yeh Bro.
+			</p>
+			<div class="path-links">
+				<a href="/blog/bodybuilding-blueprint">Hub</a>
+				<a href="/blog/bodybuilding-blueprint-phase-1-cut">Phase 1 · Cut</a>
+				<a href="/blog/bodybuilding-blueprint-phase-2-health-pivot">Phase 2 · Health</a>
+				<a href="/blog/bodybuilding-blueprint-phase-3-lean-bulk">Phase 3 · Bulk</a>
+				<a href="/blog/bodybuilding-blueprint-safety">Safety</a>
+			</div>
+		</section>
+
 		<ol class="path">
 			<li>
-				<strong>Full beginner stack</strong> — read the order of operations first.
+				<strong>Legal beginner stack</strong> — creatine, protein, caffeine order of operations.
 				<div class="path-links">
 					<a href="/blog/beginner-supplement-stack-australia">Stack guide</a>
 					<a href="/go/stack-beginner-sm" rel="sponsored noopener noreferrer">/go/stack-beginner-sm</a>
@@ -63,18 +97,27 @@ import DisclosureNote from '../components/DisclosureNote.astro';
 		</ol>
 
 		<p class="muted">
-			Affiliate URLs are TODO placeholders until programs approve. Only canonical phase-1 slugs are
-			wired in <code>affiliates.ts</code> — unknown <code>/go/</code> paths 404.
+			Affiliate URLs are TODO placeholders until programs approve. Only canonical phase-1 legal
+			sports-nutrition slugs are wired in <code>affiliates.ts</code> — unknown <code>/go/</code> paths
+			404. No AAS / SARM / peptide / UGL slugs. Ever.
 		</p>
 
 		<div class="cta-row">
-			<a class="btn btn-primary" href="/blog">All guides</a>
-			<a class="btn btn-secondary" href="/about">About Yeh Bro</a>
+			<a class="btn btn-primary" href="/blog/ped-harm-reduction-australia">PED education</a>
+			<a class="btn btn-secondary" href="/blog">All guides</a>
 		</div>
 	</article>
 </BaseLayout>
 
 <style>
+	.hub-block {
+		margin: 2rem 0 2.5rem;
+		padding: 1.5rem 0 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.hub-block h2 {
+		margin-bottom: 0.75rem;
+	}
 	.path {
 		padding-left: 1.25rem;
 		margin: 2rem 0;
