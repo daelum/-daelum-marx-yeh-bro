@@ -41,6 +41,9 @@ export default defineConfig({
 		'/guides/best-plant-protein-australia': '/blog/best-plant-protein-australia',
 		'/guides/magnesium-for-lifters-australia': '/blog/magnesium-for-lifters-australia',
 		'/guides/omega-3-for-lifters-australia': '/blog/omega-3-for-lifters-australia',
+		'/guides/intra-workout-electrolytes-australia': '/blog/intra-workout-electrolytes-australia',
+		'/guides/supplement-label-red-flags-australia': '/blog/supplement-label-red-flags-australia',
+		'/guides/vitamin-d-training-australia': '/blog/vitamin-d-training-australia',
 	},
 });
 
