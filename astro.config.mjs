@@ -6,7 +6,7 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://yehbro.com.au',
+	site: 'https://yehbro.com',
 	integrations: [
 		mdx(),
 		sitemap({
@@ -23,5 +23,9 @@ export default defineConfig({
 		'/guides/best-stim-free-pre-workout-australia': '/blog/best-stim-free-pre-workout-australia',
 		'/guides/protein-scoop-economics-australia': '/blog/protein-scoop-economics-australia',
 		'/guides/pre-workout-without-hype': '/blog/pre-workout-without-hype',
+		'/guides/beginner-supplement-stack-australia': '/blog/beginner-supplement-stack-australia',
+		'/guides/does-creatine-cause-bloating': '/blog/does-creatine-cause-bloating',
+		'/guides/cheapest-protein-powder-australia': '/blog/cheapest-protein-powder-australia',
 	},
 });
+

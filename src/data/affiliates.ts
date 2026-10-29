@@ -1,73 +1,132 @@
 /**
- * Affiliate redirect map. Authors link to `/go/[slug]` only — never raw network URLs.
- * Aligned with Context docs/affiliate/go-slug-map.md + SEO draft slug inventory.
- * Replace TODO urls when programs approve. lastVerified = ISO date or null.
+ * Yeh Bro affiliate map — phase-1 seed from Context docs/affiliate.
+ * Replace url TODOs only with real tagged/deep links after approval.
+ * Source: docs/affiliate/go-slug-map.md + affiliates-ts-seed.md
+ * Deprecated aliases: docs/affiliate/slug-changelog.md — do not add keys for those.
  */
+
+export const AFFILIATE_REL = 'sponsored noopener noreferrer';
+
+export type AffiliateNetwork =
+	| 'amazon'
+	| 'awin'
+	| 'commission-factory'
+	| 'direct'
+	| 'referral'
+	| 'brandchamp'
+	| 'multi-network';
+
 export type AffiliateEntry = {
-	url: string;
-	network: string;
-	rel: string;
+	slug: string;
 	label: string;
-	lastVerified: string | null;
-	active: boolean;
+	/** Network deep link when approved — never invent; keep TODO until then */
+	url: string;
+	network: AffiliateNetwork;
+	notes: string;
 };
 
-function todo(
-	slug: string,
-	label: string,
-	network: string,
-): AffiliateEntry {
-	return {
-		// TODO: paste live network deep link when approved (go-slug-map allows "#" stub)
-		url: `https://example.com/TODO/${slug}`,
-		network,
-		rel: 'sponsored noopener noreferrer',
-		label,
-		lastVerified: null,
-		active: false,
-	};
-}
+export const affiliates: AffiliateEntry[] = [
+	{
+		slug: 'creatine-amz',
+		label: 'Creatine — Amazon AU',
+		url: 'https://example.com/TODO/creatine-amz',
+		network: 'amazon',
+		notes:
+			'Amazon Associates AU mono pick; verify Sports & Outdoors vs Health fee schedule before relying on margin.',
+	},
+	{
+		slug: 'creatine-bulk',
+		label: 'Creatine — Bulk Nutrients',
+		url: 'https://example.com/TODO/creatine-bulk',
+		network: 'referral',
+		notes:
+			'Referral/ambassador only until a cash program exists — activate only if T&Cs allow content use; no invented CPA %.',
+	},
+	{
+		slug: 'creatine-true',
+		label: 'Creatine — True Protein',
+		url: 'https://example.com/TODO/creatine-true',
+		network: 'commission-factory',
+		notes: 'CF advertiser deep link after True Protein join; pair with protein-true in creatine guides.',
+	},
+	{
+		slug: 'protein-true',
+		label: 'Protein — True Protein',
+		url: 'https://example.com/TODO/protein-true',
+		network: 'commission-factory',
+		notes: 'Primary CF True Protein CTA (flagship whey/WPI). Default protein slug for pillars.',
+	},
+	{
+		slug: 'protein-bulk',
+		label: 'Protein — Bulk Nutrients',
+		url: 'https://example.com/TODO/protein-bulk',
+		network: 'referral',
+		notes: 'Same referral constraint as creatine-bulk; keep stub for content continuity.',
+	},
+	{
+		slug: 'protein-mn',
+		label: 'Protein — Muscle Nation',
+		url: 'https://example.com/TODO/protein-mn',
+		network: 'direct',
+		notes: 'Growi / Muscle Nation direct affiliate link when approved.',
+	},
+	{
+		slug: 'protein-sm',
+		label: 'Protein — Supplement Mart',
+		url: 'https://example.com/TODO/protein-sm',
+		network: 'commission-factory',
+		notes:
+			'Prefer one path: CF or BrandChamp — if BrandChamp wins, change network to brandchamp; do not dual-attribute.',
+	},
+	{
+		slug: 'protein-mypro',
+		label: 'Protein — Myprotein AU',
+		url: 'https://example.com/TODO/protein-mypro',
+		network: 'awin',
+		notes: 'Awin Myprotein AU deep link after publisher + advertiser approval.',
+	},
+	{
+		slug: 'pre-mn',
+		label: 'Pre-workout — Muscle Nation',
+		url: 'https://example.com/TODO/pre-mn',
+		network: 'direct',
+		notes: 'MN pre CTA; disclose stimulants; open-label preference in copy.',
+	},
+	{
+		slug: 'pre-sm',
+		label: 'Pre-workout — Supplement Mart',
+		url: 'https://example.com/TODO/pre-sm',
+		network: 'commission-factory',
+		notes: 'Retailer pre pick; same single-path rule as protein-sm.',
+	},
+	{
+		slug: 'stack-beginner-sm',
+		label: 'Beginner stack — Supplement Mart',
+		url: 'https://example.com/TODO/stack-beginner-sm',
+		network: 'commission-factory',
+		notes: 'Shopping-list / category deep link for beginner stack guide.',
+	},
+	{
+		slug: 'omega-iherb',
+		label: 'Omega-3 — iHerb',
+		url: 'https://example.com/TODO/omega-iherb',
+		network: 'multi-network',
+		notes: 'Confirm Partnerize/Awin/CJ/Impact path; disclose AU shipping/duties in copy.',
+	},
+	{
+		slug: 'mag-iherb',
+		label: 'Magnesium — iHerb',
+		url: 'https://example.com/TODO/mag-iherb',
+		network: 'multi-network',
+		notes: 'Same network path as omega-iherb once iHerb affiliate is live.',
+	},
+];
 
-export const affiliates: Record<string, AffiliateEntry> = {
-	// --- Phase-1 seed (go-slug-map.md) ---
-	'creatine-amz': todo('creatine-amz', 'Amazon AU creatine mono pick', 'amazon-associates'),
-	'creatine-bulk': todo('creatine-bulk', 'Bulk Nutrients creatine', 'referral'),
-	'creatine-true': todo('creatine-true', 'True Protein creatine', 'commission-factory'),
-	'protein-true': todo('protein-true', 'True Protein flagship whey / WPI', 'commission-factory'),
-	'protein-bulk': todo('protein-bulk', 'Bulk Nutrients protein', 'referral'),
-	'protein-mn': todo('protein-mn', 'Muscle Nation protein', 'direct-growi'),
-	'protein-sm': todo('protein-sm', 'Supplement Mart protein pick', 'commission-factory'),
-	'protein-mypro': todo('protein-mypro', 'Myprotein AU protein', 'awin'),
-	'pre-mn': todo('pre-mn', 'Muscle Nation pre-workout', 'direct-growi'),
-	'pre-sm': todo('pre-sm', 'Supplement Mart pre pick', 'commission-factory'),
-	'stack-beginner-sm': todo('stack-beginner-sm', 'Beginner stack @ Supplement Mart', 'commission-factory'),
-	'omega-iherb': todo('omega-iherb', 'Omega-3 via iHerb', 'iherb-network'),
-	'mag-iherb': todo('mag-iherb', 'Magnesium via iHerb', 'iherb-network'),
+export const affiliatesBySlug = Object.fromEntries(
+	affiliates.map((a) => [a.slug, a]),
+) as Record<string, AffiliateEntry>;
 
-	// --- Content / comparison slugs (SEO batches; still TODO URLs) ---
-	'creatine-amz-au': todo('creatine-amz-au', 'Amazon AU creatine backup', 'amazon-associates'),
-	'creatine-bulk-mn': todo('creatine-bulk-mn', 'Default AU mono workhorse', 'referral'),
-	'creatine-creapure-au': todo('creatine-creapure-au', 'Creapure mono AU option', 'au-retail'),
-	'creatine-hcl-au': todo('creatine-hcl-au', 'Creatine HCL AU option', 'au-retail'),
-	'whey-conc-au': todo('whey-conc-au', 'AU whey concentrate workhorse', 'au-retail'),
-	'whey-isolate-au': todo('whey-isolate-au', 'AU whey isolate', 'au-retail'),
-	'whey-amz-au': todo('whey-amz-au', 'Amazon AU whey backup', 'amazon-associates'),
-	'whey-budget-au': todo('whey-budget-au', 'Budget AU whey cutter', 'au-retail'),
-	'plant-protein-au': todo('plant-protein-au', 'AU plant protein option', 'au-retail'),
-	'pre-stimfree-au': todo('pre-stimfree-au', 'Primary stim-free pre AU', 'au-retail'),
-	'pre-stimfree-budget': todo('pre-stimfree-budget', 'Budget stim-free pre', 'au-retail'),
-	'citrulline-au': todo('citrulline-au', 'Citrulline single-ingredient AU', 'au-retail'),
-	'electrolytes-au': todo('electrolytes-au', 'Electrolytes / intra AU', 'au-retail'),
-
-	// --- Optional variants (inactive until SKU locked) ---
-	'protein-true-wpi': todo('protein-true-wpi', 'True Protein WPI', 'commission-factory'),
-	'protein-true-wpc': todo('protein-true-wpc', 'True Protein WPC / blend', 'commission-factory'),
-	'creatine-amz-mono': todo('creatine-amz-mono', 'Amazon AU mono deep link', 'amazon-associates'),
-	'creatine-true-mono': todo('creatine-true-mono', 'True Protein mono', 'commission-factory'),
-	'pre-mn-beginner': todo('pre-mn-beginner', 'Muscle Nation beginner / lower-stim pre', 'direct-growi'),
-	'stack-beginner-true': todo('stack-beginner-true', 'Beginner stack · True Protein', 'commission-factory'),
-};
-
+/** Lookup by slug. Unknown → undefined (host/route 404). */
 export function getAffiliate(slug: string): AffiliateEntry | undefined {
-	return affiliates[slug];
+	return affiliatesBySlug[slug];
 }

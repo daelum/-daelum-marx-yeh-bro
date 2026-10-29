@@ -1,9 +1,9 @@
 ---
-import { affiliates, getAffiliate } from '../../data/affiliates';
+import { AFFILIATE_REL, affiliatesBySlug, getAffiliate } from '../../data/affiliates';
 import { UTM_KEYS } from '../../lib/utm';
 
 export function getStaticPaths() {
-	return Object.keys(affiliates).map((slug) => ({ params: { slug } }));
+	return Object.keys(affiliatesBySlug).map((slug) => ({ params: { slug } }));
 }
 
 const slug = Astro.params.slug;
@@ -16,6 +16,7 @@ if (!slug || !entry) {
 
 const destination = entry.url;
 const utmKeys = [...UTM_KEYS];
+const rel = AFFILIATE_REL;
 ---
 
 <!doctype html>
@@ -26,13 +27,12 @@ const utmKeys = [...UTM_KEYS];
 		<meta name="robots" content="noindex, nofollow" />
 		<meta http-equiv="refresh" content={`0;url=${destination}`} />
 		<title>Redirecting · Yeh Bro</title>
-		{/* No self-canonical on outbound redirects — avoid indexing hop pages */}
 	</head>
 	<body>
 		<main>
 			<p>Taking you to the retailer…</p>
 			<p>
-				<a id="continue" href={destination} rel={entry.rel}>{entry.label}</a>
+				<a id="continue" href={destination} rel={rel}>{entry.label}</a>
 			</p>
 			<p>
 				<small
