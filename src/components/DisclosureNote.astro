@@ -1,0 +1,30 @@
+---
+interface Props {
+	compact?: boolean;
+}
+const { compact = false } = Astro.props;
+---
+
+<aside class="disclosure-banner" role="note">
+	{
+		compact ? (
+			<p>
+				<strong>Affiliate:</strong> We may earn a commission if you buy through our links — no
+				extra cost to you. Picks are our own. Not medical advice.
+				<a href="/disclosure">Policy</a>
+			</p>
+		) : (
+			<p>
+				<strong>Disclosure:</strong> This page includes affiliate links. If you buy through them,
+				Yeh Bro may earn a commission at no extra cost to you. We only link legal sports nutrition
+				that fits an evidence-first AU stack. Not medical advice — general training and nutrition
+				only. <a href="/disclosure">Full disclosure</a>
+			</p>
+		)
+	}
+</aside>
+<style>
+	p {
+		margin: 0;
+	}
+</style>

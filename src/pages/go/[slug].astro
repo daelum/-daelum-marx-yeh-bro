@@ -1,0 +1,57 @@
+---
+import { affiliates, getAffiliate } from '../../data/affiliates';
+
+export function getStaticPaths() {
+	return Object.keys(affiliates).map((slug) => ({ params: { slug } }));
+}
+
+const slug = Astro.params.slug!;
+const entry = getAffiliate(slug);
+
+if (!entry) {
+	return Astro.redirect('/start-here');
+}
+
+const destination = entry.url;
+---
+
+<!doctype html>
+<html lang="en-AU">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<meta http-equiv="refresh" content={`0;url=${destination}`} />
+		<title>Redirecting · Yeh Bro</title>
+		<link rel="canonical" href={new URL(`/go/${slug}`, Astro.site)} />
+	</head>
+	<body>
+		<main>
+			<p>Taking you to the retailer…</p>
+			<p>
+				<a href={destination} rel={entry.rel}>{entry.label}</a>
+			</p>
+			<p>
+				<small
+					>Affiliate redirect (<code>{slug}</code>). Yeh Bro may earn a commission.
+					<a href="/disclosure">Disclosure</a></small
+				>
+			</p>
+		</main>
+		<script define:vars={{ destination }}>
+			window.location.replace(destination);
+		</script>
+	</body>
+</html>
+
+<style>
+	body {
+		font-family: system-ui, sans-serif;
+		background: #121212;
+		color: #f2f2f0;
+		padding: 2rem;
+	}
+	a {
+		color: #c8f135;
+	}
+</style>

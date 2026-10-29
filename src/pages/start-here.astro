@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import DisclosureNote from '../components/DisclosureNote.astro';
+---
+
+<BaseLayout
+	title="Start here"
+	description="Yeh Bro beginner path: creatine, protein, and pre guides plus tracked affiliate links for Australia."
+>
+	<article class="prose-wrap">
+		<p class="eyebrow">Hub</p>
+		<h1>Start here</h1>
+		<p class="lede">
+			New to the brand? Do this in order. Keep it boring: train, eat protein, take creatine if it fits
+			your budget — skip the hype tub.
+		</p>
+
+		<DisclosureNote compact />
+
+		<ol class="path">
+			<li>
+				<strong>Creatine</strong> — read the AU guide, then pick a transparent mono tub.
+				<div class="path-links">
+					<a href="/blog/best-creatine-australia">Guide</a>
+					<a href="/go/creatine-bulk" rel="sponsored noopener noreferrer">/go/creatine-bulk</a>
+					<a href="/go/creatine-true" rel="sponsored noopener noreferrer">/go/creatine-true</a>
+				</div>
+			</li>
+			<li>
+				<strong>Protein</strong> — run the scoop maths before you chase flavours.
+				<div class="path-links">
+					<a href="/blog/protein-scoop-economics-australia">Guide</a>
+					<a href="/go/protein-true" rel="sponsored noopener noreferrer">/go/protein-true</a>
+					<a href="/go/protein-bulk" rel="sponsored noopener noreferrer">/go/protein-bulk</a>
+				</div>
+			</li>
+			<li>
+				<strong>Pre-workout</strong> — only if caffeine + clear doses help you. Proprietary blend?
+				Skip.
+				<div class="path-links">
+					<a href="/blog/pre-workout-without-hype">Guide</a>
+					<a href="/go/pre-mn" rel="sponsored noopener noreferrer">/go/pre-mn</a>
+					<a href="/go/pre-sm" rel="sponsored noopener noreferrer">/go/pre-sm</a>
+				</div>
+			</li>
+			<li>
+				<strong>Optional beginner basket</strong> — when retailer links are live.
+				<div class="path-links">
+					<a href="/go/stack-beginner-sm" rel="sponsored noopener noreferrer">/go/stack-beginner-sm</a>
+				</div>
+			</li>
+		</ol>
+
+		<p class="muted">
+			Affiliate URLs are placeholders until programs approve. Links still route through
+			<code>/go/</code> so we can swap destinations later.
+		</p>
+
+		<div class="cta-row">
+			<a class="btn btn-primary" href="/blog">All guides</a>
+			<a class="btn btn-secondary" href="/about">About Yeh Bro</a>
+		</div>
+	</article>
+</BaseLayout>
+
+<style>
+	.path {
+		padding-left: 1.25rem;
+		margin: 2rem 0;
+	}
+	.path li {
+		margin-bottom: 1.75rem;
+	}
+	.path-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem 1rem;
+		margin-top: 0.5rem;
+		font-size: 0.95rem;
+	}
+</style>

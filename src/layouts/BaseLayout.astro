@@ -1,0 +1,47 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+
+interface Props {
+	title: string;
+	description: string;
+	fullBleed?: boolean;
+}
+
+const { title, description, fullBleed = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en-AU">
+	<head>
+		<BaseHead title={title} description={description} />
+	</head>
+	<body>
+		<a class="skip-link" href="#main">Skip to content</a>
+		<Header />
+		<main id="main" class:list={[{ 'main-pad': !fullBleed }]}>
+			<slot />
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.skip-link {
+		position: absolute;
+		left: -999px;
+		top: 0;
+		background: var(--yb-lime);
+		color: var(--yb-charcoal);
+		padding: 0.5rem 1rem;
+		z-index: 100;
+	}
+	.skip-link:focus {
+		left: 0;
+	}
+	.main-pad {
+		padding-top: 2rem;
+		padding-bottom: 2rem;
+	}
+</style>

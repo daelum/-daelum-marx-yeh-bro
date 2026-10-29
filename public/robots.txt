@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Disallow: /go/
+
+Sitemap: https://yehbro.com.au/sitemap-index.xml
