@@ -38,6 +38,9 @@ export default defineConfig({
 		'/guides/beta-alanine-tingles': '/blog/beta-alanine-tingles',
 		'/guides/pre-workout-vs-coffee': '/blog/pre-workout-vs-coffee',
 		'/guides/casein-vs-whey': '/blog/casein-vs-whey',
+		'/guides/best-plant-protein-australia': '/blog/best-plant-protein-australia',
+		'/guides/magnesium-for-lifters-australia': '/blog/magnesium-for-lifters-australia',
+		'/guides/omega-3-for-lifters-australia': '/blog/omega-3-for-lifters-australia',
 	},
 });
 
