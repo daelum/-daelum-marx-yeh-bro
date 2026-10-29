@@ -10,12 +10,15 @@ const posts = (await getCollection('blog')).sort(
 
 <BaseLayout
 	title="Guides"
-	description="Yeh Bro guides: creatine, protein scoop maths, and pre-workout without hype — Australia-first."
+	description="Yeh Bro guides: training, food, creatine, protein, bodybuilding blueprint, and optional PED culture literacy."
 >
 	<section class="wrap blog-index">
 		<p class="eyebrow">Guides</p>
-		<h1>Evidence over hype</h1>
-		<p class="lede">AU-practical long-form. Affiliate links use /go/ redirects — see disclosure on each post.</p>
+		<h1>Guides for the work.</h1>
+		<p class="lede">
+			New? Start with the numbered path on <a href="/start-here">Start here</a>. Everything below is
+			depth when you need it — training phases, scoop maths, culture literacy.
+		</p>
 		<ul class="guide-links">
 			{
 				posts.map((post) => (

@@ -9,15 +9,13 @@ const { compact = false } = Astro.props;
 	{
 		compact ? (
 			<p>
-				<strong>Affiliate link</strong> — we may earn a commission if you buy. No extra cost to you.
-				Not medical advice. <a href="/disclosure">Policy</a>
+				Some links may earn a commission.{' '}
+				<a href="/disclosure">Disclosure</a>
 			</p>
 		) : (
 			<p>
-				<strong>Disclosure:</strong> This page includes affiliate links. If you buy through them,
-				Yeh Bro may earn a commission at no extra cost to you. We only link legal sports nutrition
-				that fits an evidence-first AU stack. Not medical advice — general training and nutrition
-				only. <a href="/disclosure">Full disclosure</a>
+				Some product links may earn Yeh Bro a commission at no extra cost to you. Not medical
+				advice. <a href="/disclosure">Disclosure</a>
 			</p>
 		)
 	}

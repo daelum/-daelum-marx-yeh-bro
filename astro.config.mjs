@@ -47,6 +47,15 @@ export default defineConfig({
 		'/guides/amazon-au-vs-supplement-shops': '/blog/amazon-au-vs-supplement-shops',
 		'/guides/yeh-bro-current-picks': '/blog/yeh-bro-current-picks',
 		'/guides/supplement-mistakes-beginners-australia': '/blog/supplement-mistakes-beginners-australia',
+		'/guides/ped-harm-reduction-australia': '/blog/ped-harm-reduction-australia',
+		'/guides/bodybuilding-culture-education': '/blog/bodybuilding-culture-education',
+		'/guides/bodybuilding-blueprint': '/blog/bodybuilding-blueprint',
+		'/guides/bodybuilding-blueprint-phase-1-cut': '/blog/bodybuilding-blueprint-phase-1-cut',
+		'/guides/bodybuilding-blueprint-phase-2-health-pivot':
+			'/blog/bodybuilding-blueprint-phase-2-health-pivot',
+		'/guides/bodybuilding-blueprint-phase-3-lean-bulk':
+			'/blog/bodybuilding-blueprint-phase-3-lean-bulk',
+		'/guides/bodybuilding-blueprint-safety': '/blog/bodybuilding-blueprint-safety',
 	},
 });
 

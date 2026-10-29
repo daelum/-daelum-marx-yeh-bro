@@ -1,7 +1,7 @@
 export const SITE_TITLE = 'Yeh Bro';
 /** Unique homepage <title> (includes brand). */
-export const SITE_TITLE_HOME = 'Yeh Bro — Evidence-first lifting for Australia';
+export const SITE_TITLE_HOME = 'Yeh Bro — Cuts, bulks, bloodwork, and gym craft';
 export const SITE_DESCRIPTION =
-	'Australia-first bodybuilding education: creatine, protein, pre maths, and honest industry talk — without the hype.';
-export const SITE_TAGLINE = 'Evidence-first lifting. No hype.';
+	'Gym-literate guides on cuts, bulks, PED culture, bloodwork, and training nutrition — how an experienced lifter would think it through.';
+export const SITE_TAGLINE = 'How I’d think about the cut, the bulk, and the bloodwork.';
 export const SITE_URL = 'https://yehbro.com';

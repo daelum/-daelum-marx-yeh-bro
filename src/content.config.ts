@@ -14,6 +14,13 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
+			/** Optional post eyebrow (e.g. education / harm reduction). */
+			eyebrow: z.string().optional(),
+			/**
+			 * When true, BlogPost renders the strong enhanced/PED education disclaimer
+			 * (medical + legal + no gear sourcing + culture-pattern dosing fence).
+			 */
+			enhancedEducation: z.boolean().optional(),
 		}),
 });
 

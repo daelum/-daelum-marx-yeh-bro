@@ -1,92 +1,226 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import DisclosureNote from '../components/DisclosureNote.astro';
 ---
 
 <BaseLayout
 	title="Start here"
-	description="Yeh Bro beginner path: creatine, protein, and pre guides plus tracked affiliate links for Australia."
+	description="Yeh Bro’s blueprint for getting into the best shape of your life — mindset, training, food, sleep, supplements that matter, then optional deeper culture reading."
 >
-	<article class="prose-wrap">
-		<p class="eyebrow">Hub</p>
+	<article class="prose-wrap journey">
+		<p class="eyebrow">Blueprint</p>
 		<h1>Start here</h1>
 		<p class="lede">
-			New to the brand? Do this in order. Keep it boring: train, eat protein, take creatine if it fits
-			your budget — skip the hype tub. Yeh Bro is serious lifting education (including honest industry
-			talk) — affiliate product links stay on legal sports nutrition. Read
-			<a href="/about">About</a> for how we handle PED harm-reduction vs what we never sell.
+			Here’s how I’d get someone into the best shape of their life — not the flashiest eight-week
+			transformation, the one that still holds in twelve months. Six steps. Do them in order. Skip
+			the deep culture / PED stuff until the basics feel boring in a good way.
 		</p>
 
-		<DisclosureNote compact />
+		<nav class="step-nav" aria-label="Journey steps">
+			<a href="#step-1">1 · Mindset</a>
+			<a href="#step-2">2 · Training</a>
+			<a href="#step-3">3 · Food</a>
+			<a href="#step-4">4 · Sleep</a>
+			<a href="#step-5">5 · Supplements</a>
+			<a href="#step-6">6 · Optional deeper</a>
+		</nav>
 
-		<ol class="path">
-			<li>
-				<strong>Full beginner stack</strong> — read the order of operations first.
-				<div class="path-links">
-					<a href="/blog/beginner-supplement-stack-australia">Stack guide</a>
-					<a href="/go/stack-beginner-sm" rel="sponsored noopener noreferrer">/go/stack-beginner-sm</a>
-				</div>
-			</li>
-			<li>
-				<strong>Creatine</strong> — buy guide, dose habit, water-weight myth, then a transparent mono tub.
-				<div class="path-links">
-					<a href="/blog/best-creatine-for-beginners-australia">Beginners</a>
-					<a href="/blog/best-creatine-australia">Buy guide</a>
-					<a href="/blog/how-to-dose-creatine">How to dose</a>
-					<a href="/blog/creatine-for-women">Women</a>
-					<a href="/blog/does-creatine-cause-bloating">Bloat / water weight</a>
+		<section class="hub-block" id="step-1">
+			<p class="eyebrow">Step 1</p>
+			<h2>Mindset — honesty about where you’re starting</h2>
+			<p>
+				Be straight with yourself: training age, sleep, stress, how consistent you’ve actually been.
+				Eight-week “before/after” feeds lie with lighting, pumps, filters, and sometimes pharmacology.
+				Your job is a repeatable week you can run when life is average — not a hero week you abandon.
+			</p>
+			<ul>
+				<li><strong>Pick one goal for 12 weeks</strong> — get stronger, lose fat, or rebuild the habit. Not all three at once.</li>
+				<li><strong>Measure something boring</strong> — sessions completed, body weight trend, a few lifts. Screenshots of peak lighting don’t count.</li>
+				<li><strong>Ignore “natty or not” bait</strong> until your own process is solid. Comparison without context is how people quit.</li>
+			</ul>
+			<p class="takeaway"><strong>Takeaway:</strong> Best shape of your life is a process score, not a peak still.</p>
+		</section>
+
+		<section class="hub-block" id="step-2">
+			<p class="eyebrow">Step 2</p>
+			<h2>Training — consistency beats complexity</h2>
+			<p>
+				If I were programming for most people: lift <strong>3–4 days a week</strong>, hit the big
+				patterns (squat/hinge, push, pull, carry or core), and add load or reps over time. That’s
+				progressive overload. Fancy splits can wait.
+			</p>
+			<ul>
+				<li>
+					<strong>Simple split that works:</strong> Full body 3×/week, or Upper / Lower 4×/week.
+					Keep the same lifts long enough to get good at them.
+				</li>
+				<li>
+					<strong>Leave 1–3 reps in the tank</strong> most sets. Destroying yourself every session is
+					ego, not a plan.
+				</li>
+				<li>
+					<strong>Cardio:</strong> walk most days. Add one harder conditioning session if recovery
+					allows — not daily redline.
+				</li>
+			</ul>
+			<p>
+				When you’re ready for phased cut → health pivot → lean bulk education:
+				<a href="/blog/bodybuilding-blueprint">Bodybuilding blueprint</a>.
+			</p>
+			<p class="takeaway"><strong>Takeaway:</strong> Show up, progress the logbook, recover. Program-hopping is procrastination.</p>
+		</section>
+
+		<section class="hub-block" id="step-3">
+			<p class="eyebrow">Step 3</p>
+			<h2>Food — protein first, phases when you’re ready</h2>
+			<p>
+				Don’t obsess over apps before you can hit protein and roughly the right calories most days.
+				Here’s the order I’d use:
+			</p>
+			<ol>
+				<li><strong>Protein:</strong> about <strong>1.6–2.2 g per kg</strong> body weight as a practical range for lifters. Powder is convenience, not magic.</li>
+				<li><strong>Maintenance first:</strong> eat roughly enough to hold weight while training quality rises.</li>
+				<li><strong>Deficit when ready:</strong> ~15–20% below maintenance to lose fat without torching lifts.</li>
+				<li><strong>Surplus when ready:</strong> a small bump (~10%) to grow — not a dirty bulk that undoes the cut.</li>
+			</ol>
+			<p>
+				Phased food + training detail lives in the
+				<a href="/blog/bodybuilding-blueprint-phase-1-cut">cut</a>,
+				<a href="/blog/bodybuilding-blueprint-phase-2-health-pivot">health pivot</a>, and
+				<a href="/blog/bodybuilding-blueprint-phase-3-lean-bulk">lean bulk</a> guides — after steps 1–4 feel normal.
+			</p>
+			<p class="takeaway"><strong>Takeaway:</strong> Hit protein. Adjust calories slowly. Perfect macros can wait.</p>
+		</section>
+
+		<section class="hub-block" id="step-4">
+			<p class="eyebrow">Step 4</p>
+			<h2>Sleep / recovery — the unpaid coach</h2>
+			<p>
+				You can out-train a bad night once. You can’t out-train a bad month. Aim for a sleep window
+				you can protect most nights — same bedtime beats heroic weekend catch-up.
+			</p>
+			<ul>
+				<li>Treat <strong>7–9 hours</strong> as training support, not optional lifestyle fluff.</li>
+				<li>If resting heart rate or mood is wrecked for days, <strong>deload</strong> — cut volume ~30% for a week instead of adding more caffeine.</li>
+				<li>Stress and steps matter. A daily walk is recovery and NEAT, not punishment cardio.</li>
+			</ul>
+			<p class="takeaway"><strong>Takeaway:</strong> Recovery is part of the program. Skip it and the logbook stalls.</p>
+		</section>
+
+		<section class="hub-block" id="step-5">
+			<p class="eyebrow">Step 5</p>
+			<h2>Supplements that actually matter</h2>
+			<p>
+				Most tubs are noise. For average lifters building the best shape of their life, the short
+				list is boring on purpose:
+			</p>
+			<ul>
+				<li>
+					<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional. Form theatre is mostly marketing.
+					<a href="/blog/best-creatine-australia">Creatine guide</a> ·
+					<a href="/go/creatine-true" rel="sponsored noopener noreferrer">/go/creatine-true</a> ·
 					<a href="/go/creatine-bulk" rel="sponsored noopener noreferrer">/go/creatine-bulk</a>
-					<a href="/go/creatine-true" rel="sponsored noopener noreferrer">/go/creatine-true</a>
-				</div>
-			</li>
-			<li>
-				<strong>Protein</strong> — pillar, budget maths, then WPC vs WPI if dairy is the question.
-				<div class="path-links">
-					<a href="/blog/best-protein-powder-australia">Protein pillar</a>
-					<a href="/blog/cheapest-protein-powder-australia">Cheapest protein</a>
-					<a href="/blog/whey-concentrate-vs-isolate-australia">WPC vs WPI</a>
+				</li>
+				<li>
+					<strong>Protein powder</strong> — only if food is awkward. Judge cost per ~25 g protein, not flavour ads.
+					<a href="/blog/best-protein-powder-australia">Protein guide</a> ·
+					<a href="/go/protein-true" rel="sponsored noopener noreferrer">/go/protein-true</a> ·
 					<a href="/go/protein-bulk" rel="sponsored noopener noreferrer">/go/protein-bulk</a>
-					<a href="/go/protein-true" rel="sponsored noopener noreferrer">/go/protein-true</a>
-				</div>
-			</li>
-			<li>
-				<strong>Pre-workout</strong> — clear doses only. Stim-free guide uses phase-1 pre seeds until Ops
-				adds a dedicated stim-free slug.
-				<div class="path-links">
+				</li>
+				<li>
+					<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.
 					<a href="/blog/caffeine-dose-training">Caffeine timing</a>
-					<a href="/blog/pre-workout-without-hype">Stim pre</a>
-					<a href="/blog/best-stim-free-pre-workout-australia">Stim-free</a>
-					<a href="/go/pre-mn" rel="sponsored noopener noreferrer">/go/pre-mn</a>
-					<a href="/go/pre-sm" rel="sponsored noopener noreferrer">/go/pre-sm</a>
-				</div>
-			</li>
-		</ol>
+				</li>
+			</ul>
+			<p>
+				Order of operations and what to skip:
+				<a href="/blog/beginner-supplement-stack-australia">Beginner stack</a> ·
+				<a href="/blog/supplement-label-red-flags-australia">Label red flags</a>.
+			</p>
+			<p class="takeaway"><strong>Takeaway:</strong> Creatine + protein convenience cover most of the useful powder lane. Everything else earns its place later.</p>
+		</section>
 
-		<p class="muted">
-			Affiliate URLs are TODO placeholders until programs approve. Only canonical phase-1 slugs are
-			wired in <code>affiliates.ts</code> — unknown <code>/go/</code> paths 404.
-		</p>
+		<section class="hub-block" id="step-6">
+			<p class="eyebrow">Step 6 · Optional</p>
+			<h2>Deeper culture — when the basics are locked</h2>
+			<p>
+				Gym culture has a pharmacology shadow. Ignoring it creates naivety; leading with it creates
+				chaos for beginners. When you’re training consistently and want literacy — risks, bloodwork,
+				legality, how forums talk about phases — go here. Not day one.
+			</p>
+			<div class="path-links">
+				<a href="/blog/bodybuilding-culture-education">Bodybuilding culture</a>
+				<a href="/blog/ped-harm-reduction-australia">PED harm reduction</a>
+				<a href="/blog/bodybuilding-blueprint">Phased blueprint</a>
+				<a href="/blog/bodybuilding-blueprint-safety">Safety companion</a>
+				<a href="/about">About Yeh Bro</a>
+			</div>
+			<p class="takeaway">
+				<strong>Takeaway:</strong> Deeper reading is literacy, not a shopping list. Bloodwork and
+				medical decisions stay with a clinician. We don’t source gear.
+			</p>
+		</section>
 
-		<div class="cta-row">
-			<a class="btn btn-primary" href="/blog">All guides</a>
-			<a class="btn btn-secondary" href="/about">About Yeh Bro</a>
-		</div>
+		<section class="hub-block close-block">
+			<p class="eyebrow">Do this week</p>
+			<h2>Your first seven days</h2>
+			<ol>
+				<li>Book 3–4 lift sessions on the calendar (Upper/Lower or full body).</li>
+				<li>Hit a protein target most days — food first, powder if needed.</li>
+				<li>Protect one sleep window like it’s a session.</li>
+				<li>Start creatine if you want the easy win (3–5 g/day).</li>
+				<li>Come back to the guides when a question is real — not when you’re doomscrolling.</li>
+			</ol>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="/blog/beginner-supplement-stack-australia">Beginner stack</a>
+				<a class="btn btn-secondary" href="/blog/bodybuilding-blueprint">Phase blueprint</a>
+				<a class="btn btn-secondary" href="/blog">All guides</a>
+			</div>
+		</section>
 	</article>
 </BaseLayout>
 
 <style>
-	.path {
-		padding-left: 1.25rem;
-		margin: 2rem 0;
+	.journey .step-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 0.85rem;
+		margin: 1.5rem 0 0.5rem;
+		padding: 1rem 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+		font-size: 0.92rem;
+		font-weight: 600;
 	}
-	.path li {
-		margin-bottom: 1.75rem;
+	.journey .step-nav a {
+		color: var(--yb-muted);
+		text-decoration: none;
+	}
+	.journey .step-nav a:hover {
+		color: var(--yb-lime);
+	}
+	.hub-block {
+		margin: 2rem 0 2.5rem;
+		padding: 1.5rem 0 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		scroll-margin-top: 5rem;
+	}
+	.hub-block h2 {
+		margin-bottom: 0.75rem;
+	}
+	.takeaway {
+		margin-top: 1.25rem;
+		padding: 0.85rem 0 0.85rem 0.95rem;
+		border-left: 3px solid var(--yb-lime);
+		color: rgba(242, 242, 240, 0.9);
 	}
 	.path-links {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.75rem 1rem;
-		margin-top: 0.5rem;
+		margin-top: 0.75rem;
 		font-size: 0.95rem;
+	}
+	.close-block {
+		margin-bottom: 1rem;
 	}
 </style>
