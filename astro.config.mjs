@@ -32,8 +32,12 @@ export default defineConfig({
 		'/guides/best-creatine-for-beginners-australia': '/blog/best-creatine-for-beginners-australia',
 		'/guides/creatine-for-women': '/blog/creatine-for-women',
 		'/guides/caffeine-dose-training': '/blog/caffeine-dose-training',
+		'/guides/lactose-whey-isolate': '/blog/lactose-whey-isolate',
+		'/guides/creatine-loading-phase': '/blog/creatine-loading-phase',
+		'/guides/when-to-take-creatine': '/blog/when-to-take-creatine',
 	},
 });
+
 
 
 
