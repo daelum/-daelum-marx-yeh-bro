@@ -1,3 +1,3 @@
-# called-yeh-bro
+# yeh-bro
 
-This project was created by a Cursor cloud agent.
+New Origin project created with Cursor.
