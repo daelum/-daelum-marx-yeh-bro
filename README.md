@@ -1,6 +1,6 @@
 # Yeh Bro
 
-Australia-first, faceless, evidence-first natural-lifter affiliate site (Astro).
+Australia-first bodybuilding / lifting education site (Astro) — evidence-first guides, legal sports-nutrition affiliates, PED harm-reduction education without selling gear.
 
 **Production URL:** https://yehbro.com (AU-first market; `.com` is the primary domain.)
 
@@ -23,7 +23,7 @@ npm run build
 - Authors link products as `/go/{product}-{brand}` only — never raw network URLs
 - Seed: Context `docs/affiliate/affiliates-ts-seed.md` + `go-slug-map.md`; deprecated aliases in `slug-changelog.md` are **not** wired
 - Inbound `utm_*` on `/go/` are forwarded to the retailer URL
-- Disclosures on commercial pages; no AAS / SARMs / cycle funnels
+- Disclosures on commercial pages; never sell/source illegal AAS / SARMs / peptides / grey gear (educate ≠ storefront)
 - Brand tokens: Context `docs/yeh-bro-brand-kit.md`
 
 ## Cloudflare Pages
