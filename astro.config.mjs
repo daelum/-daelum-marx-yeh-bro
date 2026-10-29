@@ -26,6 +26,10 @@ export default defineConfig({
 		'/guides/beginner-supplement-stack-australia': '/blog/beginner-supplement-stack-australia',
 		'/guides/does-creatine-cause-bloating': '/blog/does-creatine-cause-bloating',
 		'/guides/cheapest-protein-powder-australia': '/blog/cheapest-protein-powder-australia',
+		'/guides/proprietary-blend-pre-workout': '/blog/proprietary-blend-pre-workout',
+		'/guides/creapure-vs-generic-creatine': '/blog/creapure-vs-generic-creatine',
+		'/guides/protein-per-scoop-australia': '/blog/protein-per-scoop-australia',
 	},
 });
+
 
