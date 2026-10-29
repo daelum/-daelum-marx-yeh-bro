@@ -10,7 +10,18 @@ export default defineConfig({
 	integrations: [
 		mdx(),
 		sitemap({
-			filter: (page) => !page.includes('/go/'),
+			filter: (page) => !page.includes('/go/') && !page.includes('/guides/'),
 		}),
 	],
+	// SEO drafts / link map use /guides/*; content lives under /blog/*
+	redirects: {
+		'/guides/best-creatine-australia': '/blog/best-creatine-australia',
+		'/guides/how-to-dose-creatine': '/blog/how-to-dose-creatine',
+		'/guides/creatine-monohydrate-vs-hcl': '/blog/creatine-monohydrate-vs-hcl',
+		'/guides/best-protein-powder-australia': '/blog/best-protein-powder-australia',
+		'/guides/whey-concentrate-vs-isolate-australia': '/blog/whey-concentrate-vs-isolate-australia',
+		'/guides/best-stim-free-pre-workout-australia': '/blog/best-stim-free-pre-workout-australia',
+		'/guides/protein-scoop-economics-australia': '/blog/protein-scoop-economics-australia',
+		'/guides/pre-workout-without-hype': '/blog/pre-workout-without-hype',
+	},
 });
