@@ -1,10 +1,51 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
+
+const lanes = [
+	{
+		href: '/start-here#step-2',
+		label: 'Training',
+		blurb: 'Consistency + progressive overload.',
+		image: '/images/cover-training.jpg',
+	},
+	{
+		href: '/start-here#step-3',
+		label: 'Food',
+		blurb: 'Protein first; phases when ready.',
+		image: '/images/cover-food.jpg',
+	},
+	{
+		href: '/start-here#step-4',
+		label: 'Recovery',
+		blurb: 'Sleep is part of the program.',
+		image: '/images/cover-recovery.jpg',
+	},
+	{
+		href: '/start-here#step-5',
+		label: 'Supplements',
+		blurb: 'Creatine, protein convenience, caffeine.',
+		image: '/images/cover-supplements.jpg',
+	},
+	{
+		href: '/blog/bodybuilding-culture-education',
+		label: 'Culture',
+		blurb: 'Optional PED literacy — not day one.',
+		image: '/images/cover-culture.jpg',
+	},
+];
 ---
 
-<BaseLayout title={SITE_TITLE_HOME} description={SITE_DESCRIPTION} fullBleed>
+<BaseLayout
+	title={SITE_TITLE_HOME}
+	description={SITE_DESCRIPTION}
+	fullBleed
+	image="/images/og-default.jpg"
+>
 	<section class="hero">
+		<div class="hero-media" aria-hidden="true">
+			<img src="/images/hero-gym.jpg" alt="" width="1280" height="720" fetchpriority="high" />
+		</div>
 		<div class="hero-grid" aria-hidden="true"></div>
 		<div class="wrap hero-inner">
 			<p class="eyebrow anim-rise">Training · Food · Recovery</p>
@@ -61,6 +102,31 @@ import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
 			<a class="btn btn-primary" href="/start-here">Open the full blueprint</a>
 			<a class="btn btn-secondary" href="/about">About Yeh Bro</a>
 		</div>
+	</section>
+
+	<section class="section wrap">
+		<p class="eyebrow">Lanes</p>
+		<h2>Pick a surface.</h2>
+		<p class="lede lane-lede">
+			Same path, different entry. Jump into a lane when you already know what you need.
+		</p>
+		<ul class="lane-list">
+			{
+				lanes.map((lane) => (
+					<li>
+						<a href={lane.href} class="lane-link">
+							<span class="lane-img" aria-hidden="true">
+								<img src={lane.image} alt="" width="640" height="360" loading="lazy" />
+							</span>
+							<span class="lane-copy">
+								<span class="lane-label">{lane.label}</span>
+								<span class="lane-blurb">{lane.blurb}</span>
+							</span>
+						</a>
+					</li>
+				))
+			}
+		</ul>
 	</section>
 
 	<section class="section wrap">
@@ -136,11 +202,26 @@ import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
 		overflow: hidden;
 		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
 	}
+	.hero-media {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+	}
+	.hero-media img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: 70% center;
+		display: block;
+		transform: scale(1.02);
+		animation: hero-atmosphere 14s ease-in-out infinite alternate;
+	}
 	.hero-grid {
 		position: absolute;
 		inset: 0;
+		z-index: 0;
 		background:
-			linear-gradient(120deg, rgba(18, 18, 18, 0.15), rgba(18, 18, 18, 0.88)),
+			linear-gradient(120deg, rgba(18, 18, 18, 0.55), rgba(18, 18, 18, 0.92)),
 			repeating-linear-gradient(
 				90deg,
 				rgba(242, 242, 240, 0.03) 0,
@@ -155,10 +236,9 @@ import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
 				transparent 1px,
 				transparent 72px
 			),
-			radial-gradient(ellipse 75% 55% at 78% 35%, rgba(200, 241, 53, 0.18), transparent 58%),
-			radial-gradient(ellipse 50% 45% at 15% 70%, rgba(46, 230, 166, 0.1), transparent 55%);
+			radial-gradient(ellipse 75% 55% at 78% 35%, rgba(200, 241, 53, 0.12), transparent 58%),
+			radial-gradient(ellipse 50% 45% at 15% 70%, rgba(46, 230, 166, 0.08), transparent 55%);
 		pointer-events: none;
-		animation: hero-atmosphere 14s ease-in-out infinite alternate;
 	}
 	.hero-inner {
 		position: relative;
@@ -207,19 +287,70 @@ import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
 		border-top: 1px solid rgba(242, 242, 240, 0.1);
 		border-bottom: 1px solid rgba(242, 242, 240, 0.1);
 	}
+	.lane-list {
+		list-style: none;
+		padding: 0;
+		margin: 1.5rem 0 0;
+		display: grid;
+		gap: 0;
+	}
+	.lane-link {
+		display: grid;
+		grid-template-columns: minmax(7rem, 11rem) 1fr;
+		gap: 1rem;
+		align-items: center;
+		padding: 0.85rem 0;
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+		text-decoration: none;
+		color: var(--yb-offwhite);
+		transition: color 0.2s ease;
+	}
+	.lane-link:hover {
+		color: var(--yb-lime);
+	}
+	.lane-img {
+		display: block;
+		overflow: hidden;
+		aspect-ratio: 16 / 9;
+	}
+	.lane-img img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+		transition: transform 0.45s ease;
+	}
+	.lane-link:hover .lane-img img {
+		transform: scale(1.04);
+	}
+	.lane-label {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 1.35rem;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.lane-blurb {
+		display: block;
+		font-size: 0.95rem;
+		color: var(--yb-muted);
+		margin-top: 0.2rem;
+	}
 	@keyframes hero-atmosphere {
 		from {
 			filter: brightness(1);
-			transform: scale(1);
+			transform: scale(1.02);
 		}
 		to {
 			filter: brightness(1.06);
-			transform: scale(1.02);
+			transform: scale(1.05);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.hero-grid {
+		.hero-media img,
+		.lane-link:hover .lane-img img {
 			animation: none;
+			transform: none;
 		}
 	}
 </style>

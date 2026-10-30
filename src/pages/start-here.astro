@@ -5,8 +5,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout
 	title="Start here"
 	description="Yeh Bro’s blueprint for getting into the best shape of your life — mindset, training, food, sleep, supplements that matter, then optional deeper culture reading."
+	image="/images/cover-start-here.jpg"
 >
 	<article class="prose-wrap journey">
+		<figure class="journey-cover">
+			<img
+				src="/images/cover-start-here.jpg"
+				alt=""
+				width="1280"
+				height="720"
+				fetchpriority="high"
+			/>
+		</figure>
 		<p class="eyebrow">Blueprint</p>
 		<h1>Start here</h1>
 		<p class="lede">
@@ -180,6 +190,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <style>
+	.journey-cover {
+		margin: 0 0 1.75rem;
+		padding: 0;
+	}
+	.journey-cover img {
+		display: block;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 16 / 9;
+		object-fit: cover;
+	}
 	.journey .step-nav {
 		display: flex;
 		flex-wrap: wrap;
