@@ -56,6 +56,21 @@ export default defineConfig({
 		'/guides/bodybuilding-blueprint-phase-3-lean-bulk':
 			'/blog/bodybuilding-blueprint-phase-3-lean-bulk',
 		'/guides/bodybuilding-blueprint-safety': '/blog/bodybuilding-blueprint-safety',
+		'/guides/beginner-full-body-program': '/blog/beginner-full-body-program',
+		'/guides/progressive-overload': '/blog/progressive-overload',
+		'/guides/how-many-days-to-lift': '/blog/how-many-days-to-lift',
+		'/guides/deload-week': '/blog/deload-week',
+		'/guides/protein-targets-for-lifters': '/blog/protein-targets-for-lifters',
+		'/guides/cutting-without-wrecking-lifts': '/blog/cutting-without-wrecking-lifts',
+		'/guides/lean-bulk-basics': '/blog/lean-bulk-basics',
+		'/guides/sleep-for-lifters': '/blog/sleep-for-lifters',
+		'/guides/walking-for-lifters': '/blog/walking-for-lifters',
+		'/guides/stress-and-lifting': '/blog/stress-and-lifting',
+		'/guides/whey-vs-food-protein': '/blog/whey-vs-food-protein',
+		'/guides/creatine-myths': '/blog/creatine-myths',
+		'/guides/natty-or-not-physique-standards': '/blog/natty-or-not-physique-standards',
+		'/guides/ped-bloodwork-literacy': '/blog/ped-bloodwork-literacy',
+		'/guides/ped-coming-off-under-care': '/blog/ped-coming-off-under-care',
 	},
 });
 
