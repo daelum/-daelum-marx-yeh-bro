@@ -72,6 +72,8 @@ export default defineConfig({
 		'/guides/ped-bloodwork-literacy': '/blog/ped-bloodwork-literacy',
 		'/guides/ped-coming-off-under-care': '/blog/ped-coming-off-under-care',
 		'/guides/bloodwork-for-lifters': '/blog/bloodwork-for-lifters',
+		'/guides/what-i-run-beside-testosterone': '/blog/what-i-run-beside-testosterone',
+		'/guides/energy-drinks-vs-pre-workout-deficit': '/blog/energy-drinks-vs-pre-workout-deficit',
 	},
 });
 
