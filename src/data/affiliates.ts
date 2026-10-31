@@ -47,6 +47,9 @@ const ASIN_PROTEIN_MN_WPI = 'B0DJ53C7GV';
 const ASIN_OXYSHRED_NONSTIM = 'B07WTPM5YN';
 const ASIN_MAG_GLYCINATE = 'B0F3C9LKNJ';
 const ASIN_SHAKER_VOLTRX = 'B0C7GWGLWV';
+const ASIN_ENDOFDAYZ_PRE = 'B0DPJFGYGG';
+const ASIN_VITD_D3 = 'B00IDDQBF4';
+const ASIN_GARLIC_EXTRACT = 'B0D1LTM2KC';
 
 function amzEntry(
 	partial: Omit<AffiliateEntry, 'network' | 'active' | 'url'> & {
@@ -124,7 +127,25 @@ export const affiliates: AffiliateEntry[] = [
 		url: amzAuAsinUrl(ASIN_OXYSHRED_NONSTIM),
 		linkKind: 'asin',
 		notes:
-			'EHP Labs OxyShred Non Stimulant Pre Workout Peach 60 serves · ASIN B07WTPM5YN. Product-specific deep link — do not point generic pre-amz / pre-amz-stimfree here. Public copy: non-stim pre / training support only; no fat-burner or thermogenic claims.',
+			'EHP Labs OxyShred Non Stimulant Pre Workout Peach 60 serves · ASIN B07WTPM5YN. Product-specific deep link — do not point generic pre-amz / pre-amz-stimfree here. Public copy: non-stim pre / training support only; no fat-burner or thermogenic claims. Sibling stim product: endofdayz-amz.',
+	}),
+	amzEntry({
+		slug: 'endofdayz-amz',
+		label: 'End Of Dayz pre — Amazon AU',
+		keywords: 'zombie labs end of dayz pre workout',
+		url: amzAuAsinUrl(ASIN_ENDOFDAYZ_PRE),
+		linkKind: 'asin',
+		notes:
+			'Zombie Labs End Of Dayz Pre-Workout Raspberry Sour 50 serves · ASIN B0DPJFGYGG. Product-specific stim pre deep link — do not overwrite oxyshred-amz or generic pre-amz search. Disclose stimulants; open-label preference in copy. Alias: pre-amz-zombie.',
+	}),
+	amzEntry({
+		slug: 'pre-amz-zombie',
+		label: 'Zombie Labs pre — Amazon AU',
+		keywords: 'zombie labs end of dayz pre workout',
+		url: amzAuAsinUrl(ASIN_ENDOFDAYZ_PRE),
+		linkKind: 'asin',
+		notes:
+			'Same End Of Dayz Raspberry Sour ASIN as endofdayz-amz (B0DPJFGYGG). Brand-style alias; keep oxyshred-amz and pre-amz untouched.',
 	}),
 	amzEntry({
 		slug: 'mag-amz',
@@ -156,9 +177,19 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'vitd-amz',
 		label: 'Vitamin D — Amazon AU',
 		keywords: 'vitamin D3',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_VITD_D3),
+		linkKind: 'asin',
 		notes:
-			'Conservative micronutrient browse only. Clinician-first for status/testing. No disease or hormone claims.',
+			'Best Naturals Vitamin D3 5000 IU — 360 softgels · ASIN B00IDDQBF4. Founder stack education pick; clinician-first for status/testing. Alias: vitd-amz-d3. No disease or hormone claims.',
+	}),
+	amzEntry({
+		slug: 'vitd-amz-d3',
+		label: 'Vitamin D3 — Amazon AU',
+		keywords: 'vitamin D3 5000 IU',
+		url: amzAuAsinUrl(ASIN_VITD_D3),
+		linkKind: 'asin',
+		notes:
+			'Same Best Naturals D3 5000 IU ASIN as vitd-amz (B00IDDQBF4). Explicit D3 alias for founder-stack / label literacy CTAs.',
 	}),
 	amzEntry({
 		slug: 'chromium-amz',
@@ -172,9 +203,19 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'garlic-amz',
 		label: 'Garlic extract — Amazon AU',
 		keywords: 'garlic extract supplement',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_GARLIC_EXTRACT),
+		linkKind: 'asin',
 		notes:
-			'Optional herbal browse for founder support-stack education. No BP/cardio disease claims.',
+			'Best Naturals Garlic Extract 5000 mg equivalent per serving — 360 tablets · ASIN B0D1LTM2KC. Founder stack education pick. Alias: garlic-amz-extract. No BP/cardio disease claims.',
+	}),
+	amzEntry({
+		slug: 'garlic-amz-extract',
+		label: 'Garlic extract tablets — Amazon AU',
+		keywords: 'garlic extract 5000 mg',
+		url: amzAuAsinUrl(ASIN_GARLIC_EXTRACT),
+		linkKind: 'asin',
+		notes:
+			'Same Best Naturals Garlic Extract ASIN as garlic-amz (B0D1LTM2KC). Explicit extract alias for founder-stack CTAs.',
 	}),
 	amzEntry({
 		slug: 'k2-amz',
