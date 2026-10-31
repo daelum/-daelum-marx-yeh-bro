@@ -50,6 +50,9 @@ const ASIN_SHAKER_VOLTRX = 'B0C7GWGLWV';
 const ASIN_ENDOFDAYZ_PRE = 'B0DPJFGYGG';
 const ASIN_VITD_D3 = 'B00IDDQBF4';
 const ASIN_GARLIC_EXTRACT = 'B0D1LTM2KC';
+const ASIN_CHROMIUM_PIC = 'B00URYHOI0';
+const ASIN_OMEGA_FISH_OIL = 'B0773JF7JX';
+const ASIN_K2_MK7 = 'B00N0YRR2C';
 
 function amzEntry(
 	partial: Omit<AffiliateEntry, 'network' | 'active' | 'url'> & {
@@ -169,9 +172,19 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'omega-amz',
 		label: 'Omega-3 — Amazon AU',
 		keywords: 'omega 3 fish oil EPA DHA',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_OMEGA_FISH_OIL),
+		linkKind: 'asin',
 		notes:
-			'Optional basics. Judge EPA+DHA per serve. Sibling: omega-iherb. No cardio-cure claims.',
+			'Blackmores Omega Triple Super Strength Fish Oil — 150 capsules · ASIN B0773JF7JX. Founder stack pick; judge EPA+DHA on panel. Alias: fishoil-amz. Sibling: omega-iherb. No cardio-cure claims.',
+	}),
+	amzEntry({
+		slug: 'fishoil-amz',
+		label: 'Fish oil — Amazon AU',
+		keywords: 'fish oil omega 3',
+		url: amzAuAsinUrl(ASIN_OMEGA_FISH_OIL),
+		linkKind: 'asin',
+		notes:
+			'Same Blackmores Omega Triple ASIN as omega-amz (B0773JF7JX). Explicit fish-oil CTA alias.',
 	}),
 	amzEntry({
 		slug: 'vitd-amz',
@@ -195,9 +208,10 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'chromium-amz',
 		label: 'Chromium picolinate — Amazon AU',
 		keywords: 'chromium picolinate',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_CHROMIUM_PIC),
+		linkKind: 'asin',
 		notes:
-			'Optional micronutrient browse (founder stack education). No glucose-cure or insulin claims.',
+			'Best Naturals Chromium Picolinate 1000 mcg — 120 tablets · ASIN B00URYHOI0. Founder stack education pick (app dose may differ from bottle). No glucose-cure or insulin claims.',
 	}),
 	amzEntry({
 		slug: 'garlic-amz',
@@ -221,9 +235,10 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'k2-amz',
 		label: 'Vitamin K2 — Amazon AU',
 		keywords: 'vitamin K2',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_K2_MK7),
+		linkKind: 'asin',
 		notes:
-			'Conservative K2 browse. Confirm mcg vs mg on label; clinician-first. No clotting or calcium-deposit claims.',
+			'Best Naturals MK-7 Vitamin K2 100 mcg — 120 vcaps · ASIN B00N0YRR2C. Label is mcg (not mg); resolves founder-app unit flag. Clinician-first. No clotting or calcium-deposit claims.',
 	}),
 	amzEntry({
 		slug: 'shaker-amz',
