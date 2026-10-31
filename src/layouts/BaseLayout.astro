@@ -9,15 +9,32 @@ interface Props {
 	fullBleed?: boolean;
 	noindex?: boolean;
 	ogType?: 'website' | 'article';
+	canonicalPath?: string;
+	jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-const { title, description, fullBleed = false, noindex = false, ogType = 'website' } = Astro.props;
+const {
+	title,
+	description,
+	fullBleed = false,
+	noindex = false,
+	ogType = 'website',
+	canonicalPath,
+	jsonLd,
+} = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en-AU">
 	<head>
-		<BaseHead title={title} description={description} noindex={noindex} ogType={ogType} />
+		<BaseHead
+			title={title}
+			description={description}
+			noindex={noindex}
+			ogType={ogType}
+			canonicalPath={canonicalPath}
+			jsonLd={jsonLd}
+		/>
 	</head>
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>

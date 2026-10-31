@@ -4,4 +4,5 @@ Allow: /
 # Affiliate hop pages — noindex in HTML; keep out of crawl budget
 Disallow: /go/
 
+# Sitemap (Astro @astrojs/sitemap) — apex canonical host
 Sitemap: https://yehbro.com/sitemap-index.xml

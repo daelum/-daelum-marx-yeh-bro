@@ -1,0 +1,65 @@
+---
+import { getClusterForSlug, relatedSlugsFor } from '../data/guide-clusters';
+import { getCollection } from 'astro:content';
+
+interface Props {
+	slug: string;
+}
+
+const { slug } = Astro.props;
+const cluster = getClusterForSlug(slug);
+const related = relatedSlugsFor(slug, 6);
+const posts = await getCollection('blog');
+const byId = new Map(posts.map((p) => [p.id, p]));
+const items = related
+	.map((id) => {
+		const post = byId.get(id);
+		if (!post) return null;
+		return { href: `/blog/${id}`, title: post.data.title };
+	})
+	.filter(Boolean) as { href: string; title: string }[];
+---
+
+{
+	items.length > 0 && (
+		<nav class="related" aria-label="Related guides">
+			<p class="eyebrow">{cluster ? `${cluster.label} · keep reading` : 'Keep reading'}</p>
+			<ul>
+				{items.map((item) => (
+					<li>
+						<a href={item.href}>{item.title}</a>
+					</li>
+				))}
+				<li>
+					<a href="/start-here">Start here</a>
+				</li>
+				<li>
+					<a href="/blog">All guides</a>
+				</li>
+			</ul>
+		</nav>
+	)
+}
+
+<style>
+	.related {
+		margin-top: 2.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.related ul {
+		list-style: none;
+		margin: 0.75rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 0.55rem;
+	}
+	.related a {
+		color: var(--yb-offwhite);
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.related a:hover {
+		color: var(--yb-lime);
+	}
+</style>

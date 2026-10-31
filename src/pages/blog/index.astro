@@ -2,42 +2,94 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
+import { GUIDE_CLUSTERS } from '../../data/guide-clusters';
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
-);
+const posts = await getCollection('blog');
+const byId = new Map(posts.map((p) => [p.id, p]));
+const clustered = new Set(GUIDE_CLUSTERS.flatMap((c) => c.slugs));
+const unclustered = posts
+	.filter((p) => !clustered.has(p.id))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
 <BaseLayout
 	title="Guides"
 	description="Yeh Bro guides: training, food, creatine, protein, bodybuilding blueprint, and optional PED culture literacy."
+	canonicalPath="/blog"
 >
 	<section class="wrap blog-index">
 		<p class="eyebrow">Guides</p>
 		<h1>Guides for the work.</h1>
 		<p class="lede">
 			New? Start with the numbered path on <a href="/start-here">Start here</a>. Everything below is
-			depth when you need it — training phases, scoop maths, culture literacy.
+			depth when you need it — training phases, scoop maths, culture literacy. Every guide on this
+			site is listed here so Google (and you) can reach it.
 		</p>
-		<ul class="guide-links">
-			{
-				posts.map((post) => (
-					<li>
-						<a href={`/blog/${post.id}/`}>
-							{post.data.title}
-							<span>
-								<FormattedDate date={post.data.pubDate} /> — {post.data.description}
-							</span>
-						</a>
-					</li>
-				))
-			}
-		</ul>
+
+		{
+			GUIDE_CLUSTERS.map((cluster) => {
+				const items = cluster.slugs
+					.map((id) => byId.get(id))
+					.filter(Boolean) as typeof posts;
+				if (items.length === 0) return null;
+				return (
+					<section class="cluster" id={cluster.id}>
+						<h2>{cluster.label}</h2>
+						<p class="muted cluster-blurb">{cluster.blurb}</p>
+						<ul class="guide-links">
+							{items.map((post) => (
+								<li>
+									<a href={`/blog/${post.id}`}>
+										{post.data.title}
+										<span>
+											<FormattedDate date={post.data.pubDate} /> — {post.data.description}
+										</span>
+									</a>
+								</li>
+							))}
+						</ul>
+					</section>
+				);
+			})
+		}
+
+		{
+			unclustered.length > 0 && (
+				<section class="cluster" id="more">
+					<h2>More guides</h2>
+					<ul class="guide-links">
+						{unclustered.map((post) => (
+							<li>
+								<a href={`/blog/${post.id}`}>
+									{post.data.title}
+									<span>
+										<FormattedDate date={post.data.pubDate} /> — {post.data.description}
+									</span>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
 	</section>
 </BaseLayout>
 
 <style>
 	.blog-index {
 		padding-bottom: 3rem;
+	}
+	.cluster {
+		margin-top: 2.5rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		scroll-margin-top: 5rem;
+	}
+	.cluster h2 {
+		margin-bottom: 0.35rem;
+	}
+	.cluster-blurb {
+		margin: 0 0 1rem;
+		max-width: 36rem;
 	}
 </style>

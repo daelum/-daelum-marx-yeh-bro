@@ -9,6 +9,15 @@ interface Props {
 	noindex?: boolean;
 	ogType?: 'website' | 'article';
 	canonicalPath?: string;
+	/** Optional JSON-LD objects (Article, WebSite, etc.). */
+	jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+/** Prefer apex https://yehbro.com/path — strip trailing slash except root. */
+function normalizeCanonicalPath(raw: string): string {
+	if (!raw || raw === '/') return '/';
+	const withSlash = raw.startsWith('/') ? raw : `/${raw}`;
+	return withSlash.length > 1 && withSlash.endsWith('/') ? withSlash.slice(0, -1) : withSlash;
 }
 
 const {
@@ -18,14 +27,16 @@ const {
 	noindex = false,
 	ogType = 'website',
 	canonicalPath,
+	jsonLd,
 } = Astro.props;
 
-const path = canonicalPath ?? Astro.url.pathname;
+const path = normalizeCanonicalPath(canonicalPath ?? Astro.url.pathname);
 const canonicalURL = new URL(path, Astro.site ?? SITE_URL);
 const fullTitle = title === SITE_TITLE || title.startsWith(`${SITE_TITLE} `) || title.startsWith(`${SITE_TITLE}—`) || title.startsWith(`${SITE_TITLE} —`)
 	? title
 	: `${title} · ${SITE_TITLE}`;
 const ogImage = new URL(image, Astro.site ?? SITE_URL);
+const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
 
 <meta charset="utf-8" />
@@ -70,3 +81,9 @@ const ogImage = new URL(image, Astro.site ?? SITE_URL);
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogImage} />
+
+{
+	jsonLdBlocks.map((block) => (
+		<script type="application/ld+json" set:html={JSON.stringify(block)} />
+	))
+}

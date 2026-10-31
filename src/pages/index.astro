@@ -1,9 +1,35 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE_HOME } from '../consts';
+import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE, SITE_TITLE_HOME, SITE_URL } from '../consts';
+
+const homeLd = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: SITE_TITLE,
+		url: SITE_URL,
+		description: SITE_DESCRIPTION,
+		inLanguage: 'en-AU',
+		publisher: { '@type': 'Organization', name: SITE_TITLE, url: SITE_URL },
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'Organization',
+		name: SITE_TITLE,
+		url: SITE_URL,
+		description: SITE_DESCRIPTION,
+		logo: new URL('/favicon.svg', SITE_URL).href,
+	},
+];
 ---
 
-<BaseLayout title={SITE_TITLE_HOME} description={SITE_DESCRIPTION} fullBleed>
+<BaseLayout
+	title={SITE_TITLE_HOME}
+	description={SITE_DESCRIPTION}
+	fullBleed
+	canonicalPath="/"
+	jsonLd={homeLd}
+>
 	<section class="hero">
 		<div class="hero-grid" aria-hidden="true"></div>
 		<div class="wrap hero-inner">
