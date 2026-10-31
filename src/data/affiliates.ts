@@ -122,6 +122,30 @@ export const affiliates: AffiliateEntry[] = [
 			'Conservative micronutrient browse only. Clinician-first for status/testing. No disease or hormone claims.',
 	}),
 	amzEntry({
+		slug: 'chromium-amz',
+		label: 'Chromium picolinate — Amazon AU',
+		keywords: 'chromium picolinate',
+		linkKind: 'asin-needed',
+		notes:
+			'Optional micronutrient browse (founder stack education). No glucose-cure or insulin claims.',
+	}),
+	amzEntry({
+		slug: 'garlic-amz',
+		label: 'Garlic extract — Amazon AU',
+		keywords: 'garlic extract supplement',
+		linkKind: 'asin-needed',
+		notes:
+			'Optional herbal browse for founder support-stack education. No BP/cardio disease claims.',
+	}),
+	amzEntry({
+		slug: 'k2-amz',
+		label: 'Vitamin K2 — Amazon AU',
+		keywords: 'vitamin K2',
+		linkKind: 'asin-needed',
+		notes:
+			'Conservative K2 browse. Confirm mcg vs mg on label; clinician-first. No clotting or calcium-deposit claims.',
+	}),
+	amzEntry({
 		slug: 'shaker-amz',
 		label: 'Shaker bottle — Amazon AU',
 		keywords: 'protein shaker bottle',
@@ -246,6 +270,26 @@ export const affiliates: AffiliateEntry[] = [
 		active: false,
 		linkKind: 'todo',
 		notes: 'Same network path as omega-iherb once iHerb affiliate is live.',
+	},
+	{
+		slug: 'medibolic-heart',
+		label: 'Medibolic Heart & Kidney Support',
+		url: 'https://example.com/TODO/medibolic-heart',
+		network: 'direct',
+		active: false,
+		linkKind: 'todo',
+		notes:
+			'Brand/retail paste only after Human confirms legal Amazon or retail promo path. Education framing — not on-cycle detox or disease treatment.',
+	},
+	{
+		slug: 'medibolic-liver',
+		label: 'Medibolic Liver Support',
+		url: 'https://example.com/TODO/medibolic-liver',
+		network: 'direct',
+		active: false,
+		linkKind: 'todo',
+		notes:
+			'Same gate as medibolic-heart. Activate only with approved deep link; no “liver cleanse / cycle support” shopping voice.',
 	},
 ];
 
