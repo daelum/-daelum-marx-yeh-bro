@@ -46,6 +46,7 @@ const ASIN_CREATINE_MN_MONO = 'B0D47CJPPC';
 const ASIN_PROTEIN_MN_WPI = 'B0DJ53C7GV';
 const ASIN_OXYSHRED_NONSTIM = 'B07WTPM5YN';
 const ASIN_MAG_GLYCINATE = 'B0F3C9LKNJ';
+const ASIN_SHAKER_VOLTRX = 'B0C7GWGLWV';
 
 function amzEntry(
 	partial: Omit<AffiliateEntry, 'network' | 'active' | 'url'> & {
@@ -187,8 +188,19 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'shaker-amz',
 		label: 'Shaker bottle — Amazon AU',
 		keywords: 'protein shaker bottle',
-		linkKind: 'search',
-		notes: 'Useful lifter accessory. Low-claim gear CTA; ASIN optional.',
+		url: amzAuAsinUrl(ASIN_SHAKER_VOLTRX),
+		linkKind: 'asin',
+		notes:
+			'VOLTRX Protein Shaker Bottle — Merger USB-C rechargeable electric mixer, BPA free, 24oz · ASIN B0C7GWGLWV. Primary gear CTA; brand alias: shaker-amz-voltrx. Low-claim accessory only.',
+	}),
+	amzEntry({
+		slug: 'shaker-amz-voltrx',
+		label: 'VOLTRX shaker — Amazon AU',
+		keywords: 'voltrx protein shaker bottle',
+		url: amzAuAsinUrl(ASIN_SHAKER_VOLTRX),
+		linkKind: 'asin',
+		notes:
+			'Same VOLTRX Merger 24oz ASIN as shaker-amz (B0C7GWGLWV). Explicit brand CTA if generic shaker search is restored later.',
 	}),
 	amzEntry({
 		slug: 'bands-amz',
