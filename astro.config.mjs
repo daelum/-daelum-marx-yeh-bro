@@ -10,7 +10,17 @@ export default defineConfig({
 	integrations: [
 		mdx(),
 		sitemap({
+			// Public indexable routes only — /go/ is noindex; /guides/ are redirects to /blog/
 			filter: (page) => !page.includes('/go/') && !page.includes('/guides/'),
+			serialize(item) {
+				// Align sitemap URLs with apex canonicals (no trailing slash except origin root).
+				const url = new URL(item.url);
+				if (url.pathname.length > 1 && url.pathname.endsWith('/')) {
+					url.pathname = url.pathname.slice(0, -1);
+					item.url = url.toString();
+				}
+				return item;
+			},
 		}),
 	],
 	// SEO drafts / link map use /guides/*; content lives under /blog/*
