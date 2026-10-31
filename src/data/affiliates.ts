@@ -53,6 +53,8 @@ const ASIN_GARLIC_EXTRACT = 'B0D1LTM2KC';
 const ASIN_CHROMIUM_PIC = 'B00URYHOI0';
 const ASIN_OMEGA_FISH_OIL = 'B0773JF7JX';
 const ASIN_K2_MK7 = 'B00N0YRR2C';
+const ASIN_CREATINE_GUMMIES = 'B0H9RD7M5X';
+const ASIN_OXYSHRED_ENERGY = 'B0DMMTLMYZ';
 
 function amzEntry(
 	partial: Omit<AffiliateEntry, 'network' | 'active' | 'url'> & {
@@ -88,6 +90,24 @@ export const affiliates: AffiliateEntry[] = [
 		linkKind: 'asin',
 		notes:
 			'Same MN unflavoured mono ASIN as creatine-amz (B0D47CJPPC). Explicit mono CTA for guides that want the -mono slug.',
+	}),
+	amzEntry({
+		slug: 'creatine-amz-gummies',
+		label: 'Creatine gummies — Amazon AU',
+		keywords: 'creatine gummies',
+		url: amzAuAsinUrl(ASIN_CREATINE_GUMMIES),
+		linkKind: 'asin',
+		notes:
+			'OxyShred Creatine Gummies Strawberry · ~3g creatine/serving · ASIN B0H9RD7M5X. Convenience format only — do not overwrite creatine-amz powder. Alias: oxyshred-creatine-gummies-amz. Daily mono powder remains default economics.',
+	}),
+	amzEntry({
+		slug: 'oxyshred-creatine-gummies-amz',
+		label: 'OxyShred creatine gummies — Amazon AU',
+		keywords: 'oxyshred creatine gummies',
+		url: amzAuAsinUrl(ASIN_CREATINE_GUMMIES),
+		linkKind: 'asin',
+		notes:
+			'Same OxyShred Creatine Gummies ASIN as creatine-amz-gummies (B0H9RD7M5X). Brand-style alias; powder mono stays on creatine-amz.',
 	}),
 	amzEntry({
 		slug: 'protein-amz',
@@ -130,7 +150,25 @@ export const affiliates: AffiliateEntry[] = [
 		url: amzAuAsinUrl(ASIN_OXYSHRED_NONSTIM),
 		linkKind: 'asin',
 		notes:
-			'EHP Labs OxyShred Non Stimulant Pre Workout Peach 60 serves · ASIN B07WTPM5YN. Product-specific deep link — do not point generic pre-amz / pre-amz-stimfree here. Public copy: non-stim pre / training support only; no fat-burner or thermogenic claims. Sibling stim product: endofdayz-amz.',
+			'EHP Labs OxyShred Non Stimulant Pre Workout Peach 60 serves · ASIN B07WTPM5YN. Product-specific deep link — do not point generic pre-amz / pre-amz-stimfree here. Public copy: non-stim pre / training support only; no fat-burner or thermogenic claims. Sibling stim product: endofdayz-amz. RTD sibling: oxyshred-energy-amz.',
+	}),
+	amzEntry({
+		slug: 'oxyshred-energy-amz',
+		label: 'OxyShred Healthy Energy — Amazon AU',
+		keywords: 'oxyshred healthy energy drink',
+		url: amzAuAsinUrl(ASIN_OXYSHRED_ENERGY),
+		linkKind: 'asin',
+		notes:
+			'EHP Labs OxyShred Healthy Energy Drink Kiwi Strawberry 12-pack · ASIN B0DMMTLMYZ. Sugar/carb/calorie-free RTD energy. Frame as caffeine/ritual/hunger-noise tool in deficit education — no fat-burner claims. Alias: energy-drink-amz. Keep separate from oxyshred-amz (powder non-stim).',
+	}),
+	amzEntry({
+		slug: 'energy-drink-amz',
+		label: 'Low-cal energy drink — Amazon AU',
+		keywords: 'zero calorie energy drink',
+		url: amzAuAsinUrl(ASIN_OXYSHRED_ENERGY),
+		linkKind: 'asin',
+		notes:
+			'Same OxyShred Healthy Energy 12-pack ASIN as oxyshred-energy-amz (B0DMMTLMYZ). Generic editorial alias for deficit / hunger-noise guides.',
 	}),
 	amzEntry({
 		slug: 'endofdayz-amz',
