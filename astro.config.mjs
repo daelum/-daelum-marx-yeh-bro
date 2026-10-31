@@ -71,6 +71,7 @@ export default defineConfig({
 		'/guides/natty-or-not-physique-standards': '/blog/natty-or-not-physique-standards',
 		'/guides/ped-bloodwork-literacy': '/blog/ped-bloodwork-literacy',
 		'/guides/ped-coming-off-under-care': '/blog/ped-coming-off-under-care',
+		'/guides/bloodwork-for-lifters': '/blog/bloodwork-for-lifters',
 	},
 });
 
