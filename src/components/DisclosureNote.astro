@@ -9,13 +9,14 @@ const { compact = false } = Astro.props;
 	{
 		compact ? (
 			<p>
-				Some links may earn a commission.{' '}
+				Some links may earn a commission. As an Amazon Associate we earn from qualifying purchases.{' '}
 				<a href="/disclosure">Disclosure</a>
 			</p>
 		) : (
 			<p>
-				Some product links may earn Yeh Bro a commission at no extra cost to you. Not medical
-				advice. <a href="/disclosure">Disclosure</a>
+				Some product links may earn Yeh Bro a commission at no extra cost to you. As an Amazon
+				Associate we earn from qualifying purchases. Not medical advice.{' '}
+				<a href="/disclosure">Disclosure</a>
 			</p>
 		)
 	}

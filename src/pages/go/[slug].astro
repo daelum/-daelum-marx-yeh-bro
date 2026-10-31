@@ -1,5 +1,10 @@
 ---
-import { AFFILIATE_REL, affiliatesBySlug, getAffiliate } from '../../data/affiliates';
+import {
+	AFFILIATE_REL,
+	affiliatesBySlug,
+	getAffiliate,
+} from '../../data/affiliates';
+import { AMZ_ASSOCIATE_TAG, AMZ_ASSOCIATES_READY, AMZ_TAG_DEFAULT } from '../../data/amazon';
 import { UTM_KEYS } from '../../lib/utm';
 
 export function getStaticPaths() {
@@ -14,9 +19,11 @@ if (!slug || !entry) {
 	return new Response(null, { status: 404, statusText: 'Not Found' });
 }
 
+const isActive = entry.active;
 const destination = entry.url;
 const utmKeys = [...UTM_KEYS];
 const rel = AFFILIATE_REL;
+const isAmazon = entry.network === 'amazon';
 ---
 
 <!doctype html>
@@ -25,36 +32,89 @@ const rel = AFFILIATE_REL;
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="robots" content="noindex, nofollow" />
-		<meta http-equiv="refresh" content={`0;url=${destination}`} />
-		<title>Redirecting · Yeh Bro</title>
+		{isActive ? <meta http-equiv="refresh" content={`0;url=${destination}`} /> : null}
+		<title>{isActive ? 'Redirecting' : 'Link pending'} · Yeh Bro</title>
 	</head>
 	<body>
 		<main>
-			<p>Taking you to the retailer…</p>
-			<p>
-				<a id="continue" href={destination} rel={rel}>{entry.label}</a>
-			</p>
-			<p>
-				<small
-					>Affiliate redirect (<code>{slug}</code>). Yeh Bro may earn a commission.
-					<a href="/disclosure">Disclosure</a></small
-				>
-			</p>
-		</main>
-		<script define:vars={{ destination, utmKeys }}>
-			const dest = new URL(destination);
-			const incoming = new URLSearchParams(window.location.search);
-			for (const key of utmKeys) {
-				const value = incoming.get(key);
-				if (value && !dest.searchParams.has(key)) {
-					dest.searchParams.set(key, value);
-				}
+			{
+				isActive ? (
+					<>
+						<p>Taking you to the retailer…</p>
+						<p>
+							<a id="continue" href={destination} rel={rel}>
+								{entry.label}
+							</a>
+						</p>
+						<p>
+							<small>
+								Affiliate redirect (<code>{slug}</code>). Yeh Bro may earn a commission.
+								{isAmazon ? (
+									<>
+										{' '}
+										As an Amazon Associate we earn from qualifying purchases.
+									</>
+								) : null}{' '}
+								<a href="/disclosure">Disclosure</a>
+							</small>
+						</p>
+					</>
+				) : (
+					<>
+						<p class="eyebrow">Affiliate link</p>
+						<h1>Link pending</h1>
+						<p>
+							<strong>{entry.label}</strong> (<code>/go/{slug}</code>) is mapped but not live
+							yet.
+						</p>
+						{
+							isAmazon && !AMZ_ASSOCIATES_READY ? (
+								<p>
+									Amazon AU destinations are wired but the Associates tag is not live.
+									Expected default: <code>{AMZ_TAG_DEFAULT}</code>. Current:{' '}
+									<code>{AMZ_ASSOCIATE_TAG}</code>. Set{' '}
+									<code>PUBLIC_AMZ_ASSOCIATE_TAG</code> or <code>AMZ_TAG_DEFAULT</code> in{' '}
+									<code>src/data/amazon.ts</code>, then redeploy.
+								</p>
+							) : (
+								<p>
+									Waiting on an approved deep link from Affiliate Ops. Guides stay useful
+									without the hop.
+								</p>
+							)
+						}
+						<p>
+							<a href="/start-here">Start here</a> · <a href="/disclosure">Disclosure</a>
+							{isAmazon ? (
+								<>
+									{' '}
+									· As an Amazon Associate we earn from qualifying purchases once the tag is
+									live.
+								</>
+							) : null}
+						</p>
+					</>
+				)
 			}
-			const finalUrl = dest.toString();
-			const link = document.getElementById('continue');
-			if (link) link.setAttribute('href', finalUrl);
-			window.location.replace(finalUrl);
-		</script>
+		</main>
+		{
+			isActive ? (
+				<script define:vars={{ destination, utmKeys }}>
+					const dest = new URL(destination);
+					const incoming = new URLSearchParams(window.location.search);
+					for (const key of utmKeys) {
+						const value = incoming.get(key);
+						if (value && !dest.searchParams.has(key)) {
+							dest.searchParams.set(key, value);
+						}
+					}
+					const finalUrl = dest.toString();
+					const link = document.getElementById('continue');
+					if (link) link.setAttribute('href', finalUrl);
+					window.location.replace(finalUrl);
+				</script>
+			) : null
+		}
 	</body>
 </html>
 
@@ -64,8 +124,24 @@ const rel = AFFILIATE_REL;
 		background: #121212;
 		color: #f2f2f0;
 		padding: 2rem;
+		max-width: 40rem;
+		line-height: 1.5;
 	}
 	a {
 		color: #c8f135;
+	}
+	.eyebrow {
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		font-size: 0.75rem;
+		color: #9a9a96;
+		margin-bottom: 0.35rem;
+	}
+	h1 {
+		font-size: 1.5rem;
+		margin: 0 0 0.75rem;
+	}
+	code {
+		font-size: 0.9em;
 	}
 </style>
