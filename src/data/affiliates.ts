@@ -1,13 +1,13 @@
 /**
  * Yeh Bro affiliate map — phase-1 seed from Context docs/affiliate.
- * Amazon AU (`*-amz`): real amazon.com.au search deep links; tag from
+ * Amazon AU (`*-amz`): amazon.com.au search or `/dp/{ASIN}` deep links; tag from
  * `src/data/amazon.ts` (`PUBLIC_AMZ_ASSOCIATE_TAG` or `YEHBRO_AMZ_TAG` fallback).
  * Other networks: keep TODO stubs until Ops pastes approved deep links.
  * Source: docs/affiliate/go-slug-map.md + affiliates-ts-seed.md
  * Deprecated aliases: docs/affiliate/slug-changelog.md — do not add keys for those.
  */
 
-import { AMZ_ASSOCIATES_READY, amzAuSearchUrl } from './amazon';
+import { AMZ_ASSOCIATES_READY, amzAuAsinUrl, amzAuSearchUrl } from './amazon';
 
 export const AFFILIATE_REL = 'sponsored noopener noreferrer';
 
@@ -33,12 +33,19 @@ export type AffiliateEntry = {
 	 */
 	active: boolean;
 	/**
+	 * `asin` = live `/dp/{ASIN}?tag=` deep link.
 	 * `search` = category/keyword browse Ops can swap for ASIN via intake.
-	 * `asin-needed` = same for now; Ops should prefer SiteStripe ASIN when ready.
+	 * `asin-needed` = search for now; Ops should prefer SiteStripe ASIN when ready.
 	 * `todo` = non-Amazon stub awaiting network approval.
 	 */
-	linkKind: 'search' | 'asin-needed' | 'todo';
+	linkKind: 'asin' | 'search' | 'asin-needed' | 'todo';
 };
+
+/** Founder SiteStripe pastes (Amazon AU · tag yehbro-22). */
+const ASIN_CREATINE_MN_MONO = 'B0D47CJPPC';
+const ASIN_PROTEIN_MN_WPI = 'B0DJ53C7GV';
+const ASIN_OXYSHRED_NONSTIM = 'B07WTPM5YN';
+const ASIN_MAG_GLYCINATE = 'B0F3C9LKNJ';
 
 function amzEntry(
 	partial: Omit<AffiliateEntry, 'network' | 'active' | 'url'> & {
@@ -61,25 +68,37 @@ export const affiliates: AffiliateEntry[] = [
 		slug: 'creatine-amz',
 		label: 'Creatine — Amazon AU',
 		keywords: 'creatine monohydrate',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_CREATINE_MN_MONO),
+		linkKind: 'asin',
 		notes:
-			'Primary Amazon Associates AU CTA. Search deep link until SiteStripe ASIN for a mono pick. Verify Sports & Outdoors vs Health fee schedule.',
+			'Muscle Nation Unflavoured Creatine Monohydrate 225g · ASIN B0D47CJPPC. Primary Amazon creatine CTA. Sibling mono alias: creatine-amz-mono.',
 	}),
 	amzEntry({
 		slug: 'creatine-amz-mono',
 		label: 'Creatine mono — Amazon AU',
 		keywords: 'creatine monohydrate powder',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_CREATINE_MN_MONO),
+		linkKind: 'asin',
 		notes:
-			'Explicit mono vs blended Amazon browse. Prefer ASIN swap when Ops locks a Creapure or generic mono SKU.',
+			'Same MN unflavoured mono ASIN as creatine-amz (B0D47CJPPC). Explicit mono CTA for guides that want the -mono slug.',
 	}),
 	amzEntry({
 		slug: 'protein-amz',
 		label: 'Protein / whey — Amazon AU',
 		keywords: 'whey protein powder',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_PROTEIN_MN_WPI),
+		linkKind: 'asin',
 		notes:
-			'Whey/protein discovery backup. Brand paths (protein-true / protein-bulk) stay primary editorial CTAs.',
+			'Muscle Nation Vanilla Ice Cream Whey Protein Isolate 990g · ASIN B0DJ53C7GV. Amazon whey CTA; brand paths (protein-true / protein-bulk) stay primary editorial when live.',
+	}),
+	amzEntry({
+		slug: 'protein-amz-isolate',
+		label: 'Whey isolate — Amazon AU',
+		keywords: 'whey protein isolate',
+		url: amzAuAsinUrl(ASIN_PROTEIN_MN_WPI),
+		linkKind: 'asin',
+		notes:
+			'Same MN Vanilla Ice Cream WPI ASIN as protein-amz (B0DJ53C7GV). Explicit isolate CTA (lactose / WPI guides).',
 	}),
 	amzEntry({
 		slug: 'pre-amz',
@@ -87,7 +106,7 @@ export const affiliates: AffiliateEntry[] = [
 		keywords: 'pre workout',
 		linkKind: 'search',
 		notes:
-			'Stim pre browse. Prefer open-label panels; disclose caffeine. ASIN optional once a labelled pick is locked.',
+			'Stim pre browse — keep as search. Product-specific non-stim pick is oxyshred-amz (do not overwrite this slug).',
 	}),
 	amzEntry({
 		slug: 'pre-amz-stimfree',
@@ -95,15 +114,34 @@ export const affiliates: AffiliateEntry[] = [
 		keywords: 'stim free pre workout',
 		linkKind: 'search',
 		notes:
-			'Stim-free / caffeine-free pre browse for evening sessions. Pair with stim-free guide; no disease claims.',
+			'Category stim-free browse for evening sessions. Founder OxyShred Non Stim SKU uses oxyshred-amz — leave this as discovery search; no fat-burner framing.',
+	}),
+	amzEntry({
+		slug: 'oxyshred-amz',
+		label: 'OxyShred Non Stim — Amazon AU',
+		keywords: 'oxyshred non stimulant pre workout',
+		url: amzAuAsinUrl(ASIN_OXYSHRED_NONSTIM),
+		linkKind: 'asin',
+		notes:
+			'EHP Labs OxyShred Non Stimulant Pre Workout Peach 60 serves · ASIN B07WTPM5YN. Product-specific deep link — do not point generic pre-amz / pre-amz-stimfree here. Public copy: non-stim pre / training support only; no fat-burner or thermogenic claims.',
 	}),
 	amzEntry({
 		slug: 'mag-amz',
 		label: 'Magnesium — Amazon AU',
 		keywords: 'magnesium glycinate',
-		linkKind: 'asin-needed',
+		url: amzAuAsinUrl(ASIN_MAG_GLYCINATE),
+		linkKind: 'asin',
 		notes:
-			'Optional basics. Prefer clear elemental Mg on panel. iHerb path remains mag-iherb. No sleep/cure claims.',
+			'Nature’s Own Magnesium Glycinate 1150mg 120 tablets · ASIN B0F3C9LKNJ. Already glycinate-scoped keywords — upgraded to founder SiteStripe pick. Explicit alias: mag-amz-glycinate. Sibling: mag-iherb. No sleep/cure claims.',
+	}),
+	amzEntry({
+		slug: 'mag-amz-glycinate',
+		label: 'Magnesium glycinate — Amazon AU',
+		keywords: 'magnesium glycinate',
+		url: amzAuAsinUrl(ASIN_MAG_GLYCINATE),
+		linkKind: 'asin',
+		notes:
+			'Same Nature’s Own Magnesium Glycinate ASIN as mag-amz (B0F3C9LKNJ). Explicit glycinate CTA for guides that want the -glycinate slug.',
 	}),
 	amzEntry({
 		slug: 'omega-amz',

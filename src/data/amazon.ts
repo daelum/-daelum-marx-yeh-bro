@@ -7,8 +7,8 @@
  * Override at build time with env `PUBLIC_AMZ_ASSOCIATE_TAG` if needed
  * (e.g. staging). Default is the live Associates tag.
  *
- * Ops may later swap search URLs for SiteStripe ASIN/dp links via the
- * deep-link intake template for higher conversion.
+ * Prefer `amzAuAsinUrl(ASIN)` for founder-pasted SiteStripe picks; keep
+ * `amzAuSearchUrl` for category browse until an ASIN is locked.
  */
 
 /** Historical placeholder — kept so old docs still resolve “not ready” checks. */
@@ -48,8 +48,8 @@ export function amzAuSearchUrl(keywords: string): string {
 }
 
 /**
- * Amazon AU ASIN deep link helper (SiteStripe paste path).
- * Unused until Ops supplies ASINs — kept for intake swaps.
+ * Amazon AU ASIN deep link (`/dp/{ASIN}?tag=`).
+ * Use for SiteStripe / Product Linker pastes in `affiliates.ts`.
  */
 export function amzAuAsinUrl(asin: string): string {
 	const url = new URL(`${AMZ_AU_ORIGIN}/dp/${encodeURIComponent(asin)}`);
