@@ -1,0 +1,6 @@
+# Copy to .dev.vars for local `wrangler pages dev` (gitignored).
+# Never commit real values.
+ADMIN_SOCIAL_PASSWORD=replace-me
+# Optional:
+# ZERNIO_API_KEY=
+# ADMIN_SOCIAL_FIXTURE=1

@@ -10,8 +10,9 @@ export default defineConfig({
 	integrations: [
 		mdx(),
 		sitemap({
-			// Public indexable routes only — /go/ is noindex; /guides/ are redirects to /blog/
-			filter: (page) => !page.includes('/go/') && !page.includes('/guides/'),
+			// Public indexable routes only — /go/ + /admin/ are noindex; /guides/ redirect to /blog/
+			filter: (page) =>
+				!page.includes('/go/') && !page.includes('/guides/') && !page.includes('/admin/'),
 			serialize(item) {
 				// Align sitemap URLs with apex canonicals (no trailing slash except origin root).
 				const url = new URL(item.url);

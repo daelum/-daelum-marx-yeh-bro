@@ -1,0 +1,921 @@
+---
+import '../../styles/global.css';
+import { SITE_TITLE } from '../../consts';
+import {
+	FIXTURE_DATE,
+	buildFixtureDay,
+	summarizeDay,
+} from '../../lib/admin-social/client-fixtures';
+
+const fixtureDay = buildFixtureDay(FIXTURE_DATE);
+const fixtureBoot = {
+	date: FIXTURE_DATE,
+	day: fixtureDay,
+	days: [summarizeDay(fixtureDay)],
+};
+---
+
+<!doctype html>
+<html lang="en-AU">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Social approve · {SITE_TITLE}</title>
+		<meta name="description" content="Private Instagram queue approve/reject for Yeh Bro." />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body class="admin-body">
+		<div id="app" class="admin-shell" data-state="boot">
+			<header class="admin-top">
+				<div class="brand-lock">
+					<img src="/brand/yehbro-logo-nav.webp" alt="" width="120" height="28" />
+					<span class="brand-sub">Social queue · @theyehbro</span>
+				</div>
+				<div class="top-meta" id="top-meta" hidden></div>
+			</header>
+
+			<section id="view-setup" class="panel" hidden>
+				<h1>Setup required</h1>
+				<p>
+					Set the Cloudflare Pages secret <code>ADMIN_SOCIAL_PASSWORD</code>, bind KV
+					<code>IG_QUEUE</code> and R2 <code>IG_MEDIA</code>, then redeploy. This gate stays
+					closed until the password exists.
+				</p>
+				<p class="hint">
+					Local demo without bindings: open <code>/admin/social?fixture=1</code>
+				</p>
+			</section>
+
+			<section id="view-login" class="panel" hidden>
+				<h1>Approve desk</h1>
+				<p class="lede">Password gate for Instagram singles + carousels. Not linked in public nav.</p>
+				<form id="login-form" class="login-form">
+					<label>
+						<span class="sr-only">Password</span>
+						<input
+							type="password"
+							name="password"
+							id="password"
+							autocomplete="current-password"
+							placeholder="Admin password"
+							required
+						/>
+					</label>
+					<button type="submit" class="btn btn-primary">Enter</button>
+				</form>
+				<p id="login-error" class="error" hidden></p>
+				<p class="hint">
+					No live API? Use <a href="/admin/social?fixture=1">fixture mode</a> for a local demo.
+				</p>
+			</section>
+
+			<section id="view-desk" class="desk" hidden>
+				<div class="desk-bar">
+					<label class="day-picker">
+						<span>Day</span>
+						<select id="day-select"></select>
+					</label>
+					<div class="desk-actions">
+						<button type="button" class="btn" id="btn-approve-all">Approve all pending</button>
+						<button type="button" class="btn btn-danger" id="btn-reject-selected">
+							Reject selected
+						</button>
+						<button type="button" class="btn btn-primary" id="btn-post">Post approved</button>
+						<button type="button" class="btn btn-ghost" id="btn-logout">Log out</button>
+					</div>
+				</div>
+				<p id="desk-banner" class="banner" hidden></p>
+				<p id="desk-status" class="status-line" aria-live="polite"></p>
+
+				<section class="block">
+					<h2>Singles</h2>
+					<div id="singles-grid" class="grid"></div>
+				</section>
+
+				<section class="block">
+					<h2>Carousels</h2>
+					<div id="carousels-list" class="carousels"></div>
+				</section>
+			</section>
+		</div>
+
+		<script is:inline define:vars={{ fixtureBoot }}>
+			window.__YB_FIXTURE__ = fixtureBoot;
+		</script>
+		<script>
+			type ItemStatus = 'pending' | 'approved' | 'rejected' | 'posted' | 'failed';
+			type QueueItem = {
+				id: string;
+				kind: 'single' | 'carousel';
+				status: ItemStatus;
+				caption: string;
+				angle?: string;
+				files: string[];
+				slides?: string[];
+				mediaUrls: string[];
+			};
+			type Day = {
+				date: string;
+				account: string;
+				updatedAt: string;
+				items: QueueItem[];
+				publishLog?: string[];
+			};
+			type DaySummary = {
+				date: string;
+				pending: number;
+				approved: number;
+				rejected: number;
+				posted: number;
+				failed: number;
+				total: number;
+			};
+
+			const boot = (window as any).__YB_FIXTURE__ as {
+				date: string;
+				day: Day;
+				days: DaySummary[];
+			};
+
+			const params = new URLSearchParams(location.search);
+			const forceFixture = params.get('fixture') === '1';
+
+			let mode: 'live' | 'fixture' = forceFixture ? 'fixture' : 'live';
+			let zernio = false;
+			let currentDate = boot.date;
+			let day: Day | null = forceFixture ? structuredClone(boot.day) : null;
+			let days: DaySummary[] = forceFixture ? structuredClone(boot.days) : [];
+			const selected = new Set<string>();
+
+			const els = {
+				app: document.getElementById('app')!,
+				setup: document.getElementById('view-setup')!,
+				login: document.getElementById('view-login')!,
+				desk: document.getElementById('view-desk')!,
+				topMeta: document.getElementById('top-meta')!,
+				loginForm: document.getElementById('login-form') as HTMLFormElement,
+				loginError: document.getElementById('login-error')!,
+				daySelect: document.getElementById('day-select') as HTMLSelectElement,
+				singles: document.getElementById('singles-grid')!,
+				carousels: document.getElementById('carousels-list')!,
+				banner: document.getElementById('desk-banner')!,
+				status: document.getElementById('desk-status')!,
+			};
+
+			function show(view: 'setup' | 'login' | 'desk') {
+				els.setup.hidden = view !== 'setup';
+				els.login.hidden = view !== 'login';
+				els.desk.hidden = view !== 'desk';
+				els.app.dataset.state = view;
+			}
+
+			function setBanner(text: string | null, kind: 'info' | 'ok' | 'warn' = 'info') {
+				if (!text) {
+					els.banner.hidden = true;
+					els.banner.textContent = '';
+					return;
+				}
+				els.banner.hidden = false;
+				els.banner.dataset.kind = kind;
+				els.banner.textContent = text;
+			}
+
+			function setStatus(text: string) {
+				els.status.textContent = text;
+			}
+
+			async function api(path: string, init: RequestInit = {}) {
+				const res = await fetch(`/admin/social/api${path}`, {
+					credentials: 'same-origin',
+					headers: {
+						Accept: 'application/json',
+						...(init.body ? { 'Content-Type': 'application/json' } : {}),
+						...(init.headers || {}),
+					},
+					...init,
+				});
+				let data: any = null;
+				try {
+					data = await res.json();
+				} catch {
+					data = null;
+				}
+				return { res, data };
+			}
+
+			function summarize(d: Day): DaySummary {
+				const counts = { pending: 0, approved: 0, rejected: 0, posted: 0, failed: 0 };
+				for (const item of d.items) {
+					if (item.status in counts) (counts as any)[item.status]++;
+				}
+				return { date: d.date, total: d.items.length, ...counts };
+			}
+
+			function refreshDaySelect() {
+				els.daySelect.innerHTML = '';
+				for (const d of days) {
+					const opt = document.createElement('option');
+					opt.value = d.date;
+					opt.textContent = `${d.date} · ${d.pending} pending · ${d.approved} approved`;
+					if (d.date === currentDate) opt.selected = true;
+					els.daySelect.appendChild(opt);
+				}
+			}
+
+			function statusClass(s: ItemStatus) {
+				return `st-${s}`;
+			}
+
+			function render() {
+				if (!day) return;
+				refreshDaySelect();
+				const singles = day.items.filter((i) => i.kind === 'single');
+				const carousels = day.items.filter((i) => i.kind === 'carousel');
+				const counts = summarize(day);
+
+				els.topMeta.hidden = false;
+				els.topMeta.textContent = `${mode === 'fixture' ? 'FIXTURE · ' : ''}${counts.pending} pending · ${counts.approved} approved · ${counts.posted} posted`;
+
+				els.singles.innerHTML = '';
+				for (const item of singles) {
+					els.singles.appendChild(renderSingle(item));
+				}
+				els.carousels.innerHTML = '';
+				for (const item of carousels) {
+					els.carousels.appendChild(renderCarousel(item));
+				}
+				setStatus(`${day.date} · ${day.items.length} items · updated ${day.updatedAt}`);
+			}
+
+			function renderSingle(item: QueueItem) {
+				const card = document.createElement('article');
+				card.className = `item ${statusClass(item.status)}`;
+				card.dataset.id = item.id;
+
+				const check = document.createElement('label');
+				check.className = 'check';
+				check.innerHTML = `<input type="checkbox" data-select="${item.id}" ${selected.has(item.id) ? 'checked' : ''}/><span>${item.id}</span>`;
+
+				const img = document.createElement('img');
+				img.src = item.mediaUrls[0] || '';
+				img.alt = `Single ${item.id}`;
+				img.loading = 'lazy';
+
+				const meta = document.createElement('div');
+				meta.className = 'meta';
+				meta.innerHTML = `<span class="pill ${statusClass(item.status)}">${item.status}</span>${item.angle ? `<span class="angle">${escapeHtml(item.angle)}</span>` : ''}`;
+
+				const cap = document.createElement('p');
+				cap.className = 'caption';
+				cap.textContent = item.caption;
+
+				const actions = document.createElement('div');
+				actions.className = 'item-actions';
+				actions.append(
+					actionBtn('Approve', 'approve', item.id, item.status === 'approved' || item.status === 'posted'),
+					actionBtn('Reject', 'reject', item.id, item.status === 'rejected' || item.status === 'posted'),
+				);
+
+				card.append(check, img, meta, cap, actions);
+				return card;
+			}
+
+			function renderCarousel(item: QueueItem) {
+				const card = document.createElement('article');
+				card.className = `item carousel ${statusClass(item.status)}`;
+				card.dataset.id = item.id;
+
+				const head = document.createElement('div');
+				head.className = 'carousel-head';
+				head.innerHTML = `<label class="check"><input type="checkbox" data-select="${item.id}" ${selected.has(item.id) ? 'checked' : ''}/><span>${item.id}</span></label><span class="pill ${statusClass(item.status)}">${item.status}</span>`;
+
+				const strip = document.createElement('div');
+				strip.className = 'slide-strip';
+				item.mediaUrls.forEach((url, i) => {
+					const fig = document.createElement('figure');
+					const img = document.createElement('img');
+					img.src = url;
+					img.alt = `${item.id} slide ${i + 1}`;
+					img.loading = 'lazy';
+					const figcap = document.createElement('figcaption');
+					figcap.textContent = item.slides?.[i] || `Slide ${i + 1}`;
+					fig.append(img, figcap);
+					strip.appendChild(fig);
+				});
+
+				const cap = document.createElement('p');
+				cap.className = 'caption';
+				cap.textContent = item.caption;
+
+				const actions = document.createElement('div');
+				actions.className = 'item-actions';
+				actions.append(
+					actionBtn('Approve', 'approve', item.id, item.status === 'approved' || item.status === 'posted'),
+					actionBtn('Reject', 'reject', item.id, item.status === 'rejected' || item.status === 'posted'),
+				);
+
+				card.append(head, strip, cap, actions);
+				return card;
+			}
+
+			function actionBtn(label: string, action: string, id: string, disabled: boolean) {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = action === 'approve' ? 'btn btn-primary' : 'btn btn-danger';
+				btn.textContent = label;
+				btn.dataset.action = action;
+				btn.dataset.id = id;
+				btn.disabled = disabled;
+				return btn;
+			}
+
+			function escapeHtml(s: string) {
+				return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			}
+
+			async function setStatusItem(id: string, status: ItemStatus) {
+				if (!day) return;
+				if (mode === 'fixture') {
+					const item = day.items.find((i) => i.id === id);
+					if (!item || item.status === 'posted') return;
+					item.status = status;
+					day.updatedAt = new Date().toISOString();
+					days = [summarize(day)];
+					render();
+					return;
+				}
+				const { res, data } = await api(`/days/${currentDate}`, {
+					method: 'PATCH',
+					body: JSON.stringify({ id, status }),
+				});
+				if (!res.ok) {
+					setBanner(data?.error || 'Status update failed', 'warn');
+					return;
+				}
+				await loadDay(currentDate);
+			}
+
+			async function bulk(action: 'approve_pending' | 'reject_selected') {
+				if (!day) return;
+				if (mode === 'fixture') {
+					if (action === 'approve_pending') {
+						for (const item of day.items) if (item.status === 'pending') item.status = 'approved';
+					} else {
+						for (const item of day.items) {
+							if (selected.has(item.id) && item.status !== 'posted') item.status = 'rejected';
+						}
+					}
+					day.updatedAt = new Date().toISOString();
+					days = [summarize(day)];
+					render();
+					return;
+				}
+				const body: any = { action };
+				if (action === 'reject_selected') body.ids = [...selected];
+				const { res, data } = await api(`/days/${currentDate}/bulk`, {
+					method: 'POST',
+					body: JSON.stringify(body),
+				});
+				if (!res.ok) {
+					setBanner(data?.error || 'Bulk update failed', 'warn');
+					return;
+				}
+				day = data.day;
+				await loadDays();
+				render();
+			}
+
+			async function postApproved() {
+				if (!day) return;
+				if (mode === 'fixture') {
+					setBanner(
+						'Synced — ask agent to post (fixture mode; no Zernio on this page).',
+						'ok',
+					);
+					return;
+				}
+				setStatus('Posting approved…');
+				const { res, data } = await api(`/days/${currentDate}/post`, { method: 'POST' });
+				if (!res.ok) {
+					setBanner(data?.error || 'Post failed', 'warn');
+					return;
+				}
+				if (data.mode === 'agent') {
+					setBanner(data.message || 'Synced — ask agent to post', 'ok');
+				} else {
+					setBanner(`Posted ${data.posted} item(s) via Zernio.`, 'ok');
+				}
+				if (data.day) day = data.day;
+				await loadDays();
+				render();
+			}
+
+			async function loadDays() {
+				if (mode === 'fixture') {
+					days = day ? [summarize(day)] : structuredClone(boot.days);
+					return;
+				}
+				const { res, data } = await api('/days');
+				if (!res.ok) throw new Error(data?.error || 'days failed');
+				days = data.days || [];
+				if (data.fixture) mode = 'fixture';
+			}
+
+			async function loadDay(date: string) {
+				currentDate = date;
+				selected.clear();
+				if (mode === 'fixture') {
+					if (!day || day.date !== date) day = structuredClone(boot.day);
+					day.date = date;
+					render();
+					return;
+				}
+				const { res, data } = await api(`/days/${date}`);
+				if (!res.ok) {
+					setBanner(data?.error || 'Could not load day', 'warn');
+					return;
+				}
+				day = data.day;
+				render();
+			}
+
+			async function bootLive() {
+				try {
+					const { res, data } = await api('/session');
+					if (res.status === 503 || data?.setupRequired) {
+						show('setup');
+						return;
+					}
+					if (!res.ok) {
+						// Functions missing (static astro dev) → fixture
+						enterFixture('API unavailable — fixture mode.');
+						return;
+					}
+					zernio = Boolean(data.zernio);
+					if (data.fixture) mode = 'fixture';
+					if (!data.ok) {
+						show('login');
+						return;
+					}
+					await enterDesk();
+				} catch {
+					enterFixture('Could not reach API — fixture mode.');
+				}
+			}
+
+			function enterFixture(message: string) {
+				mode = 'fixture';
+				day = structuredClone(boot.day);
+				days = [summarize(day)];
+				currentDate = day.date;
+				show('desk');
+				setBanner(message, 'info');
+				render();
+			}
+
+			async function enterDesk() {
+				show('desk');
+				setBanner(
+					zernio
+						? 'Zernio key present — Post approved will publish to @theyehbro.'
+						: 'No ZERNIO_API_KEY on Pages — Post approved marks sync and asks the agent to post.',
+					'info',
+				);
+				await loadDays();
+				if (!days.length && mode === 'fixture') {
+					enterFixture('Fixture day loaded.');
+					return;
+				}
+				currentDate = days[0]?.date || boot.date;
+				await loadDay(currentDate);
+			}
+
+			els.loginForm.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				els.loginError.hidden = true;
+				const password = (document.getElementById('password') as HTMLInputElement).value;
+				if (mode === 'fixture' && forceFixture) {
+					enterFixture('Fixture mode (no password check).');
+					return;
+				}
+				const { res, data } = await api('/login', {
+					method: 'POST',
+					body: JSON.stringify({ password }),
+				});
+				if (res.status === 503) {
+					show('setup');
+					return;
+				}
+				if (!res.ok) {
+					els.loginError.hidden = false;
+					els.loginError.textContent = data?.error || 'Login failed';
+					return;
+				}
+				await enterDesk();
+			});
+
+			els.daySelect.addEventListener('change', () => {
+				void loadDay(els.daySelect.value);
+			});
+
+			document.getElementById('btn-approve-all')!.addEventListener('click', () => {
+				void bulk('approve_pending');
+			});
+			document.getElementById('btn-reject-selected')!.addEventListener('click', () => {
+				if (!selected.size) {
+					setBanner('Select items to reject.', 'warn');
+					return;
+				}
+				void bulk('reject_selected');
+			});
+			document.getElementById('btn-post')!.addEventListener('click', () => {
+				void postApproved();
+			});
+			document.getElementById('btn-logout')!.addEventListener('click', async () => {
+				if (mode === 'fixture') {
+					show('login');
+					setBanner(null);
+					return;
+				}
+				await api('/logout', { method: 'POST' });
+				show('login');
+			});
+
+			els.desk.addEventListener('click', (e) => {
+				const t = e.target as HTMLElement;
+				const btn = t.closest('button[data-action]') as HTMLButtonElement | null;
+				if (btn?.dataset.action && btn.dataset.id) {
+					const status = btn.dataset.action === 'approve' ? 'approved' : 'rejected';
+					void setStatusItem(btn.dataset.id, status as ItemStatus);
+				}
+			});
+
+			els.desk.addEventListener('change', (e) => {
+				const t = e.target as HTMLInputElement;
+				if (t.matches('input[data-select]')) {
+					const id = t.getAttribute('data-select')!;
+					if (t.checked) selected.add(id);
+					else selected.delete(id);
+				}
+			});
+
+			if (forceFixture) enterFixture('Fixture mode — sample queue for local demo.');
+			else void bootLive();
+		</script>
+
+		<style>
+			.admin-body {
+				margin: 0;
+				min-height: 100vh;
+				font-family: var(--font-body);
+				color: var(--yb-offwhite);
+				background-color: var(--yb-black);
+				background-image:
+					linear-gradient(180deg, rgba(8, 8, 8, 0.92), rgba(8, 8, 8, 0.97)),
+					var(--noise),
+					radial-gradient(ellipse 55% 35% at 100% 0%, rgba(200, 241, 53, 0.05), transparent 55%),
+					linear-gradient(180deg, #080808, #10100e 50%, #080808);
+			}
+			.admin-shell {
+				max-width: 72rem;
+				margin: 0 auto;
+				padding: 1.25rem 1rem 3rem;
+			}
+			.admin-top {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: flex-end;
+				justify-content: space-between;
+				gap: 0.75rem;
+				margin-bottom: 1.5rem;
+				padding-bottom: 1rem;
+				border-bottom: 1px solid var(--yb-edge);
+			}
+			.brand-lock {
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+			}
+			.brand-lock img {
+				width: 132px;
+				height: auto;
+			}
+			.brand-sub {
+				font-size: 0.8rem;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--yb-muted);
+			}
+			.top-meta {
+				font-size: 0.85rem;
+				color: var(--yb-steel);
+			}
+			.panel {
+				max-width: 28rem;
+				padding: 1.5rem 0;
+			}
+			.panel h1,
+			.block h2 {
+				font-family: var(--font-display);
+				text-transform: uppercase;
+				letter-spacing: 0.03em;
+			}
+			.lede {
+				color: var(--yb-muted);
+			}
+			.hint {
+				font-size: 0.9rem;
+				color: var(--yb-muted);
+			}
+			.hint code,
+			.panel code {
+				color: var(--yb-lime);
+				font-size: 0.85em;
+			}
+			.login-form {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.6rem;
+				margin: 1.25rem 0 0.75rem;
+			}
+			.login-form input {
+				flex: 1 1 12rem;
+				min-height: 2.75rem;
+				padding: 0.65rem 0.85rem;
+				border: 1px solid var(--yb-edge);
+				border-radius: 0;
+				background: var(--yb-surface);
+				color: var(--yb-offwhite);
+				font: inherit;
+			}
+			.login-form input:focus {
+				outline: 2px solid var(--yb-lime);
+				outline-offset: 2px;
+			}
+			.btn {
+				appearance: none;
+				border: 1px solid var(--yb-edge);
+				background: var(--yb-surface-2);
+				color: var(--yb-offwhite);
+				font: inherit;
+				font-size: 0.9rem;
+				padding: 0.55rem 0.9rem;
+				cursor: pointer;
+				transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+			}
+			.btn:hover:not(:disabled) {
+				border-color: var(--yb-lime);
+			}
+			.btn:disabled {
+				opacity: 0.45;
+				cursor: not-allowed;
+			}
+			.btn-primary {
+				background: var(--yb-lime);
+				color: var(--yb-charcoal);
+				border-color: var(--yb-lime);
+				font-weight: 700;
+			}
+			.btn-primary:hover:not(:disabled) {
+				background: var(--yb-teal);
+				border-color: var(--yb-teal);
+				color: var(--yb-charcoal);
+			}
+			.btn-danger {
+				border-color: rgba(232, 93, 76, 0.55);
+				color: #ffb0a6;
+			}
+			.btn-ghost {
+				background: transparent;
+			}
+			.error {
+				color: var(--yb-danger);
+			}
+			.desk-bar {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.85rem;
+				align-items: flex-end;
+				justify-content: space-between;
+				margin-bottom: 1rem;
+			}
+			.day-picker {
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--yb-muted);
+			}
+			.day-picker select {
+				min-width: 16rem;
+				min-height: 2.6rem;
+				background: var(--yb-surface);
+				color: var(--yb-offwhite);
+				border: 1px solid var(--yb-edge);
+				font: inherit;
+				padding: 0.4rem 0.6rem;
+			}
+			.desk-actions {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.45rem;
+			}
+			.banner {
+				padding: 0.7rem 0.85rem;
+				border-left: 3px solid var(--yb-lime);
+				background: rgba(200, 241, 53, 0.06);
+				color: var(--yb-offwhite);
+				font-size: 0.95rem;
+			}
+			.banner[data-kind='warn'] {
+				border-left-color: var(--yb-danger);
+				background: rgba(232, 93, 76, 0.08);
+			}
+			.banner[data-kind='ok'] {
+				border-left-color: var(--yb-teal);
+				background: rgba(46, 230, 166, 0.07);
+			}
+			.status-line {
+				font-size: 0.85rem;
+				color: var(--yb-muted);
+				margin: 0.75rem 0 1.25rem;
+			}
+			.block {
+				margin-bottom: 2.5rem;
+			}
+			.block h2 {
+				font-size: 1.35rem;
+				margin-bottom: 1rem;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+				gap: 1rem;
+			}
+			.item {
+				display: flex;
+				flex-direction: column;
+				gap: 0.55rem;
+				padding: 0.75rem 0 1rem;
+				border-bottom: 1px solid var(--yb-edge);
+				animation: rise 0.35s ease both;
+			}
+			@keyframes rise {
+				from {
+					opacity: 0;
+					transform: translateY(8px);
+				}
+				to {
+					opacity: 1;
+					transform: none;
+				}
+			}
+			.item img {
+				width: 100%;
+				aspect-ratio: 4 / 5;
+				object-fit: cover;
+				background: var(--yb-surface);
+				border: 1px solid var(--yb-edge);
+			}
+			.check {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.45rem;
+				font-family: var(--font-display);
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				font-size: 0.95rem;
+			}
+			.check input {
+				accent-color: var(--yb-lime);
+				width: 1.05rem;
+				height: 1.05rem;
+			}
+			.meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.45rem;
+				align-items: center;
+			}
+			.pill {
+				font-size: 0.7rem;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				padding: 0.15rem 0.45rem;
+				border: 1px solid var(--yb-edge);
+				color: var(--yb-muted);
+			}
+			.pill.st-pending {
+				color: var(--yb-steel);
+			}
+			.pill.st-approved {
+				color: var(--yb-teal);
+				border-color: rgba(46, 230, 166, 0.45);
+			}
+			.pill.st-rejected {
+				color: var(--yb-danger);
+				border-color: rgba(232, 93, 76, 0.45);
+			}
+			.pill.st-posted {
+				color: var(--yb-lime);
+				border-color: rgba(200, 241, 53, 0.45);
+			}
+			.angle {
+				font-size: 0.8rem;
+				color: var(--yb-muted);
+			}
+			.caption {
+				font-size: 0.92rem;
+				line-height: 1.45;
+				color: var(--yb-offwhite);
+				margin: 0;
+			}
+			.item-actions {
+				display: flex;
+				gap: 0.4rem;
+				margin-top: auto;
+			}
+			.carousels {
+				display: flex;
+				flex-direction: column;
+				gap: 1.75rem;
+			}
+			.carousel-head {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 0.75rem;
+			}
+			.slide-strip {
+				display: grid;
+				grid-auto-flow: column;
+				grid-auto-columns: minmax(9.5rem, 12rem);
+				gap: 0.65rem;
+				overflow-x: auto;
+				padding-bottom: 0.35rem;
+				scroll-snap-type: x mandatory;
+			}
+			.slide-strip figure {
+				margin: 0;
+				scroll-snap-align: start;
+			}
+			.slide-strip img {
+				width: 100%;
+				aspect-ratio: 4 / 5;
+				object-fit: cover;
+				border: 1px solid var(--yb-edge);
+				background: var(--yb-surface);
+			}
+			.slide-strip figcaption {
+				font-size: 0.72rem;
+				color: var(--yb-muted);
+				margin-top: 0.35rem;
+				line-height: 1.35;
+			}
+			.item.st-approved {
+				box-shadow: inset 3px 0 0 var(--yb-teal);
+				padding-left: 0.55rem;
+			}
+			.item.st-rejected {
+				opacity: 0.72;
+				box-shadow: inset 3px 0 0 var(--yb-danger);
+				padding-left: 0.55rem;
+			}
+			.item.st-posted {
+				box-shadow: inset 3px 0 0 var(--yb-lime);
+				padding-left: 0.55rem;
+			}
+			.sr-only {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				padding: 0;
+				margin: -1px;
+				overflow: hidden;
+				clip: rect(0, 0, 0, 0);
+				border: 0;
+			}
+			@media (max-width: 720px) {
+				.desk-actions {
+					width: 100%;
+				}
+				.desk-actions .btn {
+					flex: 1 1 calc(50% - 0.45rem);
+				}
+				.day-picker select {
+					min-width: 0;
+					width: 100%;
+				}
+			}
+		</style>
+	</body>
+</html>
