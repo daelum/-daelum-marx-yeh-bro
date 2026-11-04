@@ -65,8 +65,8 @@ export const SYSTEM_PHASES: SystemPhase[] = [
 		job: 'Protein first, then calories for cut / maintain / lean bulk.',
 		focus: [
 			'Hit ~1.6–2.2 g protein per kg body weight most days.',
-			'Use Food Bro to set calories, then adjust from the scale trend every 2–3 weeks.',
-			'Plate frameworks before app obsession — food first, powder for gaps.',
+			'Use Food Bro to set calories, then run the coach day templates (training / rest / diet break).',
+			'Adjust from the scale trend every 2–3 weeks — food first, powder for gaps.',
 		],
 		doneWhen: 'Weight trend matches your goal without wrecking training quality.',
 		href: '/food-bro',

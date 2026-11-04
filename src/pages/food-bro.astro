@@ -4,6 +4,8 @@ import FreeOffer from '../components/FreeOffer.astro';
 import ProductPath from '../components/ProductPath.astro';
 import {
 	ACTIVITY_LABELS,
+	COACH_DAY_PLANS,
+	COACH_PLAN_EXAMPLE_PROFILE,
 	GOAL_DEFAULTS,
 	MEAL_FRAMEWORKS,
 	type Activity,
@@ -12,17 +14,19 @@ import {
 
 const activities = Object.entries(ACTIVITY_LABELS) as [Activity, string][];
 const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goal]][];
+const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 ---
 
 <BaseLayout
 	title="Food Bro — calories & macros"
-	description="Food Bro: free cut / maintain / lean bulk calorie and macro calculator with practical meal frameworks. Saves in your browser."
+	description="Food Bro: free calorie and macro calculator plus recommended coach day templates — non-training, training, and diet break."
 	canonicalPath="/food-bro"
 >
 	<ProductPath
 		crumbs={[
 			{ href: '/start-here', label: 'Yeh Bro System' },
 			{ href: '/food-bro', label: 'Food Bro', current: true },
+			{ href: '/food-bro/shopping', label: 'Shopping' },
 			{ href: '/food', label: 'Food hub' },
 		]}
 	/>
@@ -35,8 +39,9 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 				<FreeOffer />
 			</div>
 			<p class="lede anim-rise-delay">
-				Set daily calories and macros for a cut, maintain, or lean bulk — with a plain-English why.
-				Inputs stick in this browser so you can come back and nudge.
+				Set daily calories and macros for a cut, maintain, or lean bulk — then run the recommended
+				coach day templates: non-training, training, or a 1–2 week diet break (~maintenance when
+				you’re flat). Inputs stick in this browser.
 			</p>
 		</header>
 
@@ -175,12 +180,96 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 			</div>
 		</div>
 
-		<section class="fos-meals" id="meals">
-			<p class="eyebrow">Meal frameworks</p>
-			<h2>Practical plates</h2>
+		<section class="fos-plans" id="recommended-plans">
+			<p class="eyebrow">Recommended</p>
+			<h2>Coach day templates</h2>
 			<p class="lede">
-				Frameworks beat perfect macros. Use these when you know the calorie ballpark but don’t want
-				to live in an app.
+				Three day types from the founder coach plan. Built for an example profile of {age} years /
+				{weightKg} kg / {heightCm} cm — scale with the calculator above and coach judgment, not as
+				one-size-fits-all. Diet break ≈ maintenance for that profile — run <strong>1–2 weeks</strong>{' '}
+				when you’re flat / glycogen depleted, then return to your cut or training week.
+			</p>
+
+			<div class="plan-tabs" role="tablist" aria-label="Day type">
+				{
+					COACH_DAY_PLANS.map((plan, i) => (
+						<button
+							type="button"
+							class:list={['plan-tab', i === 0 && 'is-active']}
+							role="tab"
+							id={`tab-${plan.id}`}
+							aria-selected={i === 0 ? 'true' : 'false'}
+							aria-controls={`panel-${plan.id}`}
+							data-plan-tab={plan.id}
+						>
+							{plan.title}
+						</button>
+					))
+				}
+			</div>
+
+			{
+				COACH_DAY_PLANS.map((plan, i) => (
+					<div
+						class:list={['plan-panel', i === 0 && 'is-active']}
+						role="tabpanel"
+						id={`panel-${plan.id}`}
+						aria-labelledby={`tab-${plan.id}`}
+						hidden={i !== 0}
+						data-plan-panel={plan.id}
+					>
+						<p class="plan-when muted">{plan.when}</p>
+						<p class="plan-totals">
+							<span class="plan-cal">{plan.calories} kcal</span>
+							<span class="muted">
+								P {plan.proteinG}g ({plan.proteinPct}%) · C {plan.carbsG}g ({plan.carbsPct}%) · F{' '}
+								{plan.fatG}g ({plan.fatPct}%) · Fibre {plan.fibreG}g
+							</span>
+						</p>
+						{!plan.recipesReady && (
+							<p class="plan-pending muted">
+								Macros locked. Ingredient portions for this day type land when the founder sends
+								them — meal names stay the same.
+							</p>
+						)}
+						<ul class="plan-meals">
+							{plan.meals.map((meal) => (
+								<li class:list={['plan-meal', meal.intra && 'is-intra']}>
+									<div class="plan-meal-head">
+										<strong>{meal.name}</strong>
+										<span class="muted">
+											{meal.kcal} kcal · P {meal.proteinG} / C {meal.carbsG} / F {meal.fatG}
+										</span>
+									</div>
+									{meal.ingredients && meal.ingredients.length > 0 ? (
+										<ul class="plan-ings">
+											{meal.ingredients.map((ing) => (
+												<li>
+													{ing.name} — {ing.amount}
+													{ing.note ? <span class="muted"> ({ing.note})</span> : null}
+												</li>
+											))}
+										</ul>
+									) : plan.recipesReady ? null : (
+										<p class="plan-ing-empty muted">Recipe pending.</p>
+									)}
+								</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+
+			<p class="plan-shop-cta">
+				<a class="btn btn-secondary" href="/food-bro/shopping">Weekly shopping list</a>
+			</p>
+		</section>
+
+		<section class="fos-meals" id="meals">
+			<p class="eyebrow">Also useful</p>
+			<h2>Soft plate heuristics</h2>
+			<p class="lede">
+				When you’re off the coach template or need protein without an app spiral.
 			</p>
 			{
 				MEAL_FRAMEWORKS.map((fw) => (
@@ -207,6 +296,7 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 			<div class="cta-row">
 				<a class="btn btn-primary" href="/start-here">Yeh Bro System</a>
 				<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
+				<a class="btn btn-secondary" href="/food-bro/shopping">Shopping list</a>
 				<a class="btn btn-secondary" href="/food">Food hub</a>
 			</div>
 			<p class="compliance muted">
@@ -398,6 +488,24 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 		writeStored(defaults);
 		render(defaults);
 		if (saveNote) saveNote.textContent = 'Reset to defaults.';
+	});
+
+	const planTabs = document.querySelectorAll<HTMLButtonElement>('[data-plan-tab]');
+	const planPanels = document.querySelectorAll<HTMLElement>('[data-plan-panel]');
+	planTabs.forEach((tab) => {
+		tab.addEventListener('click', () => {
+			const id = tab.dataset.planTab;
+			planTabs.forEach((t) => {
+				const on = t.dataset.planTab === id;
+				t.classList.toggle('is-active', on);
+				t.setAttribute('aria-selected', on ? 'true' : 'false');
+			});
+			planPanels.forEach((panel) => {
+				const on = panel.dataset.planPanel === id;
+				panel.classList.toggle('is-active', on);
+				panel.hidden = !on;
+			});
+		});
 	});
 </script>
 
@@ -632,6 +740,101 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 		padding-left: 1.1rem;
 		font-size: 0.95rem;
 		color: rgba(242, 242, 240, 0.88);
+	}
+	.fos-plans {
+		margin-top: 3.5rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.plan-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin: 1.25rem 0 1.5rem;
+	}
+	.plan-tab {
+		font: inherit;
+		font-weight: 600;
+		font-size: 0.92rem;
+		padding: 0.65rem 0.95rem;
+		border: 1px solid rgba(242, 242, 240, 0.18);
+		background: rgba(0, 0, 0, 0.25);
+		color: var(--yb-offwhite);
+		cursor: pointer;
+	}
+	.plan-tab.is-active {
+		border-color: rgba(200, 241, 53, 0.55);
+		background: rgba(200, 241, 53, 0.1);
+		color: var(--yb-lime);
+	}
+	.plan-tab:focus-visible {
+		outline: 2px solid var(--yb-lime);
+		outline-offset: 2px;
+	}
+	.plan-when {
+		margin: 0 0 0.75rem;
+		max-width: 42rem;
+	}
+	.plan-totals {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.5rem 1rem;
+		margin: 0 0 1.25rem;
+	}
+	.plan-cal {
+		font-family: var(--font-display);
+		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+		letter-spacing: 0.03em;
+		color: var(--yb-lime);
+	}
+	.plan-pending {
+		margin: 0 0 1rem;
+	}
+	.plan-meals {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		gap: 1.15rem;
+		max-width: 44rem;
+	}
+	.plan-meal {
+		margin: 0;
+		padding: 0.9rem 0 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.1);
+	}
+	.plan-meal.is-intra {
+		border-top-color: rgba(46, 230, 166, 0.35);
+	}
+	.plan-meal-head {
+		display: grid;
+		gap: 0.2rem;
+	}
+	.plan-meal-head strong {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--yb-lime);
+	}
+	.plan-ings {
+		margin: 0.55rem 0 0;
+		padding-left: 1.1rem;
+		font-size: 0.95rem;
+		color: rgba(242, 242, 240, 0.9);
+	}
+	.plan-ing-empty {
+		margin: 0.4rem 0 0;
+		font-size: 0.9rem;
+	}
+	.plan-shop-cta {
+		margin: 1.75rem 0 0;
+	}
+	.plan-shop-cta .btn-secondary {
+		border: 2px solid rgba(242, 242, 240, 0.35);
+		color: var(--yb-offwhite);
+		background: transparent;
 	}
 	.fos-meals {
 		margin-top: 3.5rem;

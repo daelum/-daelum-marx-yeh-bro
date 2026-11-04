@@ -1,0 +1,199 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductPath from '../../components/ProductPath.astro';
+import {
+	COACH_PLAN_EXAMPLE_PROFILE,
+	SHOPPING_LIST_DIET_BREAK_WEEK,
+	SHOPPING_LIST_TYPICAL_WEEK,
+	SHOPPING_WEEK_REST_DAYS,
+	SHOPPING_WEEK_TRAINING_DAYS,
+	formatDietBreakShoppingPlain,
+	formatShoppingListPlain,
+} from '../../lib/food-os';
+
+const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
+const typicalPlain = formatShoppingListPlain();
+const dietBreakPlain = formatDietBreakShoppingPlain();
+---
+
+<BaseLayout
+	title="Weekly shopping list — Food Bro"
+	description="Woolworths shopping list for Food Bro coach meal plans — phone-copyable weights for a typical training week and a diet-break week."
+	canonicalPath="/food-bro/shopping"
+>
+	<ProductPath
+		crumbs={[
+			{ href: '/start-here', label: 'Yeh Bro System' },
+			{ href: '/food-bro', label: 'Food Bro' },
+			{ href: '/food-bro/shopping', label: 'Shopping', current: true },
+			{ href: '/food', label: 'Food hub' },
+		]}
+	/>
+
+	<article class="wrap shop-page">
+		<header class="shop-hero">
+			<p class="eyebrow anim-rise">Food Bro · Woolworths</p>
+			<h1 class="anim-rise">Weekly shopping list</h1>
+			<p class="lede anim-rise-delay">
+				Phone-copyable totals for the coach day templates. Typical week ={' '}
+				{SHOPPING_WEEK_TRAINING_DAYS} training + {SHOPPING_WEEK_REST_DAYS} rest. Built around the
+				example profile ({age} / {weightKg} kg / {heightCm} cm) — nudge amounts if your split or
+				body differs. Prefer Woolworths where the founder listed it; Coles mince → WW lean mince is
+				fine.
+			</p>
+		</header>
+
+		<section class="shop-block" id="typical-week">
+			<p class="eyebrow">Default week</p>
+			<h2>
+				{SHOPPING_WEEK_TRAINING_DAYS} training · {SHOPPING_WEEK_REST_DAYS} rest
+			</h2>
+			<p class="muted shop-note">
+				Coconut water only on training days (Intra). Everything else is the shared base day.
+			</p>
+			<button type="button" class="btn btn-primary" id="copy-typical" data-copy="typical">
+				Copy list
+			</button>
+			<p class="copy-status muted" id="status-typical" aria-live="polite"></p>
+			<ul class="shop-list">
+				{
+					SHOPPING_LIST_TYPICAL_WEEK.map((line) => (
+						<li>
+							<span class="shop-name">{line.name}</span>
+							<span class="shop-amt">{line.amount}</span>
+							{line.note ? <span class="shop-line-note muted">{line.note}</span> : null}
+						</li>
+					))
+				}
+			</ul>
+			<pre class="shop-plain" id="plain-typical" hidden>{typicalPlain}</pre>
+		</section>
+
+		<section class="shop-block" id="diet-break-week">
+			<p class="eyebrow">Diet-break week</p>
+			<h2>1–2 weeks when flat</h2>
+			<p class="muted shop-note">
+				≈ maintenance for the example profile. Bigger rice / cereal / pasta / bars + 1 L coconut
+				water every day. Run then return to the typical week list — not a forever surplus.
+			</p>
+			<button type="button" class="btn btn-secondary" id="copy-diet" data-copy="diet">
+				Copy diet-break list
+			</button>
+			<p class="copy-status muted" id="status-diet" aria-live="polite"></p>
+			<ul class="shop-list">
+				{
+					SHOPPING_LIST_DIET_BREAK_WEEK.map((line) => (
+						<li>
+							<span class="shop-name">{line.name}</span>
+							<span class="shop-amt">{line.amount}</span>
+							{line.note ? <span class="shop-line-note muted">{line.note}</span> : null}
+						</li>
+					))
+				}
+			</ul>
+			<pre class="shop-plain" id="plain-diet" hidden>{dietBreakPlain}</pre>
+		</section>
+
+		<section class="shop-next">
+			<p class="eyebrow">Back to Food Bro</p>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="/food-bro#recommended-plans">Day templates</a>
+				<a class="btn btn-secondary" href="/food-bro">Calculator</a>
+				<a class="btn btn-secondary" href="/food">Food hub</a>
+			</div>
+			<p class="compliance muted">
+				Education only — not medical advice. Product names match the founder log; we don’t invent
+				SKUs. Swap near-identical Woolworths lines when stock moves.
+			</p>
+		</section>
+	</article>
+</BaseLayout>
+
+<script>
+	const payloads: Record<string, string> = {
+		typical: document.getElementById('plain-typical')?.textContent ?? '',
+		diet: document.getElementById('plain-diet')?.textContent ?? '',
+	};
+
+	async function copyKey(key: string) {
+		const text = payloads[key];
+		const status = document.getElementById(key === 'typical' ? 'status-typical' : 'status-diet');
+		if (!text) return;
+		try {
+			await navigator.clipboard.writeText(text);
+			if (status) status.textContent = 'Copied — paste into notes / Woolworths.';
+		} catch {
+			if (status) status.textContent = 'Copy blocked — select the list and copy manually.';
+		}
+	}
+
+	document.getElementById('copy-typical')?.addEventListener('click', () => copyKey('typical'));
+	document.getElementById('copy-diet')?.addEventListener('click', () => copyKey('diet'));
+</script>
+
+<style>
+	.shop-page {
+		padding-top: 2rem;
+		padding-bottom: 3rem;
+	}
+	.shop-hero {
+		margin-bottom: 2rem;
+		max-width: 42rem;
+	}
+	.shop-block {
+		margin-top: 2.5rem;
+		padding-top: 1.75rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.shop-note {
+		margin: 0.35rem 0 1rem;
+		max-width: 40rem;
+	}
+	.shop-block .btn-secondary {
+		border: 2px solid rgba(242, 242, 240, 0.35);
+		color: var(--yb-offwhite);
+		background: transparent;
+	}
+	.copy-status {
+		min-height: 1.25em;
+		margin: 0.5rem 0 1rem;
+		font-size: 0.9rem;
+	}
+	.shop-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		max-width: 44rem;
+		display: grid;
+		gap: 0.85rem;
+	}
+	.shop-list li {
+		margin: 0;
+		padding: 0.7rem 0 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.08);
+		display: grid;
+		gap: 0.15rem;
+	}
+	.shop-name {
+		font-weight: 600;
+		color: var(--yb-offwhite);
+	}
+	.shop-amt {
+		font-family: var(--font-display);
+		letter-spacing: 0.03em;
+		color: var(--yb-lime);
+	}
+	.shop-line-note {
+		font-size: 0.88rem;
+	}
+	.shop-next {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.compliance {
+		margin-top: 1.5rem;
+		font-size: 0.9rem;
+		max-width: 38rem;
+	}
+</style>
