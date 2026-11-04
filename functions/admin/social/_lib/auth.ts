@@ -37,9 +37,18 @@ export function passwordConfigured(env: Env): boolean {
 	return Boolean(env.ADMIN_SOCIAL_PASSWORD && env.ADMIN_SOCIAL_PASSWORD.length > 0);
 }
 
+/** True when KV + R2 bindings are present on the Worker env. */
+export function hasQueueBindings(env: Env): boolean {
+	return Boolean(env.IG_QUEUE && env.IG_MEDIA);
+}
+
+/**
+ * Explicit fixture only (`ADMIN_SOCIAL_FIXTURE=1`).
+ * Missing bindings must NOT silently serve the 7-item sample as a real day —
+ * APIs return bindingsRequired instead.
+ */
 export function fixtureMode(env: Env): boolean {
-	if (env.ADMIN_SOCIAL_FIXTURE === '1') return true;
-	return !env.IG_QUEUE || !env.IG_MEDIA;
+	return env.ADMIN_SOCIAL_FIXTURE === '1';
 }
 
 export async function createSessionCookie(

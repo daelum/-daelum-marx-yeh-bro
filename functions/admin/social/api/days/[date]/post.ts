@@ -1,5 +1,12 @@
-import { fixtureMode, passwordConfigured, verifySession } from '../../../_lib/auth';
-import { badRequest, json, notFound, setupRequired, unauthorized } from '../../../_lib/responses';
+import { fixtureMode, hasQueueBindings, passwordConfigured, verifySession } from '../../../_lib/auth';
+import {
+	badRequest,
+	bindingsRequired,
+	json,
+	notFound,
+	setupRequired,
+	unauthorized,
+} from '../../../_lib/responses';
 import { enrichDay, readDay, writeDay } from '../../../_lib/store';
 import { hasZernio, publishApprovedItem } from '../../../_lib/zernio';
 import { DAY_KEY_RE, type Env } from '../../../_lib/types';
@@ -7,6 +14,7 @@ import { DAY_KEY_RE, type Env } from '../../../_lib/types';
 export const onRequestPost: PagesFunction<Env> = async (context) => {
 	const { request, env, params } = context;
 	if (!passwordConfigured(env)) return setupRequired();
+	if (!fixtureMode(env) && !hasQueueBindings(env)) return bindingsRequired();
 	if (!(await verifySession(request, env))) return unauthorized();
 
 	const date = String(params.date || '');
@@ -20,7 +28,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 		return json({ ok: true, posted: 0, message: 'No approved items to post.' });
 	}
 
-	// Fixture / missing Zernio: mark as approved (unchanged) and ask agent to post.
+	// Fixture / missing Zernio: leave approved and ask agent to post.
 	if (fixtureMode(env) || !hasZernio(env)) {
 		const stamp = new Date().toISOString();
 		day.publishLog = day.publishLog || [];

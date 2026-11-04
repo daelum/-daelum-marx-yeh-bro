@@ -35,3 +35,16 @@ export function setupRequired(): Response {
 		{ status: 503 },
 	);
 }
+
+export function bindingsRequired(): Response {
+	return json(
+		{
+			ok: false,
+			bindingsRequired: true,
+			fixture: false,
+			message:
+				'IG_QUEUE (KV) and/or IG_MEDIA (R2) are not bound on this Worker. Bind them in wrangler.toml / dashboard and redeploy — live queue will not load until then. For local demo only, open /admin/social?fixture=1.',
+		},
+		{ status: 503 },
+	);
+}

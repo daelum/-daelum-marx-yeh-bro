@@ -1,6 +1,6 @@
-import { fixtureMode, passwordConfigured, verifySession } from '../_lib/auth';
+import { fixtureMode, hasQueueBindings, passwordConfigured, verifySession } from '../_lib/auth';
 import { fixtureSvg } from '../_lib/fixtures';
-import { notFound, setupRequired, unauthorized } from '../_lib/responses';
+import { bindingsRequired, notFound, setupRequired, unauthorized } from '../_lib/responses';
 import { DAY_KEY_RE, mediaKey, type Env } from '../_lib/types';
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -26,9 +26,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 			headers: {
 				'Content-Type': 'image/svg+xml; charset=utf-8',
 				'Cache-Control': 'private, no-store',
+				'X-YB-Media': 'fixture',
 			},
 		});
 	}
+
+	if (!hasQueueBindings(env)) return bindingsRequired();
 
 	const obj = await env.IG_MEDIA!.get(mediaKey(date, file));
 	if (!obj) return notFound('Media not found');
@@ -36,6 +39,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 	const headers = new Headers();
 	headers.set('Content-Type', obj.httpMetadata?.contentType || 'image/png');
 	headers.set('Cache-Control', 'private, max-age=60');
+	headers.set('X-YB-Media', 'live');
+	// Allow same-origin <img> / fetch with session cookie.
+	headers.set('Vary', 'Cookie');
 	if (obj.httpEtag) headers.set('ETag', obj.httpEtag);
 
 	return new Response(obj.body, { headers });

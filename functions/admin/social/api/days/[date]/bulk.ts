@@ -1,11 +1,19 @@
-import { passwordConfigured, verifySession } from '../../../_lib/auth';
-import { badRequest, json, notFound, setupRequired, unauthorized } from '../../../_lib/responses';
+import { fixtureMode, hasQueueBindings, passwordConfigured, verifySession } from '../../../_lib/auth';
+import {
+	badRequest,
+	bindingsRequired,
+	json,
+	notFound,
+	setupRequired,
+	unauthorized,
+} from '../../../_lib/responses';
 import { bulkUpdate, enrichDay } from '../../../_lib/store';
 import { DAY_KEY_RE, type Env } from '../../../_lib/types';
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
 	const { request, env, params } = context;
 	if (!passwordConfigured(env)) return setupRequired();
+	if (!fixtureMode(env) && !hasQueueBindings(env)) return bindingsRequired();
 	if (!(await verifySession(request, env))) return unauthorized();
 
 	const date = String(params.date || '');

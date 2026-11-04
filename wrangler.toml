@@ -9,15 +9,25 @@
 #   ZERNIO_API_KEY          optional — enables Post approved → Zernio publish to @theyehbro
 #   ADMIN_SOCIAL_FIXTURE    optional — "1" forces fixture data even with bindings
 #
-# Bindings (add in dashboard after deploy unlocks Settings → Bindings — do not
-# commit real account resource IDs here unless the team chooses to):
-#   IG_QUEUE  → KV namespace (e.g. title yehbro-ig-queue)
-#   IG_MEDIA  → R2 bucket (e.g. yehbro-ig-media)
+# Bindings must be declared here. Dashboard-only bindings are undefined on
+# Workers+assets deploys and previously caused silent fixture mode (7 fake items).
+#   IG_QUEUE  → KV namespace yehbro-ig-queue
+#   IG_MEDIA  → R2 bucket yehbro-ig-media
+#
+# `name` must match the Workers project that serves yehbro.com.
 
-name = "yeh-bro"
+name = "daelum-marx-yeh-bro"
 compatibility_date = "2025-10-01"
 main = "./dist-worker/index.js"
 upload_source_maps = true
+
+[[kv_namespaces]]
+binding = "IG_QUEUE"
+id = "cbc2ba4244bd4bb3ab3394a0809d0b7e"
+
+[[r2_buckets]]
+binding = "IG_MEDIA"
+bucket_name = "yehbro-ig-media"
 
 [assets]
 directory = "./dist"

@@ -48,11 +48,13 @@ Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
 |------|------|----------|---------|
 | `ADMIN_SOCIAL_PASSWORD` | Worker **secret** | Yes | Login gate (HttpOnly session cookie) |
 | `ZERNIO_API_KEY` | Worker **secret** | No | Post-from-admin via Zernio to `@theyehbro` |
-| `ADMIN_SOCIAL_FIXTURE` | Env var `"1"` | No | Force fixture sample data |
+| `ADMIN_SOCIAL_FIXTURE` | Env var `"1"` | No | Force fixture sample data (opt-in only) |
 | `IG_QUEUE` | KV binding | Yes (prod) | Per-day manifest/status JSON |
 | `IG_MEDIA` | R2 binding | Yes (prod) | PNG bytes (never in `public/`) |
 
-Media is served only through the authenticated proxy: `/admin/social/media/{date}/{file}`.
+**Bindings must be declared in `wrangler.toml`** (`[[kv_namespaces]]` / `[[r2_buckets]]`). If they are missing from the Worker env, the desk shows a bindings-required error — it does **not** silently fall back to the 7-item fixture sample. Fixture is only via `?fixture=1` or `ADMIN_SOCIAL_FIXTURE=1`.
+
+Media is served only through the authenticated proxy: `/admin/social/media/{date}/{file}` (session cookie; UI fetches with credentials → blob preview).
 
 ---
 
@@ -99,7 +101,7 @@ npm run pages:dev
 # Set ADMIN_SOCIAL_PASSWORD in .dev.vars (gitignored)
 ```
 
-Create `.dev.vars` locally (gitignored) with `ADMIN_SOCIAL_PASSWORD=…` — never commit it. Without KV/R2 bindings, Functions auto-enter **fixture mode**.
+Create `.dev.vars` locally (gitignored) with `ADMIN_SOCIAL_PASSWORD=…` — never commit it. Without KV/R2 bindings the live desk shows **bindings required** (use `?fixture=1` for a local sample).
 
 ---
 

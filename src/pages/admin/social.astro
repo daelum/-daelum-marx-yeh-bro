@@ -43,8 +43,8 @@ const fixtureBoot = {
 
 			<section id="view-setup" class="panel" hidden>
 				<h1>Setup required</h1>
-				<p>
-					Set the Cloudflare Pages secret <code>ADMIN_SOCIAL_PASSWORD</code>, bind KV
+				<p id="setup-copy">
+					Set the Cloudflare secret <code>ADMIN_SOCIAL_PASSWORD</code>, bind KV
 					<code>IG_QUEUE</code> and R2 <code>IG_MEDIA</code>, then redeploy. This gate stays
 					closed until the password exists.
 				</p>
@@ -72,7 +72,8 @@ const fixtureBoot = {
 				</form>
 				<p id="login-error" class="error" hidden></p>
 				<p class="hint">
-					No live API? Use <a href="/admin/social?fixture=1">fixture mode</a> for a local demo.
+					Local demo only: <a href="/admin/social?fixture=1">open fixture mode</a>
+					(<code>?fixture=1</code>). Live desk never auto-falls back to fixture.
 				</p>
 			</section>
 
@@ -97,11 +98,13 @@ const fixtureBoot = {
 				<section class="block">
 					<h2>Singles</h2>
 					<div id="singles-grid" class="grid"></div>
+					<p id="singles-empty" class="empty-line" hidden>No singles for this day.</p>
 				</section>
 
 				<section class="block">
 					<h2>Carousels</h2>
 					<div id="carousels-list" class="carousels"></div>
+					<p id="carousels-empty" class="empty-line" hidden>No carousels for this day.</p>
 				</section>
 			</section>
 		</div>
@@ -149,14 +152,18 @@ const fixtureBoot = {
 
 			let mode: 'live' | 'fixture' = forceFixture ? 'fixture' : 'live';
 			let zernio = false;
+			let bindingsOk = false;
 			let currentDate = boot.date;
 			let day: Day | null = forceFixture ? structuredClone(boot.day) : null;
 			let days: DaySummary[] = forceFixture ? structuredClone(boot.days) : [];
 			const selected = new Set<string>();
+			/** blob: object URLs created for authenticated media — revoke on re-render */
+			const blobUrls = new Set<string>();
 
 			const els = {
 				app: document.getElementById('app')!,
 				setup: document.getElementById('view-setup')!,
+				setupCopy: document.getElementById('setup-copy')!,
 				login: document.getElementById('view-login')!,
 				desk: document.getElementById('view-desk')!,
 				topMeta: document.getElementById('top-meta')!,
@@ -164,7 +171,9 @@ const fixtureBoot = {
 				loginError: document.getElementById('login-error')!,
 				daySelect: document.getElementById('day-select') as HTMLSelectElement,
 				singles: document.getElementById('singles-grid')!,
+				singlesEmpty: document.getElementById('singles-empty')!,
 				carousels: document.getElementById('carousels-list')!,
+				carouselsEmpty: document.getElementById('carousels-empty')!,
 				banner: document.getElementById('desk-banner')!,
 				status: document.getElementById('desk-status')!,
 			};
@@ -176,10 +185,11 @@ const fixtureBoot = {
 				els.app.dataset.state = view;
 			}
 
-			function setBanner(text: string | null, kind: 'info' | 'ok' | 'warn' = 'info') {
+			function setBanner(text: string | null, kind: 'info' | 'ok' | 'warn' | 'fixture' = 'info') {
 				if (!text) {
 					els.banner.hidden = true;
 					els.banner.textContent = '';
+					delete els.banner.dataset.kind;
 					return;
 				}
 				els.banner.hidden = false;
@@ -191,15 +201,33 @@ const fixtureBoot = {
 				els.status.textContent = text;
 			}
 
+			function showBindingsRequired(message?: string) {
+				els.setupCopy.innerHTML =
+					message ||
+					`Logged in, but this Worker is missing <code>IG_QUEUE</code> (KV) and/or <code>IG_MEDIA</code> (R2). Live queue data is in Cloudflare — bind those names on the Worker that serves yehbro.com, redeploy, then hard-refresh <code>/admin/social</code> (no <code>?fixture=1</code>).`;
+				show('setup');
+				els.topMeta.hidden = false;
+				els.topMeta.textContent = 'LIVE · bindings required';
+			}
+
+			function showApiError(message: string) {
+				els.setupCopy.textContent = message;
+				show('setup');
+			}
+
 			async function api(path: string, init: RequestInit = {}) {
+				const headers: Record<string, string> = {
+					Accept: 'application/json',
+					...(init.body ? { 'Content-Type': 'application/json' } : {}),
+				};
+				const extra = init.headers;
+				if (extra && typeof extra === 'object' && !(extra instanceof Headers)) {
+					Object.assign(headers, extra as Record<string, string>);
+				}
 				const res = await fetch(`/admin/social/api${path}`, {
-					credentials: 'same-origin',
-					headers: {
-						Accept: 'application/json',
-						...(init.body ? { 'Content-Type': 'application/json' } : {}),
-						...(init.headers || {}),
-					},
 					...init,
+					credentials: 'same-origin',
+					headers,
 				});
 				let data: any = null;
 				try {
@@ -223,7 +251,7 @@ const fixtureBoot = {
 				for (const d of days) {
 					const opt = document.createElement('option');
 					opt.value = d.date;
-					opt.textContent = `${d.date} · ${d.pending} pending · ${d.approved} approved`;
+					opt.textContent = `${d.date} · ${d.pending} pending · ${d.approved} approved · ${d.total} total`;
 					if (d.date === currentDate) opt.selected = true;
 					els.daySelect.appendChild(opt);
 				}
@@ -233,25 +261,78 @@ const fixtureBoot = {
 				return `st-${s}`;
 			}
 
+			function revokeBlobs() {
+				for (const url of blobUrls) URL.revokeObjectURL(url);
+				blobUrls.clear();
+			}
+
+			/** Load authenticated media via cookie credentials → blob URL (Safari-safe). */
+			async function authMediaSrc(url: string): Promise<string> {
+				if (!url) return '';
+				if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+				try {
+					const res = await fetch(url, {
+						credentials: 'same-origin',
+						headers: { Accept: 'image/*,*/*' },
+					});
+					if (!res.ok) throw new Error(`media ${res.status}`);
+					const blob = await res.blob();
+					const obj = URL.createObjectURL(blob);
+					blobUrls.add(obj);
+					return obj;
+				} catch {
+					return '';
+				}
+			}
+
+			function mountAuthImg(img: HTMLImageElement, url: string, fallbackLabel: string) {
+				img.alt = fallbackLabel;
+				img.loading = 'lazy';
+				img.decoding = 'async';
+				img.referrerPolicy = 'same-origin';
+				img.classList.add('media-pending');
+				void authMediaSrc(url).then((src) => {
+					img.classList.remove('media-pending');
+					if (src) {
+						img.src = src;
+					} else {
+						img.removeAttribute('src');
+						img.classList.add('media-broken');
+						img.alt = `${fallbackLabel} (failed to load)`;
+					}
+				});
+			}
+
 			function render() {
 				if (!day) return;
+				revokeBlobs();
 				refreshDaySelect();
 				const singles = day.items.filter((i) => i.kind === 'single');
 				const carousels = day.items.filter((i) => i.kind === 'carousel');
 				const counts = summarize(day);
 
 				els.topMeta.hidden = false;
-				els.topMeta.textContent = `${mode === 'fixture' ? 'FIXTURE · ' : ''}${counts.pending} pending · ${counts.approved} approved · ${counts.posted} posted`;
+				if (mode === 'fixture') {
+					els.topMeta.textContent = `FIXTURE · sample · ${counts.total} items · not live KV`;
+				} else {
+					els.topMeta.textContent = `LIVE · ${counts.pending} pending · ${counts.approved} approved · ${counts.posted} posted · ${counts.total} items`;
+				}
 
 				els.singles.innerHTML = '';
 				for (const item of singles) {
 					els.singles.appendChild(renderSingle(item));
 				}
+				els.singlesEmpty.hidden = singles.length > 0;
+
 				els.carousels.innerHTML = '';
 				for (const item of carousels) {
 					els.carousels.appendChild(renderCarousel(item));
 				}
-				setStatus(`${day.date} · ${day.items.length} items · updated ${day.updatedAt}`);
+				els.carouselsEmpty.hidden = carousels.length > 0;
+
+				setStatus(
+					`${mode === 'fixture' ? 'FIXTURE · ' : 'LIVE · '}${day.date} · ${day.items.length} items · updated ${day.updatedAt}`,
+				);
 			}
 
 			function renderSingle(item: QueueItem) {
@@ -264,9 +345,7 @@ const fixtureBoot = {
 				check.innerHTML = `<input type="checkbox" data-select="${item.id}" ${selected.has(item.id) ? 'checked' : ''}/><span>${item.id}</span>`;
 
 				const img = document.createElement('img');
-				img.src = item.mediaUrls[0] || '';
-				img.alt = `Single ${item.id}`;
-				img.loading = 'lazy';
+				mountAuthImg(img, item.mediaUrls[0] || '', `Single ${item.id}`);
 
 				const meta = document.createElement('div');
 				meta.className = 'meta';
@@ -296,19 +375,160 @@ const fixtureBoot = {
 				head.className = 'carousel-head';
 				head.innerHTML = `<label class="check"><input type="checkbox" data-select="${item.id}" ${selected.has(item.id) ? 'checked' : ''}/><span>${item.id}</span></label><span class="pill ${statusClass(item.status)}">${item.status}</span>`;
 
-				const strip = document.createElement('div');
-				strip.className = 'slide-strip';
-				item.mediaUrls.forEach((url, i) => {
-					const fig = document.createElement('figure');
+				const viewer = document.createElement('div');
+				viewer.className = 'carousel-viewer';
+				viewer.tabIndex = 0;
+				viewer.setAttribute('role', 'region');
+				viewer.setAttribute('aria-label', `${item.id} slides`);
+
+				const track = document.createElement('div');
+				track.className = 'carousel-track';
+
+				const urls = item.mediaUrls.length ? item.mediaUrls : [];
+				const total = Math.max(urls.length, 1);
+				urls.forEach((url, i) => {
+					const slide = document.createElement('figure');
+					slide.className = 'carousel-slide';
+					slide.dataset.index = String(i);
 					const img = document.createElement('img');
-					img.src = url;
-					img.alt = `${item.id} slide ${i + 1}`;
-					img.loading = 'lazy';
+					mountAuthImg(img, url, `${item.id} slide ${i + 1}`);
 					const figcap = document.createElement('figcaption');
 					figcap.textContent = item.slides?.[i] || `Slide ${i + 1}`;
-					fig.append(img, figcap);
-					strip.appendChild(fig);
+					slide.append(img, figcap);
+					track.appendChild(slide);
 				});
+				if (!urls.length) {
+					const empty = document.createElement('figure');
+					empty.className = 'carousel-slide media-broken';
+					empty.textContent = 'No slides';
+					track.appendChild(empty);
+				}
+
+				const chrome = document.createElement('div');
+				chrome.className = 'carousel-chrome';
+				const prev = document.createElement('button');
+				prev.type = 'button';
+				prev.className = 'btn carousel-nav';
+				prev.textContent = 'Prev';
+				prev.setAttribute('aria-label', 'Previous slide');
+				const counter = document.createElement('span');
+				counter.className = 'carousel-counter';
+				counter.textContent = `1/${total}`;
+				const next = document.createElement('button');
+				next.type = 'button';
+				next.className = 'btn carousel-nav';
+				next.textContent = 'Next';
+				next.setAttribute('aria-label', 'Next slide');
+				const dots = document.createElement('div');
+				dots.className = 'carousel-dots';
+				for (let i = 0; i < total; i++) {
+					const dot = document.createElement('button');
+					dot.type = 'button';
+					dot.className = 'carousel-dot' + (i === 0 ? ' is-active' : '');
+					dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+					dot.dataset.goto = String(i);
+					dots.appendChild(dot);
+				}
+				chrome.append(prev, counter, next, dots);
+
+				let index = 0;
+				const sync = () => {
+					const width = viewer.clientWidth || 1;
+					track.style.transform = `translateX(${-index * width}px)`;
+					counter.textContent = `${index + 1}/${total}`;
+					dots.querySelectorAll('.carousel-dot').forEach((d, i) => {
+						d.classList.toggle('is-active', i === index);
+					});
+					prev.disabled = index <= 0;
+					next.disabled = index >= total - 1;
+				};
+				const go = (i: number) => {
+					index = Math.max(0, Math.min(total - 1, i));
+					sync();
+				};
+
+				prev.addEventListener('click', () => go(index - 1));
+				next.addEventListener('click', () => go(index + 1));
+				dots.addEventListener('click', (e) => {
+					const t = e.target as HTMLElement;
+					const btn = t.closest('[data-goto]') as HTMLElement | null;
+					if (btn?.dataset.goto != null) go(Number(btn.dataset.goto));
+				});
+
+				let startX = 0;
+				let startY = 0;
+				let dragging = false;
+				let axis: 'x' | 'y' | null = null;
+				const onDown = (x: number, y: number) => {
+					dragging = true;
+					axis = null;
+					startX = x;
+					startY = y;
+				};
+				const onMove = (x: number, y: number, ev?: Event) => {
+					if (!dragging) return;
+					const dx = x - startX;
+					const dy = y - startY;
+					if (!axis && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+						axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+					}
+					if (axis === 'x') {
+						ev?.preventDefault();
+						const width = viewer.clientWidth || 1;
+						track.style.transform = `translateX(${-index * width + dx}px)`;
+					}
+				};
+				const onUp = (x: number) => {
+					if (!dragging) return;
+					dragging = false;
+					if (axis === 'x') {
+						const dx = x - startX;
+						if (dx < -40) go(index + 1);
+						else if (dx > 40) go(index - 1);
+						else sync();
+					}
+					axis = null;
+				};
+
+				viewer.addEventListener(
+					'touchstart',
+					(e) => {
+						const t = e.touches[0];
+						if (t) onDown(t.clientX, t.clientY);
+					},
+					{ passive: true },
+				);
+				viewer.addEventListener(
+					'touchmove',
+					(e) => {
+						const t = e.touches[0];
+						if (t) onMove(t.clientX, t.clientY, e);
+					},
+					{ passive: false },
+				);
+				viewer.addEventListener('touchend', (e) => {
+					const t = e.changedTouches[0];
+					onUp(t ? t.clientX : startX);
+				});
+				viewer.addEventListener('mousedown', (e) => {
+					onDown(e.clientX, e.clientY);
+				});
+				window.addEventListener('mousemove', (e) => {
+					if (dragging) onMove(e.clientX, e.clientY, e);
+				});
+				window.addEventListener('mouseup', (e) => onUp(e.clientX));
+				viewer.addEventListener('keydown', (e) => {
+					if (e.key === 'ArrowLeft') go(index - 1);
+					if (e.key === 'ArrowRight') go(index + 1);
+				});
+
+				requestAnimationFrame(sync);
+				window.addEventListener('resize', sync, { passive: true });
+
+				viewer.append(track);
+				const frame = document.createElement('div');
+				frame.className = 'carousel-frame';
+				frame.append(viewer, chrome);
 
 				const cap = document.createElement('p');
 				cap.className = 'caption';
@@ -321,7 +541,7 @@ const fixtureBoot = {
 					actionBtn('Reject', 'reject', item.id, item.status === 'rejected' || item.status === 'posted'),
 				);
 
-				card.append(head, strip, cap, actions);
+				card.append(head, frame, cap, actions);
 				return card;
 			}
 
@@ -351,10 +571,14 @@ const fixtureBoot = {
 					render();
 					return;
 				}
-				const { res, data } = await api(`/days/${currentDate}`, {
+				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}`, {
 					method: 'PATCH',
 					body: JSON.stringify({ id, status }),
 				});
+				if (data?.bindingsRequired) {
+					showBindingsRequired(data.message);
+					return;
+				}
 				if (!res.ok) {
 					setBanner(data?.error || 'Status update failed', 'warn');
 					return;
@@ -379,10 +603,14 @@ const fixtureBoot = {
 				}
 				const body: any = { action };
 				if (action === 'reject_selected') body.ids = [...selected];
-				const { res, data } = await api(`/days/${currentDate}/bulk`, {
+				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}/bulk`, {
 					method: 'POST',
 					body: JSON.stringify(body),
 				});
+				if (data?.bindingsRequired) {
+					showBindingsRequired(data.message);
+					return;
+				}
 				if (!res.ok) {
 					setBanner(data?.error || 'Bulk update failed', 'warn');
 					return;
@@ -396,13 +624,19 @@ const fixtureBoot = {
 				if (!day) return;
 				if (mode === 'fixture') {
 					setBanner(
-						'Synced — ask agent to post (fixture mode; no Zernio on this page).',
-						'ok',
+						'FIXTURE only — no Zernio publish. Open /admin/social (no query) for the live queue.',
+						'fixture',
 					);
 					return;
 				}
 				setStatus('Posting approved…');
-				const { res, data } = await api(`/days/${currentDate}/post`, { method: 'POST' });
+				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}/post`, {
+					method: 'POST',
+				});
+				if (data?.bindingsRequired) {
+					showBindingsRequired(data.message);
+					return;
+				}
 				if (!res.ok) {
 					setBanner(data?.error || 'Post failed', 'warn');
 					return;
@@ -420,12 +654,19 @@ const fixtureBoot = {
 			async function loadDays() {
 				if (mode === 'fixture') {
 					days = day ? [summarize(day)] : structuredClone(boot.days);
-					return;
+					return true;
 				}
 				const { res, data } = await api('/days');
+				if (data?.bindingsRequired || res.status === 503) {
+					showBindingsRequired(data?.message);
+					return false;
+				}
 				if (!res.ok) throw new Error(data?.error || 'days failed');
 				days = data.days || [];
-				if (data.fixture) mode = 'fixture';
+				bindingsOk = data.bindingsOk !== false;
+				// Never flip live → fixture from API; fixture is opt-in only.
+				if (data.fixture === true && forceFixture) mode = 'fixture';
+				return true;
 			}
 
 			async function loadDay(date: string) {
@@ -437,13 +678,59 @@ const fixtureBoot = {
 					render();
 					return;
 				}
-				const { res, data } = await api(`/days/${date}`);
+				const { res, data } = await api(`/days/${encodeURIComponent(date)}`);
+				if (data?.bindingsRequired) {
+					showBindingsRequired(data.message);
+					return;
+				}
 				if (!res.ok) {
 					setBanner(data?.error || 'Could not load day', 'warn');
 					return;
 				}
 				day = data.day;
 				render();
+			}
+
+			function applyDeskBanner() {
+				if (mode === 'fixture') {
+					setBanner(
+						'FIXTURE MODE (?fixture=1 or ADMIN_SOCIAL_FIXTURE=1) — sample queue only. Hard-refresh /admin/social with no query to load live KV/R2.',
+						'fixture',
+					);
+					return;
+				}
+				setBanner(
+					zernio
+						? 'LIVE queue · Zernio key present — Post approved publishes to @theyehbro.'
+						: 'LIVE queue · No ZERNIO_API_KEY — Post approved marks sync and asks the agent to post.',
+					'info',
+				);
+			}
+
+			async function enterDesk() {
+				show('desk');
+				applyDeskBanner();
+				const ok = await loadDays();
+				if (!ok) return;
+				if (!days.length) {
+					day = null;
+					els.singles.innerHTML = '';
+					els.carousels.innerHTML = '';
+					els.singlesEmpty.hidden = false;
+					els.carouselsEmpty.hidden = false;
+					els.topMeta.hidden = false;
+					els.topMeta.textContent = mode === 'fixture' ? 'FIXTURE · empty' : 'LIVE · no synced days';
+					setBanner(
+						mode === 'fixture'
+							? 'Fixture day missing.'
+							: 'No days in KV yet. Run scripts/sync-ig-queue-to-cf.py then refresh.',
+						'warn',
+					);
+					setStatus('No days');
+					return;
+				}
+				currentDate = days.find((d) => d.date === currentDate)?.date || days[0]!.date;
+				await loadDay(currentDate);
 			}
 
 			async function bootLive() {
@@ -454,19 +741,30 @@ const fixtureBoot = {
 						return;
 					}
 					if (!res.ok) {
-						// Functions missing (static astro dev) → fixture
-						enterFixture('API unavailable — fixture mode.');
+						showApiError(
+							'Could not reach /admin/social/api/session. Confirm the Worker script is deployed (not assets-only), then retry. Fixture is opt-in only via ?fixture=1.',
+						);
 						return;
 					}
 					zernio = Boolean(data.zernio);
-					if (data.fixture) mode = 'fixture';
+					bindingsOk = Boolean(data.bindingsOk);
+					// Explicit server fixture flag only — never silent client fixture.
+					if (data.fixture === true) {
+						mode = 'fixture';
+					}
 					if (!data.ok) {
 						show('login');
 						return;
 					}
+					if (data.bindingsRequired && mode !== 'fixture') {
+						showBindingsRequired(data.message);
+						return;
+					}
 					await enterDesk();
 				} catch {
-					enterFixture('Could not reach API — fixture mode.');
+					showApiError(
+						'Network error reaching the admin API. Check connectivity / Worker deploy. Live desk will not silently show fixture data.',
+					);
 				}
 			}
 
@@ -476,46 +774,37 @@ const fixtureBoot = {
 				days = [summarize(day)];
 				currentDate = day.date;
 				show('desk');
-				setBanner(message, 'info');
+				setBanner(message, 'fixture');
 				render();
-			}
-
-			async function enterDesk() {
-				show('desk');
-				setBanner(
-					zernio
-						? 'Zernio key present — Post approved will publish to @theyehbro.'
-						: 'No ZERNIO_API_KEY on Pages — Post approved marks sync and asks the agent to post.',
-					'info',
-				);
-				await loadDays();
-				if (!days.length && mode === 'fixture') {
-					enterFixture('Fixture day loaded.');
-					return;
-				}
-				currentDate = days[0]?.date || boot.date;
-				await loadDay(currentDate);
 			}
 
 			els.loginForm.addEventListener('submit', async (e) => {
 				e.preventDefault();
 				els.loginError.hidden = true;
 				const password = (document.getElementById('password') as HTMLInputElement).value;
-				if (mode === 'fixture' && forceFixture) {
-					enterFixture('Fixture mode (no password check).');
+				if (forceFixture) {
+					enterFixture('FIXTURE MODE (?fixture=1) — sample queue for local demo. Not live KV/R2.');
 					return;
 				}
 				const { res, data } = await api('/login', {
 					method: 'POST',
 					body: JSON.stringify({ password }),
 				});
-				if (res.status === 503) {
+				if (res.status === 503 && data?.setupRequired) {
 					show('setup');
 					return;
 				}
 				if (!res.ok) {
 					els.loginError.hidden = false;
 					els.loginError.textContent = data?.error || 'Login failed';
+					return;
+				}
+				const session = await api('/session');
+				zernio = Boolean(session.data?.zernio);
+				bindingsOk = Boolean(session.data?.bindingsOk);
+				if (session.data?.fixture) mode = 'fixture';
+				if (session.data?.bindingsRequired && mode !== 'fixture') {
+					showBindingsRequired(session.data.message);
 					return;
 				}
 				await enterDesk();
@@ -539,13 +828,14 @@ const fixtureBoot = {
 				void postApproved();
 			});
 			document.getElementById('btn-logout')!.addEventListener('click', async () => {
-				if (mode === 'fixture') {
+				if (mode === 'fixture' && forceFixture) {
 					show('login');
 					setBanner(null);
 					return;
 				}
 				await api('/logout', { method: 'POST' });
 				show('login');
+				setBanner(null);
 			});
 
 			els.desk.addEventListener('click', (e) => {
@@ -566,8 +856,13 @@ const fixtureBoot = {
 				}
 			});
 
-			if (forceFixture) enterFixture('Fixture mode — sample queue for local demo.');
-			else void bootLive();
+			if (forceFixture) {
+				enterFixture(
+					'FIXTURE MODE (?fixture=1) — sample 7-item queue. Hard-refresh /admin/social with no query for live KV/R2.',
+				);
+			} else {
+				void bootLive();
+			}
 		</script>
 
 		<style>
@@ -744,10 +1039,19 @@ const fixtureBoot = {
 				border-left-color: var(--yb-teal);
 				background: rgba(46, 230, 166, 0.07);
 			}
-			.status-line {
+			.banner[data-kind='fixture'] {
+				border-left-color: #f0a020;
+				background: rgba(240, 160, 32, 0.1);
+				color: #ffe2b0;
+			}
+			.status-line,
+			.empty-line {
 				font-size: 0.85rem;
 				color: var(--yb-muted);
 				margin: 0.75rem 0 1.25rem;
+			}
+			.empty-line {
+				margin-top: 0;
 			}
 			.block {
 				margin-bottom: 2.5rem;
@@ -779,12 +1083,25 @@ const fixtureBoot = {
 					transform: none;
 				}
 			}
-			.item img {
+			.item > img,
+			.carousel-slide img {
 				width: 100%;
 				aspect-ratio: 4 / 5;
 				object-fit: cover;
 				background: var(--yb-surface);
 				border: 1px solid var(--yb-edge);
+			}
+			.media-pending {
+				opacity: 0.55;
+			}
+			.media-broken {
+				display: grid;
+				place-items: center;
+				min-height: 12rem;
+				color: var(--yb-muted);
+				border: 1px dashed var(--yb-edge);
+				background: var(--yb-surface);
+				font-size: 0.85rem;
 			}
 			.check {
 				display: inline-flex;
@@ -855,31 +1172,80 @@ const fixtureBoot = {
 				align-items: center;
 				gap: 0.75rem;
 			}
-			.slide-strip {
-				display: grid;
-				grid-auto-flow: column;
-				grid-auto-columns: minmax(9.5rem, 12rem);
-				gap: 0.65rem;
-				overflow-x: auto;
-				padding-bottom: 0.35rem;
-				scroll-snap-type: x mandatory;
+			.carousel-frame {
+				display: flex;
+				flex-direction: column;
+				gap: 0.55rem;
 			}
-			.slide-strip figure {
-				margin: 0;
-				scroll-snap-align: start;
-			}
-			.slide-strip img {
-				width: 100%;
-				aspect-ratio: 4 / 5;
-				object-fit: cover;
+			.carousel-viewer {
+				overflow: hidden;
+				touch-action: pan-y;
 				border: 1px solid var(--yb-edge);
 				background: var(--yb-surface);
+				outline: none;
 			}
-			.slide-strip figcaption {
-				font-size: 0.72rem;
+			.carousel-viewer:focus-visible {
+				outline: 2px solid var(--yb-lime);
+				outline-offset: 2px;
+			}
+			.carousel-track {
+				display: flex;
+				transition: transform 0.28s ease;
+				will-change: transform;
+			}
+			.carousel-slide {
+				margin: 0;
+				flex: 0 0 100%;
+				width: 100%;
+				min-width: 100%;
+			}
+			.carousel-slide figcaption {
+				font-size: 0.78rem;
 				color: var(--yb-muted);
-				margin-top: 0.35rem;
+				padding: 0.45rem 0.55rem 0.65rem;
 				line-height: 1.35;
+			}
+			.carousel-chrome {
+				display: grid;
+				grid-template-columns: auto 1fr auto;
+				grid-template-areas:
+					'prev counter next'
+					'dots dots dots';
+				gap: 0.45rem 0.55rem;
+				align-items: center;
+			}
+			.carousel-chrome .carousel-nav:first-of-type {
+				grid-area: prev;
+			}
+			.carousel-counter {
+				grid-area: counter;
+				text-align: center;
+				font-family: var(--font-display);
+				letter-spacing: 0.06em;
+				font-size: 0.9rem;
+			}
+			.carousel-chrome .carousel-nav:last-of-type {
+				grid-area: next;
+			}
+			.carousel-dots {
+				grid-area: dots;
+				display: flex;
+				justify-content: center;
+				flex-wrap: wrap;
+				gap: 0.35rem;
+			}
+			.carousel-dot {
+				width: 0.55rem;
+				height: 0.55rem;
+				padding: 0;
+				border-radius: 0;
+				border: 1px solid var(--yb-edge);
+				background: transparent;
+				cursor: pointer;
+			}
+			.carousel-dot.is-active {
+				background: var(--yb-lime);
+				border-color: var(--yb-lime);
 			}
 			.item.st-approved {
 				box-shadow: inset 3px 0 0 var(--yb-teal);
@@ -914,6 +1280,9 @@ const fixtureBoot = {
 				.day-picker select {
 					min-width: 0;
 					width: 100%;
+				}
+				.carousel-viewer {
+					max-width: 100%;
 				}
 			}
 		</style>
