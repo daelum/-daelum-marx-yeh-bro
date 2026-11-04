@@ -16,8 +16,8 @@ Private founder UI on **yehbro.com** for reviewing Holyfield-style singles + car
    - Type: **Secret**
    - Value: a strong password only you know (never paste into chat, git, or this doc)
 3. Create bindings (once):
-   - **KV** namespace → binding name **`IG_QUEUE`**
-   - **R2** bucket (e.g. `yehbro-ig-queue`) → binding name **`IG_MEDIA`**
+   - **KV** namespace (e.g. `yehbro-ig-queue`) → binding name **`IG_QUEUE`**
+   - **R2** bucket (e.g. `yehbro-ig-media`) → binding name **`IG_MEDIA`**
    - Update `wrangler.toml` placeholder IDs after creation (or bind in the dashboard)
 4. Optional: set secret **`ZERNIO_API_KEY`** (same key the agent uses) so **Post approved** can publish from the desk. If unset, the desk still marks the batch synced and tells you to ask the agent to post.
 5. Redeploy after secrets/bindings change (`npm run deploy` / Workers Builds).
@@ -72,8 +72,14 @@ python3 scripts/sync-ig-queue-to-cf.py \
 Wrapper: `scripts/sync-ig-queue-to-cf.sh`  
 Needs authenticated `wrangler` (or `CF_KV_NAMESPACE_ID` / `CF_R2_BUCKET` env — never commit values).
 
-KV keys: `day:YYYY-MM-DD`, `index:days`  
-R2 keys: `YYYY-MM-DD/01.png`, `YYYY-MM-DD/c01-1.png`, …
+Typical bindings (names may vary by account; resolve via dashboard/API if placeholders):
+- KV namespace title ≈ `yehbro-ig-queue` → binding **`IG_QUEUE`**
+- R2 bucket ≈ `yehbro-ig-media` → binding **`IG_MEDIA`**
+
+Day folders are usually `YYYY-MM-DD`. Intro/packs may use a slug folder (e.g. `intro-yeh-bro`) or `--day-key intro-yeh-bro`.
+
+KV keys: `day:{dayKey}`, `index:days`  
+R2 keys: `{dayKey}/01.png`, `{dayKey}/c01-1.png`, …
 
 ---
 

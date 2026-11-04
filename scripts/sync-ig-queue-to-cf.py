@@ -8,12 +8,18 @@ Reads Project-store (or any) day folder with manifest.md + PNGs, writes:
 Usage:
   python3 scripts/sync-ig-queue-to-cf.py \\
     --day-dir /path/to/instagram-tweet-queue/2026-11-05 \\
-    [--dry-run] [--wrangler]
+    [--day-key intro-yeh-bro] [--dry-run] [--wrangler]
+
+Day key defaults to the folder name. Calendar folders use `YYYY-MM-DD`;
+intro/packs may use a slug like `intro-yeh-bro` via folder name or `--day-key`.
 
 Requires either:
   - `wrangler` CLI authenticated to the Yeh Bro Pages/account, or
   - env CF_ACCOUNT_ID + CF_API_TOKEN + CF_KV_NAMESPACE_ID + CF_R2_BUCKET
     (prefer wrangler path; do not paste tokens into chat/docs)
+
+Bindings: KV `IG_QUEUE` (namespace often named yehbro-ig-queue),
+R2 `IG_MEDIA` (bucket often named yehbro-ig-media).
 
 Never prints secret values.
 """
@@ -24,6 +30,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -41,6 +48,8 @@ CAROUSEL_FILES_RE = re.compile(r"^\-\s+\*\*Files:\*\*\s*(.+)$")
 CAROUSEL_CAPTION_RE = re.compile(r"^\-\s+\*\*Caption:\*\*\s*(.+)$")
 CAROUSEL_SLIDE_RE = re.compile(r"^\s+\d+\.\s+(.+)$")
 FILE_TICK_RE = re.compile(r"`([^`]+)`")
+# Match functions/admin/social/_lib/types.ts DAY_KEY_RE
+DAY_KEY_RE = re.compile(r"^(?:\d{4}-\d{2}-\d{2}|[a-z][a-z0-9-]{1,62})$")
 
 
 def parse_manifest(text: str, date: str) -> dict:
@@ -105,6 +114,14 @@ def parse_manifest(text: str, date: str) -> dict:
     }
 
 
+def wrangler_cmd(*args: str) -> list[str]:
+    """Prefer a local `wrangler` binary; fall back to `npx wrangler`."""
+    binary = shutil.which("wrangler")
+    if binary:
+        return [binary, *args]
+    return ["npx", "--yes", "wrangler", *args]
+
+
 def run(cmd: list[str], dry_run: bool) -> None:
     print("+", " ".join(cmd))
     if dry_run:
@@ -114,7 +131,7 @@ def run(cmd: list[str], dry_run: bool) -> None:
 
 def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) -> None:
     """Upload via `wrangler r2 object put` + `wrangler kv key put`."""
-    bucket = os.environ.get("CF_R2_BUCKET", "yehbro-ig-queue")
+    bucket = os.environ.get("CF_R2_BUCKET", "yehbro-ig-media")
     kv_binding_hint = os.environ.get("CF_KV_NAMESPACE_ID", "")
 
     for item in manifest["items"]:
@@ -124,8 +141,7 @@ def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) 
                 raise SystemExit(f"Missing media file: {src}")
             key = f"{date}/{file}"
             run(
-                [
-                    "wrangler",
+                wrangler_cmd(
                     "r2",
                     "object",
                     "put",
@@ -134,7 +150,8 @@ def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) 
                     str(src),
                     "--content-type",
                     "image/png",
-                ],
+                    "--remote",
+                ),
                 dry_run,
             )
 
@@ -142,15 +159,15 @@ def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) 
         json.dump(manifest, tmp, indent=2)
         tmp_path = tmp.name
     try:
-        kv_cmd = [
-            "wrangler",
+        kv_cmd = wrangler_cmd(
             "kv",
             "key",
             "put",
             f"day:{date}",
             "--path",
             tmp_path,
-        ]
+            "--remote",
+        )
         if kv_binding_hint:
             kv_cmd.extend(["--namespace-id", kv_binding_hint])
         else:
@@ -158,13 +175,13 @@ def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) 
         run(kv_cmd, dry_run)
 
         # Merge index
-        index_cmd_get = [
-            "wrangler",
+        index_cmd_get = wrangler_cmd(
             "kv",
             "key",
             "get",
             "index:days",
-        ]
+            "--remote",
+        )
         if kv_binding_hint:
             index_cmd_get.extend(["--namespace-id", kv_binding_hint])
         else:
@@ -186,15 +203,15 @@ def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) 
             json.dump(index, idx)
             idx_path = idx.name
         try:
-            put_idx = [
-                "wrangler",
+            put_idx = wrangler_cmd(
                 "kv",
                 "key",
                 "put",
                 "index:days",
                 "--path",
                 idx_path,
-            ]
+                "--remote",
+            )
             if kv_binding_hint:
                 put_idx.extend(["--namespace-id", kv_binding_hint])
             else:
@@ -212,7 +229,13 @@ def main() -> int:
         "--day-dir",
         required=True,
         type=Path,
-        help="Path to YYYY-MM-DD folder with manifest.md + PNGs",
+        help="Path to day folder with manifest.md + PNGs (YYYY-MM-DD or slug)",
+    )
+    ap.add_argument(
+        "--day-key",
+        type=str,
+        default="",
+        help="KV/R2 day key override (default: folder name). Slugs like intro-yeh-bro OK.",
     )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
@@ -237,9 +260,13 @@ def main() -> int:
         print(f"Missing manifest.md in {day_dir}", file=sys.stderr)
         return 1
 
-    date = day_dir.name
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
-        print("day-dir folder name must be YYYY-MM-DD", file=sys.stderr)
+    date = (args.day_key or day_dir.name).strip()
+    if not DAY_KEY_RE.fullmatch(date):
+        print(
+            "day key must be YYYY-MM-DD or a slug like intro-yeh-bro "
+            f"(got {date!r})",
+            file=sys.stderr,
+        )
         return 1
 
     manifest = parse_manifest(manifest_path.read_text(encoding="utf-8"), date)

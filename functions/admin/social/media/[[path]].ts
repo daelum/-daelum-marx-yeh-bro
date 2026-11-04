@@ -1,7 +1,7 @@
 import { fixtureMode, passwordConfigured, verifySession } from '../_lib/auth';
 import { fixtureSvg } from '../_lib/fixtures';
 import { notFound, setupRequired, unauthorized } from '../_lib/responses';
-import { mediaKey, type Env } from '../_lib/types';
+import { DAY_KEY_RE, mediaKey, type Env } from '../_lib/types';
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
 	const { request, env, params } = context;
@@ -17,7 +17,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 	if (parts.length < 2) return notFound('Bad media path');
 	const date = parts[0]!;
 	const file = parts.slice(1).join('/');
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return notFound('Bad date');
+	if (!DAY_KEY_RE.test(date)) return notFound('Bad date');
 	if (file.includes('..') || file.startsWith('/')) return notFound('Bad file');
 
 	if (fixtureMode(env)) {

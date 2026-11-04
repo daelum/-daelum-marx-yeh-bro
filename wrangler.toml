@@ -11,8 +11,8 @@
 #
 # Bindings (add in dashboard after deploy unlocks Settings → Bindings — do not
 # commit real account resource IDs here unless the team chooses to):
-#   IG_QUEUE  → KV namespace
-#   IG_MEDIA  → R2 bucket (e.g. yehbro-ig-queue)
+#   IG_QUEUE  → KV namespace (e.g. title yehbro-ig-queue)
+#   IG_MEDIA  → R2 bucket (e.g. yehbro-ig-media)
 
 name = "yeh-bro"
 compatibility_date = "2025-10-01"

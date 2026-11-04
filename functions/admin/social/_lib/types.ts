@@ -52,5 +52,7 @@ export const ZERNIO_ACCOUNT_ID = '6aeb1fe121bff1684d110b8e';
 export const ZERNIO_ACCOUNT_HANDLE = 'theyehbro';
 export const ZERNIO_API_BASE = 'https://zernio.com/api/v1';
 export const INDEX_KEY = 'index:days';
+/** Calendar days (`YYYY-MM-DD`) or slug packs (`intro-yeh-bro`). */
+export const DAY_KEY_RE = /^(?:\d{4}-\d{2}-\d{2}|[a-z][a-z0-9-]{1,62})$/;
 export const dayKey = (date: string) => `day:${date}`;
 export const mediaKey = (date: string, file: string) => `${date}/${file}`;

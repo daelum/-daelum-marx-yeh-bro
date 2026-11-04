@@ -1,9 +1,8 @@
 import { passwordConfigured, verifySession } from '../../../_lib/auth';
 import { badRequest, json, notFound, setupRequired, unauthorized } from '../../../_lib/responses';
 import { enrichDay, readDay, setItemStatus } from '../../../_lib/store';
-import type { Env, ItemStatus } from '../../../_lib/types';
+import { DAY_KEY_RE, type Env, type ItemStatus } from '../../../_lib/types';
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const STATUSES = new Set<ItemStatus>(['pending', 'approved', 'rejected', 'posted', 'failed']);
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
@@ -12,7 +11,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 	if (!(await verifySession(request, env))) return unauthorized();
 
 	const date = String(params.date || '');
-	if (!DATE_RE.test(date)) return badRequest('Invalid date');
+	if (!DAY_KEY_RE.test(date)) return badRequest('Invalid date');
 
 	const day = await readDay(env, date);
 	if (!day) return notFound('Day not found');
@@ -25,7 +24,7 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
 	if (!(await verifySession(request, env))) return unauthorized();
 
 	const date = String(params.date || '');
-	if (!DATE_RE.test(date)) return badRequest('Invalid date');
+	if (!DAY_KEY_RE.test(date)) return badRequest('Invalid date');
 
 	let body: { id?: string; status?: string } = {};
 	try {
