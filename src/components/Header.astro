@@ -1,12 +1,12 @@
 ---
+import BrandLogo from './BrandLogo.astro';
 import HeaderLink from './HeaderLink.astro';
 ---
 
 <header class="site-header">
 	<nav class="wrap nav" aria-label="Primary">
-		<a class="brand" href="/">
-			<span class="brand-mark" aria-hidden="true">YB</span>
-			<span class="brand-word">YEH BRO</span>
+		<a class="brand" href="/" aria-label="Yeh Bro home">
+			<BrandLogo size="nav" decorative />
 		</a>
 		<button
 			type="button"
@@ -19,10 +19,10 @@ import HeaderLink from './HeaderLink.astro';
 			<span class="nav-toggle-bars" aria-hidden="true"></span>
 		</button>
 		<div class="nav-menu" id="nav-menu">
-			<HeaderLink href="/start-here">Start Here System</HeaderLink>
-			<HeaderLink href="/food-os">Food OS</HeaderLink>
+			<HeaderLink href="/start-here">Yeh Bro System</HeaderLink>
+			<HeaderLink href="/food-bro">Food Bro</HeaderLink>
+			<HeaderLink href="/food">Food hub</HeaderLink>
 			<HeaderLink href="/blog">Guides</HeaderLink>
-			<HeaderLink href="/blog/ped-harm-reduction-australia">PED guide</HeaderLink>
 			<HeaderLink href="/about">About</HeaderLink>
 		</div>
 	</nav>
@@ -43,54 +43,39 @@ import HeaderLink from './HeaderLink.astro';
 		position: sticky;
 		top: 0;
 		z-index: 40;
-		backdrop-filter: blur(10px);
-		background: rgba(18, 18, 18, 0.85);
-		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
+		backdrop-filter: blur(12px);
+		background: rgba(10, 10, 10, 0.88);
+		border-bottom: 1px solid var(--yb-edge);
 	}
 	.nav {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		min-height: 4rem;
+		min-height: 4.25rem;
 		gap: 1rem;
 	}
 	.brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.65rem;
 		text-decoration: none;
 		color: var(--yb-offwhite);
+		opacity: 0.96;
+		transition: opacity 0.2s ease;
 	}
 	.brand:hover {
 		color: var(--yb-offwhite);
-	}
-	.brand-mark {
-		display: inline-grid;
-		place-items: center;
-		width: 2rem;
-		height: 2rem;
-		background: var(--yb-lime);
-		color: var(--yb-charcoal);
-		font-family: var(--font-display);
-		font-size: 0.85rem;
-		letter-spacing: 0.02em;
-	}
-	.brand-word {
-		font-family: var(--font-display);
-		font-size: 1.05rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		opacity: 1;
 	}
 	.nav-menu {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: 0.15rem;
 	}
 	.nav-menu :global(a) {
 		color: rgba(242, 242, 240, 0.82);
 		text-decoration: none;
-		padding: 0.55rem 0.7rem;
-		font-size: 0.92rem;
+		padding: 0.55rem 0.65rem;
+		font-size: 0.9rem;
 		font-weight: 600;
 	}
 	.nav-menu :global(a:hover),
@@ -105,6 +90,7 @@ import HeaderLink from './HeaderLink.astro';
 		height: 2.5rem;
 		padding: 0;
 		cursor: pointer;
+		border-radius: 2px;
 	}
 	.nav-toggle-bars,
 	.nav-toggle-bars::before,
@@ -125,7 +111,7 @@ import HeaderLink from './HeaderLink.astro';
 		position: absolute;
 		top: 5px;
 	}
-	@media (max-width: 760px) {
+	@media (max-width: 820px) {
 		.nav-toggle {
 			display: inline-grid;
 			place-items: center;
@@ -133,13 +119,13 @@ import HeaderLink from './HeaderLink.astro';
 		.nav-menu {
 			display: none;
 			position: absolute;
-			top: 4rem;
+			top: 4.25rem;
 			left: 0;
 			right: 0;
 			flex-direction: column;
 			align-items: stretch;
 			background: var(--yb-surface);
-			border-bottom: 1px solid rgba(242, 242, 240, 0.1);
+			border-bottom: 1px solid var(--yb-edge);
 			padding: 0.5rem 1rem 1rem;
 		}
 		.nav-menu.is-open {

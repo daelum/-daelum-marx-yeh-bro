@@ -10,6 +10,7 @@ interface Props {
 	noindex?: boolean;
 	ogType?: 'website' | 'article';
 	canonicalPath?: string;
+	ogImage?: string;
 	jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
@@ -20,6 +21,7 @@ const {
 	noindex = false,
 	ogType = 'website',
 	canonicalPath,
+	ogImage,
 	jsonLd,
 } = Astro.props;
 ---
@@ -33,6 +35,7 @@ const {
 			noindex={noindex}
 			ogType={ogType}
 			canonicalPath={canonicalPath}
+			image={ogImage}
 			jsonLd={jsonLd}
 		/>
 	</head>

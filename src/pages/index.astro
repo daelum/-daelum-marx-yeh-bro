@@ -1,6 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BrandLogo from '../components/BrandLogo.astro';
+import FreeOffer from '../components/FreeOffer.astro';
 import { SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE, SITE_TITLE_HOME, SITE_URL } from '../consts';
+import { SYSTEM_PHASES } from '../data/start-here-system';
+import { FOOD_HREF, FOOD_NAME, SYSTEM_HREF, SYSTEM_NAME } from '../data/products';
 
 const homeLd = [
 	{
@@ -18,7 +22,7 @@ const homeLd = [
 		name: SITE_TITLE,
 		url: SITE_URL,
 		description: SITE_DESCRIPTION,
-		logo: new URL('/favicon.svg', SITE_URL).href,
+		logo: new URL('/brand/yehbro-logo.jpg', SITE_URL).href,
 	},
 ];
 ---
@@ -29,79 +33,72 @@ const homeLd = [
 	fullBleed
 	canonicalPath="/"
 	jsonLd={homeLd}
+	ogImage="/brand/og-yehbro.jpg"
 >
 	<section class="hero">
-		<div class="hero-grid" aria-hidden="true"></div>
+		<div class="hero-atmosphere" aria-hidden="true"></div>
 		<div class="wrap hero-inner">
-			<p class="eyebrow anim-rise">Training · Food · Recovery</p>
-			<h1 class="anim-rise">
-				<span class="brand-hero">YEH BRO</span>
+			<h1 class="hero-brand anim-rise">
+				<span class="sr-only">Yeh Bro</span>
+				<BrandLogo size="hero" decorative />
 			</h1>
+			<div class="anim-rise-delay">
+				<FreeOffer variant="hero" />
+			</div>
 			<p class="hero-line anim-rise-delay">{SITE_TAGLINE}</p>
 			<p class="lede anim-rise-delay">
-				A clear path for getting into the best shape of your life — training that sticks, food that
-				makes sense, sleep that actually recovers you. Free coach-grade system on the site.
+				{SYSTEM_NAME} plus {FOOD_NAME} — training that sticks, calories that match the goal, weekly
+				checklists you’d usually pay a coach for.
 			</p>
 			<div class="cta-row anim-rise-delay-2">
-				<a class="btn btn-primary" href="/start-here">Start Here System</a>
-				<a class="btn btn-secondary" href="/food-os">Food OS</a>
+				<a class="btn btn-primary" href={SYSTEM_HREF}>{SYSTEM_NAME}</a>
+				<a class="btn btn-secondary" href={FOOD_HREF}>{FOOD_NAME}</a>
 			</div>
 		</div>
 	</section>
 
 	<section class="section wrap">
 		<p class="eyebrow">The path</p>
-		<h2>Six steps. No circus.</h2>
+		<h2>Five phases. One job each.</h2>
 		<p class="lede lane-lede">
-			Most people don’t need a new program every Monday. They need honesty about where they are,
-			a simple lift plan, enough protein, and sleep that isn’t optional. Here’s how I’d walk someone
-			through it.
+			Most people don’t need a new program every Monday. They need a repeatable week, progressive
+			overload on a simple split, protein first, and sleep that isn’t optional. Here’s the natural
+			path.
 		</p>
-		<ol class="home-steps">
-			<li>
-				<strong>Mindset</strong>
-				<span class="muted"> — where you’re starting, without cosplay timelines</span>
-			</li>
-			<li>
-				<strong>Training</strong>
-				<span class="muted"> — consistency + progressive overload on a simple split</span>
-			</li>
-			<li>
-				<strong>Food</strong>
-				<span class="muted"> — protein first; deficit or surplus when you’re ready</span>
-			</li>
-			<li>
-				<strong>Sleep / recovery</strong>
-				<span class="muted"> — the boring lever that pays the most</span>
-			</li>
-			<li>
-				<strong>Supplements that matter</strong>
-				<span class="muted"> — creatine, protein powder if food is awkward</span>
-			</li>
-			<li>
-				<strong>Optional deeper</strong>
-				<span class="muted"> — culture / PED literacy when you’re ready, not day one</span>
-			</li>
+		<ol class="home-phases">
+			{
+				SYSTEM_PHASES.map((phase) => (
+					<li>
+						<a href={phase.href}>
+							<span class="phase-kicker">
+								{String(phase.number).padStart(2, '0')} · {phase.weeks}
+							</span>
+							<strong>{phase.name}</strong>
+							<span class="muted"> — {phase.job}</span>
+						</a>
+					</li>
+				))
+			}
 		</ol>
 		<div class="cta-row">
-			<a class="btn btn-primary" href="/start-here">Open Start Here System</a>
-			<a class="btn btn-secondary" href="/about">About Yeh Bro</a>
+			<a class="btn btn-primary" href="/start-here">Open Yeh Bro System</a>
+			<a class="btn btn-secondary" href="/start-here/training">Training templates</a>
 		</div>
 	</section>
 
 	<section class="section wrap">
-		<p class="eyebrow">Guides when you need them</p>
-		<h2>Read after you start</h2>
+		<p class="eyebrow">Tools + depth</p>
+		<h2>Use the system. Read when stuck.</h2>
 		<ul class="guide-links">
 			<li>
 				<a href="/start-here">
-					Start Here System
-					<span>Phased natural playbook — training templates, weekly checklists, Food OS.</span>
+					Yeh Bro System
+					<span>Five phases — foundation through recovery, with tools wired in.</span>
 				</a>
 			</li>
 			<li>
-				<a href="/food-os">
-					Food OS
+				<a href="/food-bro">
+					Food Bro
 					<span>Cut / maintain / lean bulk calories + macros — sticky in your browser.</span>
 				</a>
 			</li>
@@ -109,6 +106,18 @@ const homeLd = [
 				<a href="/start-here/training">
 					Training templates
 					<span>Full body 3× and Upper/Lower 4× with progression rules.</span>
+				</a>
+			</li>
+			<li>
+				<a href="/start-here/weekly">
+					Weekly checklist
+					<span>Sessions, steps, sleep, weigh-ins — check off in the browser.</span>
+				</a>
+			</li>
+			<li>
+				<a href="/food">
+					Food hub
+					<span>Protein, cutting, and lean bulk guides around the calculator.</span>
 				</a>
 			</li>
 			<li>
@@ -130,15 +139,9 @@ const homeLd = [
 				</a>
 			</li>
 			<li>
-				<a href="/blog/bodybuilding-blueprint">
-					Bodybuilding blueprint
-					<span>Cut → health pivot → lean bulk once the basics are locked.</span>
-				</a>
-			</li>
-			<li>
 				<a href="/blog/ped-harm-reduction-australia">
 					PED culture guide
-					<span>Optional later — risks, bloodwork, legality. Not step one.</span>
+					<span>Optional later — performance-enhancing drug risks, bloodwork, legality. Not step one.</span>
 				</a>
 			</li>
 			<li>
@@ -152,14 +155,14 @@ const homeLd = [
 
 	<section class="section-tight wrap email-block">
 		<p class="eyebrow">New here?</p>
-		<h2>Don’t overthink the first week.</h2>
+		<h2>Don’t overthink week one.</h2>
 		<p class="lede">
-			Show up, lift with a plan, eat enough protein, sleep. The rest of the site is there when you
-			want depth — not when you’re still learning the bar path.
+			Open the system, book your sessions, set Food Bro, protect sleep. Depth is here when you need
+			it — not when you’re still learning the bar path.
 		</p>
 		<div class="cta-row">
 			<a class="btn btn-primary" href="/start-here">Get the system</a>
-			<a class="btn btn-secondary" href="/food-os">Set up Food OS</a>
+			<a class="btn btn-secondary" href="/food-bro">Set up Food Bro</a>
 		</div>
 	</section>
 </BaseLayout>
@@ -167,83 +170,105 @@ const homeLd = [
 <style>
 	.hero {
 		position: relative;
-		min-height: min(92vh, 820px);
+		min-height: min(88vh, 780px);
 		display: flex;
-		align-items: flex-end;
-		padding: 6rem 0 4.5rem;
+		align-items: center;
+		padding: 5.5rem 0 3.5rem;
 		overflow: hidden;
-		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
+		border-bottom: 1px solid var(--yb-edge);
 	}
-	.hero-grid {
+	.hero-atmosphere {
 		position: absolute;
 		inset: 0;
 		background:
-			linear-gradient(120deg, rgba(18, 18, 18, 0.15), rgba(18, 18, 18, 0.88)),
+			radial-gradient(ellipse 55% 60% at 72% 42%, rgba(200, 241, 53, 0.1), transparent 62%),
+			radial-gradient(ellipse 40% 45% at 18% 78%, rgba(46, 230, 166, 0.07), transparent 58%),
+			linear-gradient(115deg, rgba(10, 10, 10, 0.2), rgba(10, 10, 10, 0.92)),
 			repeating-linear-gradient(
 				90deg,
-				rgba(242, 242, 240, 0.03) 0,
-				rgba(242, 242, 240, 0.03) 1px,
+				rgba(242, 242, 240, 0.028) 0,
+				rgba(242, 242, 240, 0.028) 1px,
 				transparent 1px,
-				transparent 72px
+				transparent 76px
 			),
 			repeating-linear-gradient(
 				0deg,
-				rgba(242, 242, 240, 0.03) 0,
-				rgba(242, 242, 240, 0.03) 1px,
+				rgba(242, 242, 240, 0.028) 0,
+				rgba(242, 242, 240, 0.028) 1px,
 				transparent 1px,
-				transparent 72px
+				transparent 76px
 			),
-			radial-gradient(ellipse 75% 55% at 78% 35%, rgba(200, 241, 53, 0.18), transparent 58%),
-			radial-gradient(ellipse 50% 45% at 15% 70%, rgba(46, 230, 166, 0.1), transparent 55%);
+			var(--noise);
 		pointer-events: none;
-		animation: hero-atmosphere 14s ease-in-out infinite alternate;
+		animation: hero-atmosphere 16s ease-in-out infinite alternate;
 	}
 	.hero-inner {
 		position: relative;
 		z-index: 1;
-		padding-bottom: 1rem;
+		padding-bottom: 0.5rem;
 	}
-	.brand-hero {
-		display: inline-block;
-		position: relative;
+	.hero-brand {
+		margin: 0 0 1.1rem;
+		line-height: 0;
 	}
-	.brand-hero::after {
-		content: '';
-		display: block;
-		height: 6px;
-		width: 100%;
-		margin-top: 0.35rem;
-		background: var(--yb-lime);
-		transform-origin: left;
-		animation: underline-grow 0.8s ease 0.35s both;
+	.hero-brand :global(.brand-logo--hero) {
+		animation: logo-settle 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 	}
 	.hero-line {
 		font-family: var(--font-display);
-		font-size: clamp(1.35rem, 3vw, 1.9rem);
+		font-size: clamp(1.35rem, 3.2vw, 2rem);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: var(--yb-teal);
-		margin: 0.75rem 0 1rem;
+		color: var(--yb-offwhite);
+		margin: 0 0 0.85rem;
+		max-width: 22ch;
 	}
 	.lane-lede {
 		max-width: 40rem;
 		margin-bottom: 1.75rem;
 	}
-	.home-steps {
+	.home-phases {
+		list-style: none;
 		margin: 0 0 2rem;
-		padding-left: 1.35rem;
-		max-width: 40rem;
+		padding: 0;
+		max-width: 42rem;
 		display: grid;
-		gap: 0.85rem;
-		font-size: 1.05rem;
-		line-height: 1.45;
+		gap: 0.15rem;
 	}
-	.home-steps li strong {
+	.home-phases li {
+		margin: 0;
+	}
+	.home-phases a {
+		display: block;
+		padding: 0.95rem 0;
+		border-bottom: 1px solid var(--yb-edge);
+		text-decoration: none;
 		color: var(--yb-offwhite);
+		transition: color 0.2s ease, padding-left 0.2s ease;
+	}
+	.home-phases a:hover {
+		color: var(--yb-lime);
+		padding-left: 0.35rem;
+	}
+	.phase-kicker {
+		display: block;
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+		margin-bottom: 0.2rem;
+	}
+	.home-phases strong {
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		font-weight: 400;
 	}
 	.email-block {
-		border-top: 1px solid rgba(242, 242, 240, 0.1);
-		border-bottom: 1px solid rgba(242, 242, 240, 0.1);
+		border-top: 1px solid var(--yb-edge);
+		border-bottom: 1px solid var(--yb-edge);
 	}
 	@keyframes hero-atmosphere {
 		from {
@@ -251,12 +276,23 @@ const homeLd = [
 			transform: scale(1);
 		}
 		to {
-			filter: brightness(1.06);
-			transform: scale(1.02);
+			filter: brightness(1.05);
+			transform: scale(1.025);
+		}
+	}
+	@keyframes logo-settle {
+		from {
+			transform: translateY(14px) scale(0.98);
+			filter: contrast(1.08) brightness(0.92);
+		}
+		to {
+			transform: translateY(0) scale(1);
+			filter: contrast(1) brightness(1);
 		}
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.hero-grid {
+		.hero-atmosphere,
+		.hero-brand :global(.brand-logo--hero) {
 			animation: none;
 		}
 	}

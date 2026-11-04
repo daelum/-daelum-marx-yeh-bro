@@ -23,7 +23,7 @@ function normalizeCanonicalPath(raw: string): string {
 const {
 	title,
 	description,
-	image = '/og-default.svg',
+	image = '/brand/og-yehbro.jpg',
 	noindex = false,
 	ogType = 'website',
 	canonicalPath,
@@ -42,6 +42,8 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="icon" href="/favicon.ico" />
 <link rel="sitemap" href="/sitemap-index.xml" />
 <link

@@ -1,40 +1,46 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BrandLogo from '../components/BrandLogo.astro';
+import FreeOffer from '../components/FreeOffer.astro';
 import ProductPath from '../components/ProductPath.astro';
 import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 ---
 
 <BaseLayout
-	title="Start Here System"
-	description="Yeh Bro’s free natural transformation system — phased blueprint, training templates, weekly checklists, and Food OS calorie setup."
+	title="Yeh Bro System"
+	description="Yeh Bro’s free natural transformation system — phased blueprint, training templates, weekly checklists, and Food Bro calorie setup."
 	fullBleed
 	canonicalPath="/start-here"
+	ogImage="/brand/og-yehbro.jpg"
 >
 	<section class="sys-hero">
 		<div class="sys-hero-atmosphere" aria-hidden="true"></div>
 		<div class="wrap sys-hero-inner">
-			<p class="eyebrow anim-rise">Free coach-grade system</p>
-			<h1 class="anim-rise">
-				<span class="brand-hero">YEH BRO</span>
-			</h1>
-			<p class="sys-product-name anim-rise-delay">{SYSTEM_PRODUCT.name}</p>
+			<p class="eyebrow anim-rise">Coach-grade · natural path</p>
+			<div class="sys-logo anim-rise" aria-hidden="true">
+				<BrandLogo size="md" decorative />
+			</div>
+			<h1 class="sys-product-name anim-rise-delay">{SYSTEM_PRODUCT.name}</h1>
+			<div class="anim-rise-delay">
+				<FreeOffer />
+			</div>
 			<p class="lede anim-rise-delay">
-				{SYSTEM_PRODUCT.oneLiner} Do the natural path first. Deeper culture / PED literacy waits
-				until the basics feel boring in a good way.
+				{SYSTEM_PRODUCT.oneLiner} Do the natural path first. Deeper culture / performance-enhancing
+				drug (PED) literacy waits until the basics feel boring in a good way.
 			</p>
 			<div class="cta-row anim-rise-delay-2">
 				<a class="btn btn-primary" href="#phases">Enter the system</a>
-				<a class="btn btn-secondary" href="/food-os">Open Food OS</a>
+				<a class="btn btn-secondary" href="/food-bro">Open Food Bro</a>
 			</div>
 		</div>
 	</section>
 
 	<ProductPath
 		crumbs={[
-			{ href: '/start-here', label: 'Start Here System', current: true },
+			{ href: '/start-here', label: 'Yeh Bro System', current: true },
 			{ href: '/start-here/training', label: 'Training' },
 			{ href: '/start-here/weekly', label: 'Weekly' },
-			{ href: '/food-os', label: 'Food OS' },
+			{ href: '/food-bro', label: 'Food Bro' },
 		]}
 	/>
 
@@ -66,7 +72,7 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 						</p>
 						<a class="phase-link" href={phase.href}>
 							{phase.id === 'food'
-								? 'Open Food OS →'
+								? 'Open Food Bro →'
 								: phase.id === 'consistency' || phase.id === 'overload'
 									? 'Training templates →'
 									: phase.id === 'recovery'
@@ -96,8 +102,8 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 				</a>
 			</li>
 			<li>
-				<a href="/food-os">
-					Food OS
+				<a href="/food-bro">
+					Food Bro
 					<span>Cut / maintain / lean bulk calories + macros with plain-English why.</span>
 				</a>
 			</li>
@@ -119,7 +125,7 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 		</p>
 		<ul class="plain-list">
 			<li>
-				<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional.
+				<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional.{' '}
 				<a href="/blog/best-creatine-australia">Creatine guide</a>
 				·
 				<a href="/go/creatine-true" rel="sponsored noopener noreferrer">True Protein creatine</a>
@@ -127,7 +133,7 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 				<a href="/go/creatine-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients creatine</a>
 			</li>
 			<li>
-				<strong>Protein powder</strong> — only if food undershoots. Judge cost per ~25 g protein.
+				<strong>Protein powder</strong> — only if food undershoots. Judge cost per ~25 g protein.{' '}
 				<a href="/blog/best-protein-powder-australia">Protein guide</a>
 				·
 				<a href="/go/protein-true" rel="sponsored noopener noreferrer">True Protein whey</a>
@@ -135,7 +141,7 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 				<a href="/go/protein-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients protein</a>
 			</li>
 			<li>
-				<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.
+				<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.{' '}
 				<a href="/blog/caffeine-dose-training">Caffeine timing</a>
 			</li>
 		</ul>
@@ -167,13 +173,13 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 		<h2>Your first seven days</h2>
 		<ol class="week-one">
 			<li>Open <a href="/start-here/training">training templates</a> and book 3–4 sessions.</li>
-			<li>Set calories in <a href="/food-os">Food OS</a> — maintain first if you’re unsure.</li>
+			<li>Set calories in <a href="/food-bro">Food Bro</a> — maintain first if you’re unsure.</li>
 			<li>Run the <a href="/start-here/weekly">weekly checklist</a> like it’s part of the program.</li>
 			<li>Protect one sleep window. Start creatine if you want the easy win (3–5 g/day).</li>
 		</ol>
 		<div class="cta-row">
 			<a class="btn btn-primary" href="/start-here/training">Start with training</a>
-			<a class="btn btn-secondary" href="/food-os">Set up Food OS</a>
+			<a class="btn btn-secondary" href="/food-bro">Set up Food Bro</a>
 		</div>
 		<p class="compliance muted">
 			Education only — not medical advice. Individual needs vary. Talk to a clinician for personal
@@ -211,8 +217,9 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 				transparent 1px,
 				transparent 68px
 			),
-			radial-gradient(ellipse 70% 50% at 82% 28%, rgba(200, 241, 53, 0.2), transparent 55%),
-			radial-gradient(ellipse 45% 40% at 12% 75%, rgba(46, 230, 166, 0.1), transparent 50%);
+			radial-gradient(ellipse 70% 50% at 82% 28%, rgba(200, 241, 53, 0.12), transparent 55%),
+			radial-gradient(ellipse 45% 40% at 12% 75%, rgba(46, 230, 166, 0.07), transparent 50%),
+			var(--noise);
 		pointer-events: none;
 		animation: hero-atmosphere 14s ease-in-out infinite alternate;
 	}
@@ -220,27 +227,17 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 		position: relative;
 		z-index: 1;
 	}
-	.brand-hero {
-		display: inline-block;
-		position: relative;
-	}
-	.brand-hero::after {
-		content: '';
-		display: block;
-		height: 6px;
-		width: 100%;
-		margin-top: 0.35rem;
-		background: var(--yb-lime);
-		transform-origin: left;
-		animation: underline-grow 0.8s ease 0.35s both;
+	.sys-logo {
+		margin: 0 0 1rem;
+		width: fit-content;
 	}
 	.sys-product-name {
 		font-family: var(--font-display);
-		font-size: clamp(1.45rem, 3.2vw, 2rem);
+		font-size: clamp(1.85rem, 4vw, 2.75rem);
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: var(--yb-teal);
-		margin: 0.85rem 0 1rem;
+		color: var(--yb-offwhite);
+		margin: 0 0 1rem;
 	}
 	.sys-lede {
 		max-width: 40rem;
@@ -258,7 +255,7 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 		padding: 1.35rem 0 0;
 		border-top: 1px solid rgba(242, 242, 240, 0.12);
 		scroll-margin-top: 7.5rem;
-		animation: rise-in 0.65s ease both;
+		animation: rise-in 0.65s ease forwards;
 	}
 	.phase-item:nth-child(2) {
 		animation-delay: 0.05s;

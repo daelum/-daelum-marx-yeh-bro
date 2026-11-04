@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FreeOffer from '../components/FreeOffer.astro';
 import ProductPath from '../components/ProductPath.astro';
 import {
 	ACTIVITY_LABELS,
@@ -14,25 +15,25 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 ---
 
 <BaseLayout
-	title="Food OS — calories & macros"
-	description="Yeh Bro Food OS: free cut / maintain / lean bulk calorie and macro calculator with AU-practical meal frameworks. Saves in your browser."
-	canonicalPath="/food-os"
+	title="Food Bro — calories & macros"
+	description="Food Bro: free cut / maintain / lean bulk calorie and macro calculator with practical meal frameworks. Saves in your browser."
+	canonicalPath="/food-bro"
 >
 	<ProductPath
 		crumbs={[
-			{ href: '/start-here', label: 'Start Here System' },
-			{ href: '/food-os', label: 'Food OS', current: true },
+			{ href: '/start-here', label: 'Yeh Bro System' },
+			{ href: '/food-bro', label: 'Food Bro', current: true },
 			{ href: '/food', label: 'Food hub' },
 		]}
 	/>
 
 	<article class="wrap food-os-page">
 		<header class="fos-hero">
-			<p class="eyebrow anim-rise">Free · Start Here System</p>
-			<h1 class="anim-rise">
-				<span class="brand-inline">YEH BRO</span>
-				<span class="fos-name">Food OS</span>
-			</h1>
+			<p class="eyebrow anim-rise">Yeh Bro System · Phase 4</p>
+			<h1 class="anim-rise fos-name">Food Bro</h1>
+			<div class="anim-rise">
+				<FreeOffer />
+			</div>
 			<p class="lede anim-rise-delay">
 				Set daily calories and macros for a cut, maintain, or lean bulk — with a plain-English why.
 				Inputs stick in this browser so you can come back and nudge.
@@ -176,7 +177,7 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 
 		<section class="fos-meals" id="meals">
 			<p class="eyebrow">Meal frameworks</p>
-			<h2>AU-practical plates</h2>
+			<h2>Practical plates</h2>
 			<p class="lede">
 				Frameworks beat perfect macros. Use these when you know the calorie ballpark but don’t want
 				to live in an app.
@@ -204,7 +205,7 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 				hub when you want depth.
 			</p>
 			<div class="cta-row">
-				<a class="btn btn-primary" href="/start-here">Start Here System</a>
+				<a class="btn btn-primary" href="/start-here">Yeh Bro System</a>
 				<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
 				<a class="btn btn-secondary" href="/food">Food hub</a>
 			</div>
@@ -408,25 +409,9 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 	.fos-hero {
 		margin-bottom: 2rem;
 	}
-	.brand-inline {
-		display: block;
-		font-size: clamp(2.2rem, 5vw, 3.4rem);
-	}
-	.brand-inline::after {
-		content: '';
-		display: block;
-		height: 5px;
-		width: 4.5rem;
-		margin-top: 0.3rem;
-		background: var(--yb-lime);
-		transform-origin: left;
-		animation: underline-grow 0.7s ease 0.25s both;
-	}
 	.fos-name {
-		display: block;
-		margin-top: 0.5rem;
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--yb-teal);
+		margin: 0 0 0.85rem;
+		font-size: clamp(2.2rem, 5vw, 3.4rem);
 		letter-spacing: 0.04em;
 	}
 	.fos-grid {
@@ -674,10 +659,5 @@ const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goa
 		margin-top: 1.75rem;
 		font-size: 0.9rem;
 		max-width: 38rem;
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.brand-inline::after {
-			animation: none;
-		}
 	}
 </style>

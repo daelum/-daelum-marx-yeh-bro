@@ -1,6 +1,6 @@
 ---
 /**
- * Sticky product path for Start Here System + Food OS.
+ * Sticky product path for Yeh Bro System + Food Bro.
  */
 interface Crumb {
 	href: string;
@@ -41,11 +41,11 @@ const { crumbs } = Astro.props;
 <style>
 	.product-path {
 		position: sticky;
-		top: 4rem;
+		top: 4.25rem;
 		z-index: 30;
-		backdrop-filter: blur(10px);
-		background: rgba(18, 18, 18, 0.9);
-		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
+		backdrop-filter: blur(12px);
+		background: rgba(10, 10, 10, 0.9);
+		border-bottom: 1px solid var(--yb-edge);
 	}
 	.product-path-inner {
 		display: flex;

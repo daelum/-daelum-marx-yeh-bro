@@ -25,6 +25,8 @@ export default defineConfig({
 	],
 	// SEO drafts / link map use /guides/*; content lives under /blog/*
 	redirects: {
+		// Food Bro rename — keep old Food OS URL working
+		'/food-os': '/food-bro',
 		'/guides/best-creatine-australia': '/blog/best-creatine-australia',
 		'/guides/how-to-dose-creatine': '/blog/how-to-dose-creatine',
 		'/guides/creatine-monohydrate-vs-hcl': '/blog/creatine-monohydrate-vs-hcl',

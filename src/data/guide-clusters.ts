@@ -57,7 +57,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 	{
 		id: 'food',
 		label: 'Food',
-		blurb: 'Start with Food OS (/food-os), then protein, cuts, lean bulks — without the app obsession.',
+		blurb: 'Start with Food Bro (/food-bro), then protein, cuts, lean bulks — without the app obsession.',
 		slugs: [
 			'calories-and-macros-for-lifters',
 			'what-calories-are-for-lifters',

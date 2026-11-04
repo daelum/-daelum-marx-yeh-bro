@@ -1,0 +1,72 @@
+---
+interface Props {
+	/** Visual size preset */
+	size?: 'nav' | 'md' | 'hero';
+	/** Hide from assistive tech when a nearby text label already names the brand */
+	decorative?: boolean;
+	class?: string;
+}
+
+const { size = 'nav', decorative = false, class: className } = Astro.props;
+
+const srcBySize = {
+	nav: '/brand/yehbro-logo-nav.webp',
+	md: '/brand/yehbro-logo-md.webp',
+	hero: '/brand/yehbro-logo.webp',
+} as const;
+
+const widthBySize = {
+	nav: 77,
+	md: 128,
+	hero: 784,
+} as const;
+
+const heightBySize = {
+	nav: 96,
+	md: 160,
+	hero: 1168,
+} as const;
+---
+
+<img
+	class:list={['brand-logo', `brand-logo--${size}`, className]}
+	src={srcBySize[size]}
+	width={widthBySize[size]}
+	height={heightBySize[size]}
+	alt={decorative ? '' : 'YehBro'}
+	aria-hidden={decorative ? 'true' : undefined}
+	decoding="async"
+	fetchpriority={size === 'hero' ? 'high' : undefined}
+/>
+
+<style>
+	.brand-logo {
+		display: block;
+		height: auto;
+		width: auto;
+		max-width: 100%;
+		object-fit: contain;
+		object-position: left center;
+	}
+	.brand-logo--nav {
+		height: 2.35rem;
+		width: auto;
+	}
+	.brand-logo--md {
+		height: 3.5rem;
+		width: auto;
+	}
+	.brand-logo--hero {
+		/* Tall metal wordmark — constrain by height so it stays a hero signal, not a scroll wall */
+		height: clamp(7.5rem, 28vh, 13.5rem);
+		width: auto;
+		max-width: min(100%, 18rem);
+		filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
+	}
+	@media (min-width: 720px) {
+		.brand-logo--hero {
+			max-width: min(100%, 20rem);
+			height: clamp(9rem, 32vh, 15rem);
+		}
+	}
+</style>

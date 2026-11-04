@@ -1,5 +1,5 @@
 /**
- * Start Here System — natural transformation playbook data.
+ * Yeh Bro System — natural transformation playbook data.
  * Product UX content (not blog dump). Keep voice guide-first.
  */
 
@@ -65,11 +65,11 @@ export const SYSTEM_PHASES: SystemPhase[] = [
 		job: 'Protein first, then calories for cut / maintain / lean bulk.',
 		focus: [
 			'Hit ~1.6–2.2 g protein per kg body weight most days.',
-			'Use Food OS to set calories, then adjust from the scale trend every 2–3 weeks.',
+			'Use Food Bro to set calories, then adjust from the scale trend every 2–3 weeks.',
 			'Plate frameworks before app obsession — food first, powder for gaps.',
 		],
 		doneWhen: 'Weight trend matches your goal without wrecking training quality.',
-		href: '/food-os',
+		href: '/food-bro',
 	},
 	{
 		id: 'recovery',
@@ -266,13 +266,13 @@ export const WEEKLY_CHECKLIST: ChecklistGroup[] = [
 		items: [
 			{ id: 'w1', label: 'Morning weigh-ins 2–3×', hint: 'Trend > single day' },
 			{ id: 'w2', label: 'Protein target hit most days', hint: '~1.6–2.2 g/kg' },
-			{ id: 'w3', label: 'Calories in the Food OS ballpark', hint: 'Adjust from the 2–3 week trend' },
+			{ id: 'w3', label: 'Calories in the Food Bro ballpark', hint: 'Adjust from the 2–3 week trend' },
 		],
 	},
 ];
 
 export const SYSTEM_PRODUCT = {
-	name: 'Start Here System',
+	name: 'Yeh Bro System',
 	tagline: 'The natural playbook — best shape of your life without the circus.',
 	oneLiner:
 		'Phased training, food dial-in, and weekly checklists you’d normally pay a coach for. Free on Yeh Bro.',

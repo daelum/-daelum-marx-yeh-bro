@@ -1,22 +1,27 @@
 ---
+import BrandLogo from './BrandLogo.astro';
+
 const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
 	<div class="wrap footer-inner">
-		<p class="footer-brand">YEH BRO</p>
+		<a class="footer-brand" href="/" aria-label="Yeh Bro home">
+			<BrandLogo size="md" decorative />
+		</a>
 		<p class="footer-disclosure">
-			Gym education · not medical advice.
+			Gym education · not medical advice.{' '}
 			<a href="/disclosure">Disclosure</a>
-			·
+			{' · '}
 			<a href="/privacy">Privacy</a>
 		</p>
 		<nav class="footer-nav" aria-label="Footer">
-			<a href="/start-here">Start Here System</a>
-			<a href="/food-os">Food OS</a>
+			<a href="/start-here">Yeh Bro System</a>
+			<a href="/food-bro">Food Bro</a>
 			<a href="/food">Food hub</a>
+			<a href="/start-here/training">Training templates</a>
+			<a href="/start-here/weekly">Weekly checklist</a>
 			<a href="/blog">Guides</a>
-			<a href="/blog/bodybuilding-blueprint">Blueprint</a>
 			<a href="/blog/ped-harm-reduction-australia">PED education</a>
 			<a href="/about">About</a>
 			<a href="/disclosure">Disclosure</a>
@@ -34,18 +39,24 @@ const year = new Date().getFullYear();
 	.site-footer {
 		margin-top: 4rem;
 		padding: 3rem 0 4rem;
-		border-top: 1px solid rgba(242, 242, 240, 0.1);
-		background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.35));
+		border-top: 1px solid var(--yb-edge);
+		background:
+			linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.55)),
+			var(--noise);
 	}
 	.footer-inner {
 		display: grid;
 		gap: 1rem;
 	}
 	.footer-brand {
-		font-family: var(--font-display);
-		letter-spacing: 0.1em;
-		margin: 0;
-		font-size: 1.1rem;
+		display: inline-block;
+		text-decoration: none;
+		width: fit-content;
+		opacity: 0.95;
+		transition: opacity 0.2s ease;
+	}
+	.footer-brand:hover {
+		opacity: 1;
 	}
 	.footer-disclosure {
 		margin: 0;

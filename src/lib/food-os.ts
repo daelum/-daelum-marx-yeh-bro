@@ -1,5 +1,5 @@
 /**
- * Food OS — calorie + macro estimates for lifters.
+ * Food Bro — calorie + macro estimates for lifters.
  * Mifflin–St Jeor BMR × activity, then goal adjustment.
  * Educational starting point — not medical advice.
  */
@@ -202,7 +202,7 @@ export const MEAL_FRAMEWORKS: MealFramework[] = [
 	{
 		id: 'cut-day',
 		title: 'Cut-day framework',
-		when: 'When Food OS is in cut mode — volume food, keep lifts fed.',
+		when: 'When Food Bro is in cut mode — volume food, keep lifts fed.',
 		plates: [
 			'Anchor every meal with a palm+ of protein before adding extras',
 			'Push veg and lean cuts; keep a carb serving around training',
@@ -223,7 +223,7 @@ export const MEAL_FRAMEWORKS: MealFramework[] = [
 	},
 	{
 		id: 'au-practical',
-		title: 'AU-practical staples',
+		title: 'Practical staples',
 		when: 'Grocery reality, not US cosplay aisle lists.',
 		plates: [
 			'Protein: chicken thigh/breast, lean mince, eggs, tuna cans, Greek yoghurt, tofu, whey',
