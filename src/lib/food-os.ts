@@ -203,7 +203,7 @@ export const MEAL_FRAMEWORKS: MealFramework[] = [
 	{
 		id: 'au-practical',
 		title: 'Practical staples',
-		when: 'Grocery reality while the Woolworths list waits on recipes.',
+		when: 'Grocery reality beside the Woolworths weekly list.',
 		plates: [
 			'Protein: chicken thigh/breast, lean mince, eggs, tuna cans, Greek yoghurt, tofu, whey',
 			'Carbs: rice, pasta, potatoes, bread, oats, fruit',
