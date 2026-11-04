@@ -1,0 +1,683 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductPath from '../components/ProductPath.astro';
+import {
+	ACTIVITY_LABELS,
+	GOAL_DEFAULTS,
+	MEAL_FRAMEWORKS,
+	type Activity,
+	type Goal,
+} from '../lib/food-os';
+
+const activities = Object.entries(ACTIVITY_LABELS) as [Activity, string][];
+const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goal]][];
+---
+
+<BaseLayout
+	title="Food OS — calories & macros"
+	description="Yeh Bro Food OS: free cut / maintain / lean bulk calorie and macro calculator with AU-practical meal frameworks. Saves in your browser."
+	canonicalPath="/food-os"
+>
+	<ProductPath
+		crumbs={[
+			{ href: '/start-here', label: 'Start Here System' },
+			{ href: '/food-os', label: 'Food OS', current: true },
+			{ href: '/food', label: 'Food hub' },
+		]}
+	/>
+
+	<article class="wrap food-os-page">
+		<header class="fos-hero">
+			<p class="eyebrow anim-rise">Free · Start Here System</p>
+			<h1 class="anim-rise">
+				<span class="brand-inline">YEH BRO</span>
+				<span class="fos-name">Food OS</span>
+			</h1>
+			<p class="lede anim-rise-delay">
+				Set daily calories and macros for a cut, maintain, or lean bulk — with a plain-English why.
+				Inputs stick in this browser so you can come back and nudge.
+			</p>
+		</header>
+
+		<div class="fos-grid">
+			<form id="fos-form" class="fos-form" novalidate>
+				<fieldset class="fos-fieldset">
+					<legend>Body</legend>
+					<div class="fos-fields">
+						<label class="fos-field">
+							<span>Body weight (kg)</span>
+							<input
+								type="number"
+								name="weightKg"
+								id="weightKg"
+								inputmode="decimal"
+								min="35"
+								max="250"
+								step="0.1"
+								required
+							/>
+						</label>
+						<label class="fos-field">
+							<span>Height (cm)</span>
+							<input
+								type="number"
+								name="heightCm"
+								id="heightCm"
+								inputmode="numeric"
+								min="120"
+								max="230"
+								step="1"
+								required
+							/>
+						</label>
+						<label class="fos-field">
+							<span>Age</span>
+							<input
+								type="number"
+								name="age"
+								id="age"
+								inputmode="numeric"
+								min="16"
+								max="90"
+								step="1"
+								required
+							/>
+						</label>
+						<fieldset class="fos-seg" id="sex-field">
+							<legend class="fos-seg-legend">Sex (for resting estimate)</legend>
+							<label class="seg-opt">
+								<input type="radio" name="sex" value="male" />
+								<span>Male</span>
+							</label>
+							<label class="seg-opt">
+								<input type="radio" name="sex" value="female" />
+								<span>Female</span>
+							</label>
+						</fieldset>
+					</div>
+					<p class="fos-note muted">
+						Sex feeds the Mifflin–St Jeor resting estimate only — a starting point, not identity
+						politics or a prescription.
+					</p>
+				</fieldset>
+
+				<fieldset class="fos-fieldset">
+					<legend>Activity & goal</legend>
+					<label class="fos-field fos-field-full">
+						<span>Activity</span>
+						<select name="activity" id="activity" required>
+							{
+								activities.map(([value, label]) => (
+									<option value={value}>{label}</option>
+								))
+							}
+						</select>
+					</label>
+
+					<fieldset class="fos-seg fos-goals" id="goal-field">
+						<legend class="fos-seg-legend">Goal</legend>
+						{
+							goals.map(([value, meta]) => (
+								<label class="seg-opt">
+									<input type="radio" name="goal" value={value} />
+									<span>
+										<strong>{meta.label}</strong>
+										<small>{meta.blurb}</small>
+									</span>
+								</label>
+							))
+						}
+					</fieldset>
+
+					<label class="fos-field fos-field-full" id="adj-wrap" hidden>
+						<span id="adj-label">Adjustment</span>
+						<input type="range" name="adjustment" id="adjustment" min="10" max="25" step="1" />
+						<span class="adj-readout" id="adj-readout"></span>
+					</label>
+				</fieldset>
+
+				<div class="fos-actions">
+					<button type="submit" class="btn btn-primary">Update targets</button>
+					<button type="button" class="btn btn-secondary" id="fos-reset">Reset defaults</button>
+				</div>
+				<p class="fos-save-note muted" id="fos-save-note" aria-live="polite"></p>
+			</form>
+
+			<div class="fos-results" id="fos-results" aria-live="polite">
+				<p class="eyebrow">Your targets</p>
+				<p class="fos-empty" id="fos-empty">Enter your details — targets appear here.</p>
+				<div id="fos-output" hidden>
+					<p class="fos-cal">
+						<span class="fos-cal-num" id="out-cal">—</span>
+						<span class="fos-cal-unit">kcal / day</span>
+					</p>
+					<p class="fos-tdee muted" id="out-tdee"></p>
+					<ul class="macro-row">
+						<li>
+							<span class="macro-val" id="out-p">—</span>
+							<span class="macro-lab">Protein</span>
+						</li>
+						<li>
+							<span class="macro-val" id="out-c">—</span>
+							<span class="macro-lab">Carbs</span>
+						</li>
+						<li>
+							<span class="macro-val" id="out-f">—</span>
+							<span class="macro-lab">Fat</span>
+						</li>
+					</ul>
+					<div class="why-box">
+						<p class="why-title">Why these numbers</p>
+						<ul id="out-why"></ul>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<section class="fos-meals" id="meals">
+			<p class="eyebrow">Meal frameworks</p>
+			<h2>AU-practical plates</h2>
+			<p class="lede">
+				Frameworks beat perfect macros. Use these when you know the calorie ballpark but don’t want
+				to live in an app.
+			</p>
+			{
+				MEAL_FRAMEWORKS.map((fw) => (
+					<div class="meal-fw">
+						<h3>{fw.title}</h3>
+						<p class="muted meal-when">{fw.when}</p>
+						<ul>
+							{fw.plates.map((p) => (
+								<li>{p}</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+		</section>
+
+		<section class="fos-next">
+			<p class="eyebrow">In the system</p>
+			<h2>Food is phase 4 — not the whole plan</h2>
+			<p class="lede">
+				Pair this with training templates and the weekly checklist. Deeper reads live on the food
+				hub when you want depth.
+			</p>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="/start-here">Start Here System</a>
+				<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
+				<a class="btn btn-secondary" href="/food">Food hub</a>
+			</div>
+			<p class="compliance muted">
+				Education only — not medical advice or a personal prescription. Estimates vary; adjust from
+				your scale trend and how training feels. Under 18 or clinical conditions → talk to a
+				clinician.
+			</p>
+		</section>
+	</article>
+</BaseLayout>
+
+<script>
+	import {
+		ACTIVITY_MULTIPLIERS,
+		DEFAULT_INPUTS,
+		GOAL_DEFAULTS,
+		STORAGE_KEY,
+		calcFoodOs,
+		type Activity,
+		type Goal,
+		type Sex,
+		type StoredFoodOs,
+	} from '../lib/food-os';
+
+	const form = document.getElementById('fos-form') as HTMLFormElement | null;
+	const adjWrap = document.getElementById('adj-wrap') as HTMLLabelElement | null;
+	const adjInput = document.getElementById('adjustment') as HTMLInputElement | null;
+	const adjLabel = document.getElementById('adj-label');
+	const adjReadout = document.getElementById('adj-readout');
+	const saveNote = document.getElementById('fos-save-note');
+	const empty = document.getElementById('fos-empty');
+	const output = document.getElementById('fos-output');
+
+	function readStored(): StoredFoodOs {
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (raw) {
+				const parsed = JSON.parse(raw) as Partial<StoredFoodOs>;
+				return { ...DEFAULT_INPUTS, ...parsed };
+			}
+		} catch {
+			/* ignore */
+		}
+		return { ...DEFAULT_INPUTS };
+	}
+
+	function writeStored(data: StoredFoodOs) {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+		if (saveNote) saveNote.textContent = 'Saved on this device.';
+	}
+
+	function selectedRadio(name: string): string | null {
+		const el = form?.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+		return el?.value ?? null;
+	}
+
+	function applyToForm(data: StoredFoodOs) {
+		if (!form) return;
+		(form.elements.namedItem('weightKg') as HTMLInputElement).value = String(data.weightKg);
+		(form.elements.namedItem('heightCm') as HTMLInputElement).value = String(data.heightCm);
+		(form.elements.namedItem('age') as HTMLInputElement).value = String(data.age);
+		(form.elements.namedItem('activity') as HTMLSelectElement).value = data.activity;
+		const sex = form.querySelector<HTMLInputElement>(`input[name="sex"][value="${data.sex}"]`);
+		if (sex) sex.checked = true;
+		const goal = form.querySelector<HTMLInputElement>(`input[name="goal"][value="${data.goal}"]`);
+		if (goal) goal.checked = true;
+		syncAdjustmentUi(data);
+	}
+
+	function syncAdjustmentUi(data: StoredFoodOs) {
+		if (!adjWrap || !adjInput || !adjLabel || !adjReadout) return;
+		if (data.goal === 'maintain') {
+			adjWrap.hidden = true;
+			return;
+		}
+		adjWrap.hidden = false;
+		if (data.goal === 'cut') {
+			adjInput.min = '10';
+			adjInput.max = '25';
+			adjInput.value = String(data.cutPct);
+			adjLabel.textContent = 'Deficit (% below maintenance)';
+			adjReadout.textContent = `−${data.cutPct}%`;
+		} else {
+			adjInput.min = '5';
+			adjInput.max = '15';
+			adjInput.value = String(data.bulkPct);
+			adjLabel.textContent = 'Surplus (% above maintenance)';
+			adjReadout.textContent = `+${data.bulkPct}%`;
+		}
+	}
+
+	function collect(): StoredFoodOs | null {
+		if (!form) return null;
+		const weightKg = Number((form.elements.namedItem('weightKg') as HTMLInputElement).value);
+		const heightCm = Number((form.elements.namedItem('heightCm') as HTMLInputElement).value);
+		const age = Number((form.elements.namedItem('age') as HTMLInputElement).value);
+		const sex = selectedRadio('sex') as Sex | null;
+		const activity = (form.elements.namedItem('activity') as HTMLSelectElement).value as Activity;
+		const goal = selectedRadio('goal') as Goal | null;
+		if (!sex || !goal) return null;
+		const prev = readStored();
+		const cutPct =
+			goal === 'cut' && adjInput ? Number(adjInput.value) || prev.cutPct : prev.cutPct;
+		const bulkPct =
+			goal === 'lean-bulk' && adjInput ? Number(adjInput.value) || prev.bulkPct : prev.bulkPct;
+		return { weightKg, heightCm, age, sex, activity, goal, cutPct, bulkPct };
+	}
+
+	function render(data: StoredFoodOs) {
+		const adjustment =
+			data.goal === 'cut'
+				? -(data.cutPct / 100)
+				: data.goal === 'lean-bulk'
+					? data.bulkPct / 100
+					: 0;
+		const result = calcFoodOs({
+			weightKg: data.weightKg,
+			heightCm: data.heightCm,
+			age: data.age,
+			sex: data.sex,
+			activity: data.activity,
+			goal: data.goal,
+			adjustment,
+		});
+		if (!result) {
+			empty && (empty.hidden = false);
+			output && (output.hidden = true);
+			if (empty) empty.textContent = 'Check the inputs — weight, height, and age need to be in range.';
+			return;
+		}
+		if (empty) empty.hidden = true;
+		if (output) output.hidden = false;
+		const set = (id: string, text: string) => {
+			const el = document.getElementById(id);
+			if (el) el.textContent = text;
+		};
+		set('out-cal', String(result.calories));
+		set(
+			'out-tdee',
+			`Est. maintenance ≈ ${result.tdee} kcal · resting ≈ ${result.bmr} kcal · ${GOAL_DEFAULTS[data.goal].label}`,
+		);
+		set('out-p', `${result.proteinG} g`);
+		set('out-c', `${result.carbsG} g`);
+		set('out-f', `${result.fatG} g`);
+		const why = document.getElementById('out-why');
+		if (why) {
+			why.innerHTML = '';
+			result.why.forEach((line) => {
+				const li = document.createElement('li');
+				li.textContent = line;
+				why.appendChild(li);
+			});
+		}
+		// silence unused import tree-shake guard
+		void ACTIVITY_MULTIPLIERS;
+	}
+
+	function refresh() {
+		const data = collect();
+		if (!data) return;
+		syncAdjustmentUi(data);
+		writeStored(data);
+		render(data);
+	}
+
+	const initial = readStored();
+	applyToForm(initial);
+	render(initial);
+	if (saveNote && localStorage.getItem(STORAGE_KEY)) {
+		saveNote.textContent = 'Loaded your last saved setup.';
+	}
+
+	form?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		refresh();
+	});
+	form?.addEventListener('change', () => refresh());
+	adjInput?.addEventListener('input', () => {
+		const data = collect();
+		if (!data || !adjReadout) return;
+		if (data.goal === 'cut') adjReadout.textContent = `−${adjInput.value}%`;
+		else if (data.goal === 'lean-bulk') adjReadout.textContent = `+${adjInput.value}%`;
+		refresh();
+	});
+
+	document.getElementById('fos-reset')?.addEventListener('click', () => {
+		const defaults = { ...DEFAULT_INPUTS };
+		applyToForm(defaults);
+		writeStored(defaults);
+		render(defaults);
+		if (saveNote) saveNote.textContent = 'Reset to defaults.';
+	});
+</script>
+
+<style>
+	.food-os-page {
+		padding-top: 2rem;
+		padding-bottom: 3rem;
+	}
+	.fos-hero {
+		margin-bottom: 2rem;
+	}
+	.brand-inline {
+		display: block;
+		font-size: clamp(2.2rem, 5vw, 3.4rem);
+	}
+	.brand-inline::after {
+		content: '';
+		display: block;
+		height: 5px;
+		width: 4.5rem;
+		margin-top: 0.3rem;
+		background: var(--yb-lime);
+		transform-origin: left;
+		animation: underline-grow 0.7s ease 0.25s both;
+	}
+	.fos-name {
+		display: block;
+		margin-top: 0.5rem;
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		color: var(--yb-teal);
+		letter-spacing: 0.04em;
+	}
+	.fos-grid {
+		display: grid;
+		gap: 2rem;
+		align-items: start;
+	}
+	@media (min-width: 900px) {
+		.fos-grid {
+			grid-template-columns: 1.1fr 0.9fr;
+			gap: 2.5rem;
+		}
+		.fos-results {
+			position: sticky;
+			top: 7.5rem;
+		}
+	}
+	.fos-form {
+		display: grid;
+		gap: 1.5rem;
+	}
+	.fos-fieldset {
+		margin: 0;
+		padding: 1.15rem 1.1rem 1.25rem;
+		border: 1px solid rgba(242, 242, 240, 0.12);
+		background: var(--yb-surface);
+	}
+	.fos-fieldset > legend {
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		padding: 0 0.35rem;
+		color: var(--yb-lime);
+	}
+	.fos-fields {
+		display: grid;
+		gap: 0.85rem;
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	}
+	.fos-field {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.fos-field-full {
+		grid-column: 1 / -1;
+		margin-top: 0.75rem;
+	}
+	.fos-field input,
+	.fos-field select {
+		font: inherit;
+		font-weight: 500;
+		padding: 0.7rem 0.75rem;
+		border: 1px solid rgba(242, 242, 240, 0.2);
+		border-radius: 2px;
+		background: var(--yb-charcoal);
+		color: var(--yb-offwhite);
+	}
+	.fos-field input:focus,
+	.fos-field select:focus {
+		outline: 2px solid var(--yb-lime);
+		outline-offset: 2px;
+		border-color: var(--yb-lime);
+	}
+	.fos-note {
+		margin: 0.85rem 0 0;
+		font-size: 0.88rem;
+	}
+	.fos-seg {
+		border: none;
+		padding: 0;
+		margin: 0.25rem 0 0;
+		grid-column: 1 / -1;
+		display: grid;
+		gap: 0.5rem;
+	}
+	.fos-seg-legend {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: rgba(242, 242, 240, 0.88);
+		margin-bottom: 0.25rem;
+		padding: 0;
+	}
+	.fos-goals {
+		margin-top: 1rem;
+	}
+	.seg-opt {
+		display: flex;
+		gap: 0.65rem;
+		align-items: flex-start;
+		padding: 0.7rem 0.75rem;
+		border: 1px solid rgba(242, 242, 240, 0.12);
+		background: rgba(0, 0, 0, 0.2);
+		cursor: pointer;
+	}
+	.seg-opt:has(input:checked) {
+		border-color: rgba(200, 241, 53, 0.55);
+		background: rgba(200, 241, 53, 0.07);
+	}
+	.seg-opt:focus-within {
+		outline: 2px solid rgba(200, 241, 53, 0.4);
+		outline-offset: 2px;
+	}
+	.seg-opt input {
+		margin-top: 0.2rem;
+		accent-color: var(--yb-lime);
+	}
+	.seg-opt span {
+		display: grid;
+		gap: 0.15rem;
+	}
+	.seg-opt small {
+		font-weight: 400;
+		color: var(--yb-muted);
+		font-size: 0.88rem;
+	}
+	.adj-readout {
+		font-family: var(--font-display);
+		letter-spacing: 0.04em;
+		color: var(--yb-teal);
+	}
+	.fos-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+	.fos-actions .btn {
+		border: 2px solid transparent;
+	}
+	.fos-actions button.btn-secondary {
+		border-color: rgba(242, 242, 240, 0.35);
+		color: var(--yb-offwhite);
+		background: transparent;
+	}
+	.fos-save-note {
+		margin: 0;
+		font-size: 0.88rem;
+		min-height: 1.2em;
+	}
+	.fos-results {
+		padding: 1.35rem 1.2rem 1.5rem;
+		border: 1px solid rgba(46, 230, 166, 0.28);
+		background:
+			radial-gradient(ellipse 80% 60% at 100% 0%, rgba(200, 241, 53, 0.08), transparent 55%),
+			var(--yb-surface);
+	}
+	.fos-empty {
+		margin: 0.5rem 0 0;
+		color: var(--yb-muted);
+	}
+	.fos-cal {
+		margin: 0.35rem 0 0.35rem;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.5rem 0.75rem;
+	}
+	.fos-cal-num {
+		font-family: var(--font-display);
+		font-size: clamp(2.6rem, 6vw, 3.4rem);
+		letter-spacing: 0.02em;
+		color: var(--yb-lime);
+		line-height: 1;
+	}
+	.fos-cal-unit {
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		font-size: 0.85rem;
+		color: var(--yb-muted);
+	}
+	.fos-tdee {
+		margin: 0 0 1.25rem;
+		font-size: 0.92rem;
+	}
+	.macro-row {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 1.25rem;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.75rem;
+	}
+	.macro-row li {
+		margin: 0;
+		padding: 0.65rem 0 0;
+		border-top: 2px solid rgba(242, 242, 240, 0.12);
+	}
+	.macro-val {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 1.35rem;
+		letter-spacing: 0.02em;
+	}
+	.macro-lab {
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+	}
+	.why-box {
+		padding-top: 0.25rem;
+	}
+	.why-title {
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		margin-bottom: 0.5rem;
+		color: var(--yb-teal);
+	}
+	.why-box ul {
+		margin: 0;
+		padding-left: 1.1rem;
+		font-size: 0.95rem;
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.fos-meals {
+		margin-top: 3.5rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.meal-fw {
+		margin: 1.75rem 0;
+		max-width: 42rem;
+		padding-top: 1rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.08);
+	}
+	.meal-fw h3 {
+		color: var(--yb-lime);
+	}
+	.meal-when {
+		margin-top: 0;
+	}
+	.fos-next {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.compliance {
+		margin-top: 1.75rem;
+		font-size: 0.9rem;
+		max-width: 38rem;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.brand-inline::after {
+			animation: none;
+		}
+	}
+</style>

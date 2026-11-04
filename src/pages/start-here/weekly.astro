@@ -1,0 +1,240 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductPath from '../../components/ProductPath.astro';
+import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
+---
+
+<BaseLayout
+	title="Weekly checklist — Start Here System"
+	description="Interactive weekly checklist for training, steps, sleep, and weigh-ins — part of Yeh Bro’s Start Here System. Saves in your browser."
+	canonicalPath="/start-here/weekly"
+>
+	<ProductPath
+		crumbs={[
+			{ href: '/start-here', label: 'Start Here System' },
+			{ href: '/start-here/training', label: 'Training' },
+			{ href: '/start-here/weekly', label: 'Weekly', current: true },
+			{ href: '/food-os', label: 'Food OS' },
+		]}
+	/>
+
+	<article class="wrap week-page">
+		<p class="eyebrow anim-rise">Start Here System · Weekly OS</p>
+		<h1 class="anim-rise">Weekly checklist</h1>
+		<p class="lede anim-rise-delay">
+			Tick what you did. State saves in this browser (localStorage) so returning feels sticky — not
+			another PDF you ignore. Reset when you start a new week.
+		</p>
+		<div class="week-toolbar anim-rise-delay-2">
+			<p class="week-status" id="week-status" aria-live="polite">Loading…</p>
+			<button type="button" class="btn btn-secondary" id="week-reset">Reset this week</button>
+		</div>
+
+		<form id="week-form" class="week-form" autocomplete="off">
+			{
+				WEEKLY_CHECKLIST.map((group) => (
+					<section class="check-group" aria-labelledby={`g-${group.id}`}>
+						<h2 id={`g-${group.id}`}>{group.title}</h2>
+						<ul class="check-list">
+							{group.items.map((item) => (
+								<li>
+									<label class="check-row" for={item.id}>
+										<input type="checkbox" id={item.id} name={item.id} data-check-id={item.id} />
+										<span class="check-copy">
+											<span class="check-label">{item.label}</span>
+											{item.hint ? <span class="check-hint">{item.hint}</span> : null}
+										</span>
+									</label>
+								</li>
+							))}
+						</ul>
+					</section>
+				))
+			}
+		</form>
+
+		<section class="week-next">
+			<p class="eyebrow">Tied to food</p>
+			<h2>Weigh-ins without the spiral</h2>
+			<p class="lede">
+				2–3 morning weigh-ins beat daily panic. Set the calorie ballpark in Food OS, then nudge from
+				the 2–3 week trend — not Tuesday’s water weight.
+			</p>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="/food-os">Open Food OS</a>
+				<a class="btn btn-secondary" href="/start-here/training">Training templates</a>
+				<a class="btn btn-secondary" href="/start-here">Back to system</a>
+			</div>
+		</section>
+	</article>
+</BaseLayout>
+
+<script>
+	const STORAGE_KEY = 'yehbro-start-here-weekly-v1';
+
+	type WeekState = {
+		weekId: string;
+		checked: Record<string, boolean>;
+	};
+
+	function currentWeekId(): string {
+		const now = new Date();
+		const utc = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+		const day = utc.getUTCDay() || 7;
+		utc.setUTCDate(utc.getUTCDate() + 4 - day);
+		const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+		const week = Math.ceil(((utc.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+		return `${utc.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+	}
+
+	function load(): WeekState {
+		const weekId = currentWeekId();
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (raw) {
+				const parsed = JSON.parse(raw) as WeekState;
+				if (parsed.weekId === weekId && parsed.checked) return parsed;
+			}
+		} catch {
+			/* ignore */
+		}
+		return { weekId, checked: {} };
+	}
+
+	function save(state: WeekState) {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+	}
+
+	function updateStatus(state: WeekState) {
+		const boxes = document.querySelectorAll<HTMLInputElement>('[data-check-id]');
+		const total = boxes.length;
+		const done = [...boxes].filter((b) => b.checked).length;
+		const el = document.getElementById('week-status');
+		if (el) {
+			el.textContent = `${state.weekId.replace('-', ' ')} · ${done} / ${total} done`;
+		}
+	}
+
+	const state = load();
+	const form = document.getElementById('week-form');
+	const boxes = document.querySelectorAll<HTMLInputElement>('[data-check-id]');
+
+	boxes.forEach((box) => {
+		const id = box.dataset.checkId;
+		if (!id) return;
+		box.checked = Boolean(state.checked[id]);
+		box.addEventListener('change', () => {
+			state.checked[id] = box.checked;
+			save(state);
+			updateStatus(state);
+		});
+	});
+
+	updateStatus(state);
+
+	document.getElementById('week-reset')?.addEventListener('click', () => {
+		state.checked = {};
+		boxes.forEach((box) => {
+			box.checked = false;
+		});
+		state.weekId = currentWeekId();
+		save(state);
+		updateStatus(state);
+	});
+
+	form?.addEventListener('submit', (e) => e.preventDefault());
+</script>
+
+<style>
+	.week-page {
+		padding-top: 2rem;
+		padding-bottom: 3rem;
+	}
+	.week-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem 1.25rem;
+		margin: 1.5rem 0 0.5rem;
+		padding: 0.85rem 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.week-status {
+		margin: 0;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+		color: var(--yb-teal);
+	}
+	.check-group {
+		margin: 2rem 0;
+		scroll-margin-top: 7.5rem;
+	}
+	.check-group h2 {
+		margin-bottom: 0.85rem;
+	}
+	.check-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		gap: 0.5rem;
+		max-width: 40rem;
+	}
+	.check-list li {
+		margin: 0;
+	}
+	.check-row {
+		display: flex;
+		gap: 0.85rem;
+		align-items: flex-start;
+		padding: 0.85rem 0.95rem;
+		background: var(--yb-surface);
+		border: 1px solid rgba(242, 242, 240, 0.1);
+		cursor: pointer;
+		transition:
+			border-color 0.2s ease,
+			background 0.2s ease;
+	}
+	.check-row:hover {
+		border-color: rgba(200, 241, 53, 0.35);
+	}
+	.check-row:focus-within {
+		border-color: var(--yb-lime);
+		outline: 2px solid rgba(200, 241, 53, 0.35);
+		outline-offset: 2px;
+	}
+	.check-row input {
+		width: 1.2rem;
+		height: 1.2rem;
+		margin-top: 0.15rem;
+		accent-color: var(--yb-lime);
+		flex-shrink: 0;
+	}
+	.check-copy {
+		display: grid;
+		gap: 0.15rem;
+	}
+	.check-label {
+		font-weight: 600;
+		color: var(--yb-offwhite);
+	}
+	.check-hint {
+		font-size: 0.9rem;
+		color: var(--yb-muted);
+	}
+	.check-row:has(input:checked) {
+		border-color: rgba(46, 230, 166, 0.45);
+		background: rgba(46, 230, 166, 0.06);
+	}
+	.check-row:has(input:checked) .check-label {
+		text-decoration: line-through;
+		opacity: 0.75;
+	}
+	.week-next {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+</style>

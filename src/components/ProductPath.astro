@@ -1,0 +1,72 @@
+---
+/**
+ * Sticky product path for Start Here System + Food OS.
+ */
+interface Crumb {
+	href: string;
+	label: string;
+	current?: boolean;
+}
+
+interface Props {
+	crumbs: Crumb[];
+}
+
+const { crumbs } = Astro.props;
+---
+
+<nav class="product-path" aria-label="Product path">
+	<div class="wrap product-path-inner">
+		{
+			crumbs.map((c, i) => (
+				<>
+					{i > 0 && (
+						<span class="product-path-sep" aria-hidden="true">
+							/
+						</span>
+					)}
+					{c.current ? (
+						<span class="product-path-current" aria-current="page">
+							{c.label}
+						</span>
+					) : (
+						<a href={c.href}>{c.label}</a>
+					)}
+				</>
+			))
+		}
+	</div>
+</nav>
+
+<style>
+	.product-path {
+		position: sticky;
+		top: 4rem;
+		z-index: 30;
+		backdrop-filter: blur(10px);
+		background: rgba(18, 18, 18, 0.9);
+		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
+	}
+	.product-path-inner {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem 0.55rem;
+		min-height: 2.75rem;
+		font-size: 0.88rem;
+		font-weight: 600;
+	}
+	.product-path a {
+		color: var(--yb-muted);
+		text-decoration: none;
+	}
+	.product-path a:hover {
+		color: var(--yb-lime);
+	}
+	.product-path-current {
+		color: var(--yb-lime);
+	}
+	.product-path-sep {
+		color: rgba(242, 242, 240, 0.25);
+	}
+</style>

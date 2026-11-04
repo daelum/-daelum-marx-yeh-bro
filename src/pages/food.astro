@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductPath from '../components/ProductPath.astro';
+import { GUIDE_CLUSTERS } from '../data/guide-clusters';
+
+const posts = await getCollection('blog');
+const byId = new Map(posts.map((p) => [p.id, p]));
+const foodCluster = GUIDE_CLUSTERS.find((c) => c.id === 'food');
+const foodPosts =
+	foodCluster?.slugs.map((id) => byId.get(id)).filter(Boolean) ?? [];
+---
+
+<BaseLayout
+	title="Food hub"
+	description="Yeh Bro Food hub — Food OS calorie calculator plus protein, cutting, and lean bulk guides."
+	canonicalPath="/food"
+>
+	<ProductPath
+		crumbs={[
+			{ href: '/start-here', label: 'Start Here System' },
+			{ href: '/food-os', label: 'Food OS' },
+			{ href: '/food', label: 'Food hub', current: true },
+		]}
+	/>
+
+	<section class="wrap food-hub">
+		<p class="eyebrow anim-rise">Start Here System · Phase 4</p>
+		<h1 class="anim-rise">Food</h1>
+		<p class="lede anim-rise-delay">
+			Protein first. Calories for the goal. Perfect macros can wait. Start with the calculator, then
+			read depth when a real question shows up.
+		</p>
+		<div class="cta-row anim-rise-delay-2">
+			<a class="btn btn-primary" href="/food-os">Open Food OS</a>
+			<a class="btn btn-secondary" href="/start-here">Start Here System</a>
+		</div>
+
+		<section class="hub-lead">
+			<p class="eyebrow">Primary tool</p>
+			<a class="lead-link" href="/food-os">
+				Food OS
+				<span>Cut / maintain / lean bulk calories + macros, saved in your browser, plus AU-practical meal frameworks.</span>
+			</a>
+		</section>
+
+		{
+			foodPosts.length > 0 && (
+				<section class="hub-guides">
+					<p class="eyebrow">Guides</p>
+					<h2>When you want depth</h2>
+					<ul class="guide-links">
+						{foodPosts.map((post) =>
+							post ? (
+								<li>
+									<a href={`/blog/${post.id}`}>
+										{post.data.title}
+										<span>{post.data.description}</span>
+									</a>
+								</li>
+							) : null,
+						)}
+					</ul>
+				</section>
+			)
+		}
+	</section>
+</BaseLayout>
+
+<style>
+	.food-hub {
+		padding-top: 2rem;
+		padding-bottom: 3rem;
+	}
+	.hub-lead {
+		margin-top: 2.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.lead-link {
+		display: block;
+		margin-top: 0.5rem;
+		padding: 1.15rem 0;
+		text-decoration: none;
+		color: var(--yb-offwhite);
+		font-family: var(--font-display);
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+		transition: color 0.2s ease;
+	}
+	.lead-link:hover {
+		color: var(--yb-lime);
+	}
+	.lead-link span {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 1rem;
+		font-weight: 400;
+		text-transform: none;
+		letter-spacing: 0;
+		color: var(--yb-muted);
+		margin-top: 0.35rem;
+		max-width: 36rem;
+	}
+	.hub-guides {
+		margin-top: 2.5rem;
+	}
+</style>

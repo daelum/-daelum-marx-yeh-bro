@@ -1,392 +1,395 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductPath from '../components/ProductPath.astro';
+import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 ---
 
 <BaseLayout
-	title="Start here"
-	description="Yeh Bro’s blueprint for getting into the best shape of your life — mindset, training, food, sleep, supplements that matter, then optional deeper culture reading."
+	title="Start Here System"
+	description="Yeh Bro’s free natural transformation system — phased blueprint, training templates, weekly checklists, and Food OS calorie setup."
+	fullBleed
 	canonicalPath="/start-here"
 >
-	<article class="prose-wrap journey">
-		<p class="eyebrow">Blueprint</p>
-		<h1>Start here</h1>
-		<p class="lede">
-			Here’s how I’d get someone into the best shape of their life — not the flashiest eight-week
-			transformation, the one that still holds in twelve months. Six steps. Do them in order. Skip
-			the deep culture / PED stuff until the basics feel boring in a good way.
+	<section class="sys-hero">
+		<div class="sys-hero-atmosphere" aria-hidden="true"></div>
+		<div class="wrap sys-hero-inner">
+			<p class="eyebrow anim-rise">Free coach-grade system</p>
+			<h1 class="anim-rise">
+				<span class="brand-hero">YEH BRO</span>
+			</h1>
+			<p class="sys-product-name anim-rise-delay">{SYSTEM_PRODUCT.name}</p>
+			<p class="lede anim-rise-delay">
+				{SYSTEM_PRODUCT.oneLiner} Do the natural path first. Deeper culture / PED literacy waits
+				until the basics feel boring in a good way.
+			</p>
+			<div class="cta-row anim-rise-delay-2">
+				<a class="btn btn-primary" href="#phases">Enter the system</a>
+				<a class="btn btn-secondary" href="/food-os">Open Food OS</a>
+			</div>
+		</div>
+	</section>
+
+	<ProductPath
+		crumbs={[
+			{ href: '/start-here', label: 'Start Here System', current: true },
+			{ href: '/start-here/training', label: 'Training' },
+			{ href: '/start-here/weekly', label: 'Weekly' },
+			{ href: '/food-os', label: 'Food OS' },
+		]}
+	/>
+
+	<section class="section wrap" id="phases">
+		<p class="eyebrow">The natural path</p>
+		<h2>Five phases. One job each.</h2>
+		<p class="lede sys-lede">
+			Not an eight-week cosplay timeline — a repeatable process that still holds in twelve months.
+			Week ranges overlap on purpose: food and recovery run beside training, not after it.
 		</p>
 
-		<nav class="step-nav" aria-label="Journey steps">
-			<a href="#step-1">1 · Mindset</a>
-			<a href="#step-2">2 · Training</a>
-			<a href="#step-3">3 · Food</a>
-			<a href="#step-4">4 · Sleep</a>
-			<a href="#step-5">5 · Supplements</a>
-			<a href="#step-6">6 · Optional deeper</a>
-		</nav>
+		<ol class="phase-rail">
+			{
+				SYSTEM_PHASES.map((phase) => (
+					<li class="phase-item" id={`phase-${phase.id}`}>
+						<div class="phase-meta">
+							<span class="phase-num">{String(phase.number).padStart(2, '0')}</span>
+							<span class="phase-weeks">{phase.weeks}</span>
+						</div>
+						<h3>{phase.name}</h3>
+						<p class="phase-job">{phase.job}</p>
+						<ul class="phase-focus">
+							{phase.focus.map((f) => (
+								<li>{f}</li>
+							))}
+						</ul>
+						<p class="phase-done">
+							<strong>Done when:</strong> {phase.doneWhen}
+						</p>
+						<a class="phase-link" href={phase.href}>
+							{phase.id === 'food'
+								? 'Open Food OS →'
+								: phase.id === 'consistency' || phase.id === 'overload'
+									? 'Training templates →'
+									: phase.id === 'recovery'
+										? 'Weekly checklist →'
+										: 'Stay on this page →'}
+						</a>
+					</li>
+				))
+			}
+		</ol>
+	</section>
 
-		<section class="hub-block" id="step-1">
-			<p class="eyebrow">Step 1</p>
-			<h2>Mindset — honesty about where you’re starting</h2>
-			<p>
-				Be straight with yourself: training age, sleep, stress, how consistent you’ve actually been.
-				Eight-week “before/after” feeds lie with lighting, pumps, filters, and sometimes pharmacology.
-				Your job is a repeatable week you can run when life is average — not a hero week you abandon.
-			</p>
-			<ul>
-				<li><strong>Pick one goal for 12 weeks</strong> — get stronger, lose fat, or rebuild the habit. Not all three at once.</li>
-				<li>
-					<strong>Measure something boring</strong> — sessions completed, body weight trend, a few lifts.
-					Screenshots of peak lighting don’t count.
-					<a href="/blog/training-logbook">How to read a logbook</a>.
-				</li>
-				<li>
-					<strong>Ignore “natty or not” bait</strong> until your own process is solid. Comparison without
-					context is how people quit.
-					<a href="/blog/ego-lifting-vs-training-age">Ego lifting vs training age</a> ·
-					<a href="/blog/online-coach-red-flags">Coach red flags</a> ·
-					<a href="/blog/when-to-hire-in-person-coach">When to hire a coach</a> ·
-					<a href="/blog/body-dysmorphia-adjacency-gym-culture">Body-image adjacency</a> ·
-					<a href="/blog/tracking-weight-waist-photos">Weight vs waist vs photos</a> ·
-					<a href="/blog/photo-lighting-honesty-for-lifters">Photo lighting honesty</a> ·
-					<a href="/blog/sodium-water-scale-panic">Sodium / scale panic</a> ·
-					<a href="/blog/gym-etiquette-without-gatekeeping">Gym etiquette</a> ·
-					<a href="/blog/comment-section-ped-debate-detox">PED comment detox</a>.
-				</li>
-			</ul>
-			<p class="takeaway"><strong>Takeaway:</strong> Best shape of your life is a process score, not a peak still.</p>
-		</section>
+	<section class="section-tight wrap tools-strip">
+		<p class="eyebrow">System tools</p>
+		<h2>Use these — don’t just read them.</h2>
+		<ul class="tool-links">
+			<li>
+				<a href="/start-here/training">
+					Training templates
+					<span>Full body 3× and Upper/Lower 4× with sets, reps, and progression rules.</span>
+				</a>
+			</li>
+			<li>
+				<a href="/start-here/weekly">
+					Weekly checklist
+					<span>Training, steps, sleep, weigh-ins — sticky in your browser.</span>
+				</a>
+			</li>
+			<li>
+				<a href="/food-os">
+					Food OS
+					<span>Cut / maintain / lean bulk calories + macros with plain-English why.</span>
+				</a>
+			</li>
+			<li>
+				<a href="/food">
+					Food hub
+					<span>Protein, cutting, lean bulk guides around the calculator.</span>
+				</a>
+			</li>
+		</ul>
+	</section>
 
-		<section class="hub-block" id="step-2">
-			<p class="eyebrow">Step 2</p>
-			<h2>Training — consistency beats complexity</h2>
-			<p>
-				If I were programming for most people: lift <strong>3–4 days a week</strong>, hit the big
-				patterns (squat/hinge, push, pull, carry or core), and add load or reps over time. That’s
-				progressive overload. Fancy splits can wait.
-			</p>
-			<ul>
-				<li>
-					<strong>Simple split that works:</strong> Full body 3×/week, or Upper / Lower 4×/week.
-					Keep the same lifts long enough to get good at them.
-					<a href="/blog/beginner-full-body-program">Full-body template</a> ·
-					<a href="/blog/upper-lower-split">Upper / lower</a> ·
-					<a href="/blog/upper-lower-advanced-volume">Advanced volume</a> ·
-					<a href="/blog/powerbuilding-hybrid-week">Powerbuilding hybrid</a> ·
-					<a href="/blog/how-many-days-to-lift">How many days</a> ·
-					<a href="/blog/home-gym-starter-minimalism">Home gym minimal</a> ·
-					<a href="/blog/beginner-mistakes-home-gyms">Home gym mistakes</a> ·
-					<a href="/blog/machine-only-hypertrophy-templates">Machine-only templates</a> ·
-					<a href="/blog/cable-vs-free-weight-trade-offs">Cables vs free weights</a>
-				</li>
-				<li>
-					<strong>Leave 1–3 reps in the tank</strong> most sets. Destroying yourself every session is
-					ego, not a plan. Progress the logbook:
-					<a href="/blog/progressive-overload">Progressive overload</a> ·
-					<a href="/blog/progressive-overload-for-women">Overload for women</a> ·
-					<a href="/blog/rpe-reps-in-reserve">RPE / reps in reserve</a> ·
-					<a href="/blog/training-logbook">Logbook</a>.
-					Stuck? <a href="/blog/plateau-checklist-for-lifters">Plateau checklist</a>.
-					Ramp in — <a href="/blog/warmup-before-lifting">warmup before lifting</a> ·
-					<a href="/blog/warmup-circuit-you-keep">warmup circuit</a>.
-					Hinges — <a href="/blog/joint-friendly-hinge-progressions">joint-friendly hinge progressions</a>.
-					Pressing — <a href="/blog/barbell-vs-db-bench-shoulders">barbell vs DB bench</a>.
-					Gear when it earns it — <a href="/blog/grip-belts-when-gear-helps">grip, belts, gear</a>.
-					On the road — <a href="/blog/hotel-travel-gym-sessions">hotel / travel sessions</a>.
-					Coming back from time off — <a href="/blog/injury-return-to-lift-mindset">injury return mindset</a>.
-				</li>
-				<li>
-					<strong>Cardio:</strong> walk most days
-					(<a href="/blog/walking-for-lifters">walking guide</a>). Place harder work carefully —
-					<a href="/blog/cardio-on-lifting-days">cardio on lifting days</a>.
-					Weekend-only lifters —
-					<a href="/blog/weekend-warrior-damage-control">weekend warrior damage control</a>.
-					Fried?
-					<a href="/blog/deload-week">Deload</a> ·
-					<a href="/blog/how-to-choose-deload-style">Deload styles</a> ·
-					<a href="/blog/rest-days-vs-active-recovery">Rest days</a>.
-					Slot that fits life — <a href="/blog/morning-vs-evening-training">morning vs evening</a>.
-				</li>
-			</ul>
-			<p>
-				When you’re ready for phased cut → health pivot → lean bulk education:
-				<a href="/blog/bodybuilding-blueprint">Bodybuilding blueprint</a>.
-			</p>
-			<p class="takeaway"><strong>Takeaway:</strong> Show up, progress the logbook, recover. Program-hopping is procrastination.</p>
-		</section>
+	<section class="section wrap" id="supplements">
+		<p class="eyebrow">Phase add-ons</p>
+		<h2>Supplements that actually matter</h2>
+		<p class="lede sys-lede">
+			Most tubs are noise. For the natural path, the short list is boring on purpose — after food and
+			training are moving.
+		</p>
+		<ul class="plain-list">
+			<li>
+				<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional.
+				<a href="/blog/best-creatine-australia">Creatine guide</a>
+				·
+				<a href="/go/creatine-true" rel="sponsored noopener noreferrer">True Protein creatine</a>
+				·
+				<a href="/go/creatine-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients creatine</a>
+			</li>
+			<li>
+				<strong>Protein powder</strong> — only if food undershoots. Judge cost per ~25 g protein.
+				<a href="/blog/best-protein-powder-australia">Protein guide</a>
+				·
+				<a href="/go/protein-true" rel="sponsored noopener noreferrer">True Protein whey</a>
+				·
+				<a href="/go/protein-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients protein</a>
+			</li>
+			<li>
+				<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.
+				<a href="/blog/caffeine-dose-training">Caffeine timing</a>
+			</li>
+		</ul>
+		<p class="muted">
+			Order of operations:
+			<a href="/blog/beginner-supplement-stack-australia">Beginner stack</a>
+			·
+			<a href="/blog/yeh-bro-current-picks">Current picks</a>
+		</p>
+	</section>
 
-		<section class="hub-block" id="step-3">
-			<p class="eyebrow">Step 3</p>
-			<h2>Food — protein first, phases when you’re ready</h2>
-			<p>
-				Don’t obsess over apps before you can hit protein and roughly the right calories most days.
-				Deep dive the whole rabbit hole from
-				<a href="/blog/calories-and-macros-for-lifters">calories &amp; macros for lifters</a>.
-				Here’s the order I’d use:
-			</p>
-			<ol>
-				<li>
-					<strong>Energy balance first:</strong> what calories are, then a rough maintenance —
-					<a href="/blog/what-calories-are-for-lifters">what calories are</a> ·
-					<a href="/blog/estimate-maintenance-calories">estimate maintenance</a> ·
-					<a href="/blog/why-am-i-not-losing-fat">why am I not losing?</a>
-				</li>
-				<li>
-					<strong>Protein:</strong> about <strong>1.6–2.2 g per kg</strong> body weight as a practical
-					range for lifters.
-					<a href="/blog/protein-targets-for-lifters">Protein targets</a> ·
-					<a href="/blog/protein-timing-vs-total-intake">timing vs total</a> ·
-					<a href="/blog/whey-vs-food-protein">Whey vs food</a> ·
-					<a href="/blog/meal-structure-without-apps">Meal structure without apps</a> ·
-					<a href="/blog/partner-family-food-macros">Partner / family food</a>
-				</li>
-				<li>
-					<strong>Macro split:</strong> protein → fat floor → carbs for work —
-					<a href="/blog/macro-split-basics-for-lifters">macro split basics</a> ·
-					<a href="/blog/carb-totals-vs-timing-for-lifters">carb totals vs timing</a> ·
-					<a href="/blog/carbs-around-training">carbs around training</a> ·
-					<a href="/blog/intra-carbs-for-long-sessions">intra carbs</a> ·
-					<a href="/blog/dietary-fat-floors-for-lifters">dietary fat floors</a>.
-				</li>
-				<li>
-					<strong>How you hit the numbers:</strong>
-					<a href="/blog/tracking-vs-hand-portions">tracking vs hand portions</a> ·
-					<a href="/blog/calorie-tracking-mistakes">tracking mistakes</a> ·
-					<a href="/blog/flexible-dieting-vs-meal-plans">flexible vs meal plans</a> ·
-					<a href="/blog/hitting-macros-at-restaurants">restaurants / social food</a>.
-				</li>
-				<li><strong>Maintenance first:</strong> eat roughly enough to hold weight while training quality rises.</li>
-				<li>
-					<strong>Deficit when ready:</strong> ~15–20% below maintenance to lose fat without torching
-					lifts — <a href="/blog/cutting-without-wrecking-lifts">cutting guide</a> ·
-					<a href="/blog/hunger-on-a-cut">hunger noise vs need</a> ·
-					<a href="/blog/refeeds-and-diet-breaks">refeeds / diet breaks</a>.
-				</li>
-				<li>
-					<strong>After the cut:</strong> climb out with intent —
-					<a href="/blog/reverse-diet-literacy">reverse diet literacy</a> ·
-					<a href="/blog/cut-to-bulk-transition-mistakes">cut-to-bulk mistakes</a> ·
-					<a href="/blog/recalculating-calories-after-weight-change">recalculate after weight change</a>.
-				</li>
-				<li>
-					<strong>Surplus when ready:</strong> a small bump (~10%) to grow — not a dirty bulk that
-					undoes the cut — <a href="/blog/lean-bulk-basics">lean bulk basics</a>.
-				</li>
-			</ol>
-			<p>
-				Phased food + training detail lives in the
-				<a href="/blog/bodybuilding-blueprint-phase-1-cut">cut</a>,
-				<a href="/blog/bodybuilding-blueprint-phase-2-health-pivot">health pivot</a>, and
-				<a href="/blog/bodybuilding-blueprint-phase-3-lean-bulk">lean bulk</a> guides — after steps 1–4 feel normal.
-			</p>
-			<p class="takeaway"><strong>Takeaway:</strong> Hit protein. Adjust calories slowly. Perfect macros can wait.</p>
-		</section>
+	<section class="section-tight wrap later-gate" id="later">
+		<p class="eyebrow">Later — not day one</p>
+		<h2>Deeper culture when the basics are locked</h2>
+		<p class="lede sys-lede">
+			Gym culture has a pharmacology shadow. Ignoring it creates naivety; leading with it creates
+			chaos for beginners. Soft gate: train consistently first. Then literacy — risks, bloodwork,
+			legality — not a shopping list. We don’t source gear.
+		</p>
+		<div class="cta-row">
+			<a class="btn btn-secondary" href="/blog/bodybuilding-culture-education">Culture education</a>
+			<a class="btn btn-secondary" href="/blog/ped-harm-reduction-australia">PED harm reduction</a>
+			<a class="btn btn-secondary" href="/blog/bloodwork-for-lifters">Bloodwork for lifters</a>
+		</div>
+	</section>
 
-		<section class="hub-block" id="step-4">
-			<p class="eyebrow">Step 4</p>
-			<h2>Sleep / recovery — the unpaid coach</h2>
-			<p>
-				You can out-train a bad night once. You can’t out-train a bad month. Aim for a sleep window
-				you can protect most nights — same bedtime beats heroic weekend catch-up.
-			</p>
-			<ul>
-				<li>
-					Treat <strong>7–9 hours</strong> as training support, not optional lifestyle fluff —
-					<a href="/blog/sleep-for-lifters">sleep for lifters</a> ·
-					<a href="/blog/sleep-hygiene-late-shift-lifters">late-shift sleep</a> ·
-					<a href="/blog/sleep-trackers-useful-or-anxiety">sleep trackers</a>.
-				</li>
-				<li>
-					If resting heart rate or mood is wrecked for days, <strong>deload</strong> — cut volume
-					~30% for a week instead of adding more caffeine —
-					<a href="/blog/deload-week">deload week</a>.
-				</li>
-				<li>
-					Stress, steps, actual rest days, and the quiet tax from late nights matter.
-					<a href="/blog/stress-and-lifting">Stress and lifting</a> ·
-					<a href="/blog/walking-for-lifters">Walking for lifters</a> ·
-					<a href="/blog/step-targets-without-obsessing-neat">Step targets</a> ·
-					<a href="/blog/rest-days-vs-active-recovery">Rest days vs active recovery</a> ·
-					<a href="/blog/alcohol-training-quiet-tax">Alcohol and training</a>.
-				</li>
-				<li>
-					Persistent fatigue, hard cuts, or aging curiosity →
-					<a href="/blog/bloodwork-for-lifters">bloodwork for lifters</a>
-					(labs with a clinician — not Discord diagnosis).
-				</li>
-			</ul>
-			<p class="takeaway"><strong>Takeaway:</strong> Recovery is part of the program. Skip it and the logbook stalls.</p>
-		</section>
-
-		<section class="hub-block" id="step-5">
-			<p class="eyebrow">Step 5</p>
-			<h2>Supplements that actually matter</h2>
-			<p>
-				Most tubs are noise. For average lifters building the best shape of their life, the short
-				list is boring on purpose:
-			</p>
-			<ul>
-				<li>
-					<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional. Form theatre is mostly marketing.
-					<a href="/blog/best-creatine-australia">Creatine guide</a> ·
-					<a href="/blog/creatine-myths">Myths</a> ·
-					<a href="/blog/creatine-for-older-lifters">Older lifters</a> ·
-					<a href="/go/creatine-amz" rel="sponsored noopener noreferrer">Muscle Nation creatine monohydrate</a>
-				</li>
-				<li>
-					<strong>Protein powder</strong> — only if food is awkward. Judge cost per ~25 g protein, not flavour ads.
-					<a href="/blog/best-protein-powder-australia">Protein guide</a> ·
-					<a href="/blog/whey-vs-food-protein">Whey vs food</a> ·
-					<a href="/go/protein-amz" rel="sponsored noopener noreferrer">Muscle Nation whey isolate</a>
-				</li>
-				<li>
-					<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.
-					<a href="/blog/caffeine-dose-training">Caffeine timing</a>
-					· cut-day hunger noise vs stims:
-					<a href="/blog/energy-drinks-vs-pre-workout-deficit">Energy drinks vs pre in a deficit</a>
-				</li>
-			</ul>
-			<p>
-				Order of operations and what to skip:
-				<a href="/blog/beginner-supplement-stack-australia">Beginner stack</a> ·
-				<a href="/blog/gym-bag-basics">Gym bag basics</a> ·
-				<a href="/blog/label-math-drill">Label math drill</a> ·
-				<a href="/blog/omega-3-label-drill">Omega-3 label drill</a> ·
-				<a href="/blog/magnesium-label-form-drill">Magnesium form drill</a> ·
-				<a href="/blog/supplement-label-red-flags-australia">Label red flags</a> ·
-				<a href="/blog/supplement-mistakes-beginners-australia">Beginner mistakes</a> ·
-				<a href="/blog/yeh-bro-current-picks">Current picks</a>.
-			</p>
-			<p>
-				<strong>Deeper when you need it:</strong>
-				<a href="/blog/how-to-dose-creatine">How to dose creatine</a> ·
-				<a href="/blog/when-to-take-creatine">When to take it</a> ·
-				<a href="/blog/creatine-loading-phase">Loading</a> ·
-				<a href="/blog/does-creatine-cause-bloating">Bloat myth</a> ·
-				<a href="/blog/creatine-monohydrate-vs-hcl">Mono vs HCL</a> ·
-				<a href="/blog/creapure-vs-generic-creatine">Creapure vs generic</a> ·
-				<a href="/blog/best-creatine-for-beginners-australia">Creatine for beginners</a> ·
-				<a href="/blog/creatine-for-women">Creatine for women</a> ·
-				<a href="/blog/whey-concentrate-vs-isolate-australia">WPC vs WPI</a> ·
-				<a href="/blog/lactose-whey-isolate">Lactose / isolate</a> ·
-				<a href="/blog/protein-per-scoop-australia">Protein per scoop</a> ·
-				<a href="/blog/protein-scoop-economics-australia">Scoop economics</a> ·
-				<a href="/blog/cheapest-protein-powder-australia">Cheapest protein</a> ·
-				<a href="/blog/casein-vs-whey">Casein vs whey</a> ·
-				<a href="/blog/best-plant-protein-australia">Plant protein</a> ·
-				<a href="/blog/best-stim-free-pre-workout-australia">Stim-free pre</a> ·
-				<a href="/blog/pre-workout-without-hype">Pre without hype</a> ·
-				<a href="/blog/proprietary-blend-pre-workout">Proprietary blends</a> ·
-				<a href="/blog/pre-workout-vs-coffee">Pre vs coffee</a> ·
-				<a href="/blog/beta-alanine-tingles">Beta-alanine tingles</a> ·
-				<a href="/blog/intra-workout-electrolytes-australia">Intra electrolytes</a> ·
-				<a href="/blog/magnesium-for-lifters-australia">Magnesium</a> ·
-				<a href="/blog/omega-3-for-lifters-australia">Omega-3</a> ·
-				<a href="/blog/vitamin-d-training-australia">Vitamin D</a> ·
-				<a href="/blog/amazon-au-vs-supplement-shops">Amazon vs shops</a>.
-			</p>
-			<p class="takeaway"><strong>Takeaway:</strong> Creatine + protein convenience cover most of the useful powder lane. Everything else earns its place later.</p>
-		</section>
-
-		<section class="hub-block" id="step-6">
-			<p class="eyebrow">Step 6 · Optional</p>
-			<h2>Deeper culture — when the basics are locked</h2>
-			<p>
-				Gym culture has a pharmacology shadow. Ignoring it creates naivety; leading with it creates
-				chaos for beginners. When you’re training consistently and want literacy — risks, bloodwork,
-				legality, how forums talk about phases — go here. Not day one.
-			</p>
-			<div class="path-links">
-				<a href="/blog/bodybuilding-culture-education">Bodybuilding culture</a>
-				<a href="/blog/natty-or-not-physique-standards">Natty or not</a>
-				<a href="/blog/online-coach-red-flags">Online coach red flags</a>
-				<a href="/blog/ego-lifting-vs-training-age">Ego lifting vs training age</a>
-				<a href="/blog/enhanced-influencer-media-literacy">Enhanced influencer literacy</a>
-				<a href="/blog/contest-prep-culture-vs-health">Contest-prep vs health</a>
-				<a href="/blog/comment-section-ped-debate-detox">PED comment detox</a>
-				<a href="/blog/body-dysmorphia-adjacency-gym-culture">Body dysmorphia adjacency</a>
-				<a href="/blog/bloodwork-for-lifters">Bloodwork for lifters</a>
-				<a href="/blog/what-i-run-beside-testosterone">What I run beside testosterone</a>
-				<a href="/blog/trt-culture-literacy-vs-aas">TRT culture vs AAS literacy</a>
-				<a href="/blog/ped-harm-reduction-australia">PED harm reduction</a>
-				<a href="/blog/peptide-literacy-harm-reduction">Peptide literacy</a>
-				<a href="/blog/research-chem-marketing-tells">Research-chem marketing tells</a>
-				<a href="/blog/forum-cycle-lore-vs-clinical-care">Forum lore vs clinical care</a>
-				<a href="/blog/oral-aas-liver-risk-literacy">Oral AAS liver risk literacy</a>
-				<a href="/blog/fertility-aas-clinician-questions">Fertility + AAS clinician questions</a>
-				<a href="/blog/ped-bloodwork-literacy">PED bloodwork literacy</a>
-				<a href="/blog/ped-coming-off-under-care">Coming off under care</a>
-				<a href="/blog/bodybuilding-blueprint">Phased blueprint</a>
-				<a href="/blog/bodybuilding-blueprint-safety">Safety companion</a>
-				<a href="/about">About Yeh Bro</a>
-			</div>
-			<p class="takeaway">
-				<strong>Takeaway:</strong> Deeper reading is literacy, not a shopping list. Bloodwork and
-				medical decisions stay with a clinician. We don’t source gear.
-			</p>
-		</section>
-
-		<section class="hub-block close-block">
-			<p class="eyebrow">Do this week</p>
-			<h2>Your first seven days</h2>
-			<ol>
-				<li>Book 3–4 lift sessions on the calendar (Upper/Lower or full body).</li>
-				<li>Hit a protein target most days — food first, powder if needed.</li>
-				<li>Protect one sleep window like it’s a session.</li>
-				<li>Start creatine if you want the easy win (3–5 g/day).</li>
-				<li>Come back to the guides when a question is real — not when you’re doomscrolling.</li>
-			</ol>
-			<div class="cta-row">
-				<a class="btn btn-primary" href="/blog/beginner-full-body-program">Full-body template</a>
-				<a class="btn btn-secondary" href="/blog/beginner-supplement-stack-australia">Beginner stack</a>
-				<a class="btn btn-secondary" href="/blog">All guides</a>
-			</div>
-		</section>
-	</article>
+	<section class="section wrap close-sys">
+		<p class="eyebrow">This week</p>
+		<h2>Your first seven days</h2>
+		<ol class="week-one">
+			<li>Open <a href="/start-here/training">training templates</a> and book 3–4 sessions.</li>
+			<li>Set calories in <a href="/food-os">Food OS</a> — maintain first if you’re unsure.</li>
+			<li>Run the <a href="/start-here/weekly">weekly checklist</a> like it’s part of the program.</li>
+			<li>Protect one sleep window. Start creatine if you want the easy win (3–5 g/day).</li>
+		</ol>
+		<div class="cta-row">
+			<a class="btn btn-primary" href="/start-here/training">Start with training</a>
+			<a class="btn btn-secondary" href="/food-os">Set up Food OS</a>
+		</div>
+		<p class="compliance muted">
+			Education only — not medical advice. Individual needs vary. Talk to a clinician for personal
+			health decisions.
+		</p>
+	</section>
 </BaseLayout>
 
 <style>
-	.journey .step-nav {
+	.sys-hero {
+		position: relative;
+		min-height: min(88vh, 760px);
+		display: flex;
+		align-items: flex-end;
+		padding: 5.5rem 0 3.5rem;
+		overflow: hidden;
+		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
+	}
+	.sys-hero-atmosphere {
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(115deg, rgba(18, 18, 18, 0.2), rgba(18, 18, 18, 0.92)),
+			repeating-linear-gradient(
+				90deg,
+				rgba(242, 242, 240, 0.028) 0,
+				rgba(242, 242, 240, 0.028) 1px,
+				transparent 1px,
+				transparent 68px
+			),
+			repeating-linear-gradient(
+				0deg,
+				rgba(242, 242, 240, 0.028) 0,
+				rgba(242, 242, 240, 0.028) 1px,
+				transparent 1px,
+				transparent 68px
+			),
+			radial-gradient(ellipse 70% 50% at 82% 28%, rgba(200, 241, 53, 0.2), transparent 55%),
+			radial-gradient(ellipse 45% 40% at 12% 75%, rgba(46, 230, 166, 0.1), transparent 50%);
+		pointer-events: none;
+		animation: hero-atmosphere 14s ease-in-out infinite alternate;
+	}
+	.sys-hero-inner {
+		position: relative;
+		z-index: 1;
+	}
+	.brand-hero {
+		display: inline-block;
+		position: relative;
+	}
+	.brand-hero::after {
+		content: '';
+		display: block;
+		height: 6px;
+		width: 100%;
+		margin-top: 0.35rem;
+		background: var(--yb-lime);
+		transform-origin: left;
+		animation: underline-grow 0.8s ease 0.35s both;
+	}
+	.sys-product-name {
+		font-family: var(--font-display);
+		font-size: clamp(1.45rem, 3.2vw, 2rem);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--yb-teal);
+		margin: 0.85rem 0 1rem;
+	}
+	.sys-lede {
+		max-width: 40rem;
+		margin-bottom: 1.75rem;
+	}
+	.phase-rail {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		gap: 1.75rem;
+	}
+	.phase-item {
+		margin: 0;
+		padding: 1.35rem 0 0;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		scroll-margin-top: 7.5rem;
+		animation: rise-in 0.65s ease both;
+	}
+	.phase-item:nth-child(2) {
+		animation-delay: 0.05s;
+	}
+	.phase-item:nth-child(3) {
+		animation-delay: 0.1s;
+	}
+	.phase-item:nth-child(4) {
+		animation-delay: 0.15s;
+	}
+	.phase-item:nth-child(5) {
+		animation-delay: 0.2s;
+	}
+	.phase-meta {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 0.85rem;
-		margin: 1.5rem 0 0.5rem;
-		padding: 1rem 0;
-		border-top: 1px solid rgba(242, 242, 240, 0.12);
-		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
-		font-size: 0.92rem;
-		font-weight: 600;
+		gap: 0.75rem 1.25rem;
+		align-items: baseline;
+		margin-bottom: 0.35rem;
 	}
-	.journey .step-nav a {
-		color: var(--yb-muted);
-		text-decoration: none;
-	}
-	.journey .step-nav a:hover {
+	.phase-num {
+		font-family: var(--font-display);
+		font-size: 1.1rem;
+		letter-spacing: 0.08em;
 		color: var(--yb-lime);
 	}
-	.hub-block {
-		margin: 2rem 0 2.5rem;
-		padding: 1.5rem 0 0;
-		border-top: 1px solid rgba(242, 242, 240, 0.12);
-		scroll-margin-top: 5rem;
+	.phase-weeks {
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
 	}
-	.hub-block h2 {
+	.phase-item h3 {
+		margin-bottom: 0.4rem;
+	}
+	.phase-job {
+		color: rgba(242, 242, 240, 0.88);
 		margin-bottom: 0.75rem;
+		max-width: 40rem;
 	}
-	.takeaway {
-		margin-top: 1.25rem;
-		padding: 0.85rem 0 0.85rem 0.95rem;
+	.phase-focus {
+		max-width: 42rem;
+		margin-bottom: 0.85rem;
+	}
+	.phase-done {
+		margin: 0 0 0.85rem;
+		padding-left: 0.85rem;
 		border-left: 3px solid var(--yb-lime);
+		max-width: 40rem;
 		color: rgba(242, 242, 240, 0.9);
 	}
-	.path-links {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem 1rem;
-		margin-top: 0.75rem;
-		font-size: 0.95rem;
+	.phase-link {
+		font-weight: 700;
+		text-decoration: none;
+		letter-spacing: 0.02em;
 	}
-	.close-block {
-		margin-bottom: 1rem;
+	.phase-link:hover {
+		color: var(--yb-teal);
+	}
+	.tools-strip {
+		border-top: 1px solid rgba(242, 242, 240, 0.1);
+		border-bottom: 1px solid rgba(242, 242, 240, 0.1);
+	}
+	.tool-links {
+		list-style: none;
+		padding: 0;
+		margin: 1.5rem 0 0;
+		display: grid;
+		gap: 0.35rem;
+	}
+	.tool-links a {
+		display: block;
+		padding: 1.1rem 0;
+		border-bottom: 1px solid rgba(242, 242, 240, 0.12);
+		text-decoration: none;
+		color: var(--yb-offwhite);
+		font-family: var(--font-display);
+		font-size: clamp(1.2rem, 2.5vw, 1.55rem);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		transition:
+			color 0.2s ease,
+			padding-left 0.2s ease;
+	}
+	.tool-links a:hover {
+		color: var(--yb-lime);
+		padding-left: 0.35rem;
+	}
+	.tool-links span {
+		display: block;
+		font-family: var(--font-body);
+		font-size: 0.95rem;
+		font-weight: 400;
+		text-transform: none;
+		letter-spacing: 0;
+		color: var(--yb-muted);
+		margin-top: 0.3rem;
+	}
+	.plain-list {
+		max-width: 42rem;
+	}
+	.later-gate {
+		background: linear-gradient(180deg, rgba(26, 26, 26, 0.5), transparent);
+		border-top: 1px solid rgba(242, 242, 240, 0.08);
+		padding-left: 0;
+		padding-right: 0;
+	}
+	.week-one {
+		max-width: 40rem;
+		margin-bottom: 1.5rem;
+	}
+	.compliance {
+		margin-top: 2rem;
+		font-size: 0.9rem;
+		max-width: 36rem;
+	}
+	@keyframes hero-atmosphere {
+		from {
+			filter: brightness(1);
+			transform: scale(1);
+		}
+		to {
+			filter: brightness(1.06);
+			transform: scale(1.02);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sys-hero-atmosphere,
+		.phase-item {
+			animation: none;
+		}
 	}
 </style>
