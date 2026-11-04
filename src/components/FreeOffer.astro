@@ -15,8 +15,11 @@ const { variant = 'compact', class: className } = Astro.props;
 		<span class="sr-only">Was </span>
 		<s>{OFFER_PRICE}</s>
 	</span>
-	<span class="free-offer-now">Free</span>
-	<span class="free-offer-note">{OFFER_PRICE_NOTE}</span>
+	<span class="free-offer-tail">
+		<span class="free-offer-now">Free</span>
+		<span class="free-offer-sep" aria-hidden="true">·</span>
+		<span class="free-offer-note">{OFFER_PRICE_NOTE}</span>
+	</span>
 </p>
 
 <style>
@@ -39,12 +42,23 @@ const { variant = 'compact', class: className } = Astro.props;
 		text-decoration-thickness: 2px;
 		text-decoration-color: rgba(232, 93, 76, 0.85);
 	}
+	.free-offer-tail {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.4rem;
+	}
 	.free-offer-now {
 		font-family: var(--font-display);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: var(--yb-lime);
 		font-size: 1.15rem;
+	}
+	.free-offer-sep {
+		color: rgba(242, 242, 240, 0.45);
+		font-weight: 600;
+		font-size: 0.95rem;
 	}
 	.free-offer-note {
 		color: rgba(242, 242, 240, 0.78);
@@ -57,6 +71,7 @@ const { variant = 'compact', class: className } = Astro.props;
 	.free-offer--hero .free-offer-now {
 		font-size: clamp(1.35rem, 3vw, 1.85rem);
 	}
+	.free-offer--hero .free-offer-sep,
 	.free-offer--hero .free-offer-note {
 		font-size: 1.05rem;
 	}

@@ -123,32 +123,44 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 			Most tubs are noise. For the natural path, the short list is boring on purpose — after food and
 			training are moving.
 		</p>
-		<ul class="plain-list">
+		<ul class="plain-list supplement-list">
 			<li>
-				<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional.{' '}
-				<a href="/blog/best-creatine-australia">Creatine guide</a>
-				·
-				<a href="/go/creatine-true" rel="sponsored noopener noreferrer">True Protein creatine</a>
-				·
-				<a href="/go/creatine-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients creatine</a>
+				<p class="supplement-desc">
+					<strong>Creatine monohydrate</strong> — 3–5 g daily. Loading optional.
+				</p>
+				<p class="supplement-links">
+					<a href="/blog/best-creatine-australia">Creatine guide</a>
+					{' · '}
+					<a href="/go/creatine-true" rel="sponsored noopener noreferrer">True Protein creatine</a>
+					{' · '}
+					<a href="/go/creatine-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients creatine</a>
+				</p>
 			</li>
 			<li>
-				<strong>Protein powder</strong> — only if food undershoots. Judge cost per ~25 g protein.{' '}
-				<a href="/blog/best-protein-powder-australia">Protein guide</a>
-				·
-				<a href="/go/protein-true" rel="sponsored noopener noreferrer">True Protein whey</a>
-				·
-				<a href="/go/protein-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients protein</a>
+				<p class="supplement-desc">
+					<strong>Protein powder</strong> — only if food undershoots. Judge cost per ~25 g protein.
+				</p>
+				<p class="supplement-links">
+					<a href="/blog/best-protein-powder-australia">Protein guide</a>
+					{' · '}
+					<a href="/go/protein-true" rel="sponsored noopener noreferrer">True Protein whey</a>
+					{' · '}
+					<a href="/go/protein-bulk" rel="sponsored noopener noreferrer">Bulk Nutrients protein</a>
+				</p>
 			</li>
 			<li>
-				<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.{' '}
-				<a href="/blog/caffeine-dose-training">Caffeine timing</a>
+				<p class="supplement-desc">
+					<strong>Caffeine</strong> — useful for training focus if you tolerate it. Not a personality.
+				</p>
+				<p class="supplement-links">
+					<a href="/blog/caffeine-dose-training">Caffeine timing</a>
+				</p>
 			</li>
 		</ul>
 		<p class="muted">
-			Order of operations:
+			Order of operations:{' '}
 			<a href="/blog/beginner-supplement-stack-australia">Beginner stack</a>
-			·
+			{' · '}
 			<a href="/blog/yeh-bro-current-picks">Current picks</a>
 		</p>
 	</section>
@@ -357,6 +369,21 @@ import { SYSTEM_PHASES, SYSTEM_PRODUCT } from '../data/start-here-system';
 	}
 	.plain-list {
 		max-width: 42rem;
+	}
+	.supplement-list {
+		display: grid;
+		gap: 1.15rem;
+		padding-left: 1.15rem;
+	}
+	.supplement-list > li {
+		padding: 0.15rem 0;
+	}
+	.supplement-desc {
+		margin: 0;
+	}
+	.supplement-links {
+		margin: 0.45rem 0 0;
+		line-height: 1.55;
 	}
 	.later-gate {
 		background: linear-gradient(180deg, rgba(26, 26, 26, 0.5), transparent);

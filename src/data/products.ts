@@ -11,4 +11,4 @@ export const FOOD_HREF = '/food-bro';
 
 /** Plausible coach-program sticker price — one figure site-wide, strikethrough → free. */
 export const OFFER_PRICE = '$497';
-export const OFFER_PRICE_NOTE = 'Yours free';
+export const OFFER_PRICE_NOTE = 'No signup, no card';
