@@ -8,14 +8,16 @@ Australia-first bodybuilding / lifting education site (Astro) — evidence-first
 
 - Astro + MDX content collections (`src/content/blog/`)
 - Affiliate redirects: `/go/[slug]` ← `src/data/affiliates.ts` (UTM passthrough; canonical phase-1 slugs only)
-- Static build → Cloudflare Pages (`dist/`)
+- Static Astro SSG (`dist/`) + Cloudflare Worker for `/admin/social` Functions (`dist-worker/`)
 
 ## Commands
 
 ```sh
 npm install
 npm run dev
-npm run build
+npm run build          # astro build + compile Pages Functions → Worker
+npm run pages:dev      # local Worker + assets (needs wrangler)
+npm run deploy         # build + wrangler deploy (CI / founder)
 ```
 
 ## Conventions
@@ -26,11 +28,13 @@ npm run build
 - Disclosures on commercial pages; never sell/source illegal AAS / SARMs / peptides / grey gear (educate ≠ storefront)
 - Brand tokens: Context `docs/yeh-bro-brand-kit.md`
 
-## Cloudflare Pages
+## Cloudflare Workers (+ static assets)
 
 See **[MERGE.md](./MERGE.md)** for merge → deploy. Short form:
 
-1. Connect git `daelum-marx/yeh-bro` · production branch `main`
-2. Build `npm run build` · output `dist` · Node `22+`
-3. Attach **yehbro.com** (HTTPS; apex/www choice)
-4. Optional later: redirect `.com.au` → `https://yehbro.com` if registered
+1. Connect git `daelum-marx/yeh-bro` · production branch `main` (Workers Builds)
+2. **Build:** `npm run build` · **Deploy:** `npx wrangler deploy` · Node `22+`
+3. `wrangler.toml` sets `assets.directory = dist` and `main = dist-worker/index.js` (admin Functions)
+4. After deploy, Settings → Variables and secrets unlocks (project is no longer assets-only)
+5. Attach **yehbro.com** (HTTPS; apex/www choice)
+6. Optional later: redirect `.com.au` → `https://yehbro.com` if registered

@@ -8,14 +8,18 @@ Production URL: **https://yehbro.com** (AU-first market; `.com` is primary).
 2. Confirm CI / `npm run build` green.
 3. Merge into `main` (squash or merge commit — team preference).
 
-## 2. Cloudflare Pages
+## 2. Cloudflare Workers (+ static assets)
 
-1. Workers & Pages → Create → connect Origin/git `daelum-marx/yeh-bro`.
+The public site stays Astro SSG. `/admin/social` APIs need a real Worker script so secrets/KV/R2 work.
+
+1. Workers & Pages → open (or create) the **yeh-bro** Worker · connect Origin/git `daelum-marx/yeh-bro`.
 2. **Production branch:** `main`
-3. **Build:** `npm run build` · **Output:** `dist` · **Node:** `22+`
-4. Custom domain: **yehbro.com** (and `www` if used) → force HTTPS; pick apex ↔ www once.
-5. Optional: redirect any future `.com.au` to `https://yehbro.com` when that domain is owned.
-6. Preview deploys on PRs when available.
+3. **Build command:** `npm run build` · **Deploy command:** `npx wrangler deploy` · **Node:** `22+`  
+   (`npm run build` = `astro build` + `wrangler pages functions build` → `dist-worker/`)
+4. Confirm Settings no longer says “static assets only” — Variables and secrets / Bindings are editable.
+5. Custom domain: **yehbro.com** (and `www` if used) → force HTTPS; pick apex ↔ www once.
+6. Optional: redirect any future `.com.au` to `https://yehbro.com` when that domain is owned.
+7. Preview deploys on PRs when available.
 
 ## 3. Post-merge checks
 

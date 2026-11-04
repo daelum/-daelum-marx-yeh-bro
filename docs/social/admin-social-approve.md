@@ -10,17 +10,18 @@ Private founder UI on **yehbro.com** for reviewing Holyfield-style singles + car
 
 ## Founder how-to
 
-1. **Set the password secret** in Cloudflare Pages → your yehbro project → **Settings → Environment variables** (Production + Preview):
+1. **Deploy must include the Worker** (`main` = compiled `functions/` → `dist-worker/`). If Settings says *“Variables cannot be added to a Worker that only has static assets”*, the last deploy was assets-only — merge/deploy the Worker Functions fix first, then retry.
+2. **Set the password secret** in Cloudflare → your yehbro Worker/Pages project → **Settings → Variables and secrets** (Production + Preview):
    - Name: `ADMIN_SOCIAL_PASSWORD`
    - Type: **Secret**
    - Value: a strong password only you know (never paste into chat, git, or this doc)
-2. Create bindings (once):
+3. Create bindings (once):
    - **KV** namespace → binding name **`IG_QUEUE`**
    - **R2** bucket (e.g. `yehbro-ig-queue`) → binding name **`IG_MEDIA`**
-   - Update `wrangler.toml` placeholder IDs after creation
-3. Optional: set Pages secret **`ZERNIO_API_KEY`** (same key the agent uses) so **Post approved** can publish from the desk. If unset, the desk still marks the batch synced and tells you to ask the agent to post.
-4. Redeploy Pages after secrets/bindings change.
-5. Open `https://yehbro.com/admin/social`, enter the password, pick a day, approve/reject, then **Post approved**.
+   - Update `wrangler.toml` placeholder IDs after creation (or bind in the dashboard)
+4. Optional: set secret **`ZERNIO_API_KEY`** (same key the agent uses) so **Post approved** can publish from the desk. If unset, the desk still marks the batch synced and tells you to ask the agent to post.
+5. Redeploy after secrets/bindings change (`npm run deploy` / Workers Builds).
+6. Open `https://yehbro.com/admin/social`, enter the password, pick a day, approve/reject, then **Post approved**.
 
 If `ADMIN_SOCIAL_PASSWORD` is **unset**, the page shows setup instructions only — it does **not** leave the desk open.
 
@@ -45,8 +46,8 @@ Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
 
 | Name | Kind | Required | Purpose |
 |------|------|----------|---------|
-| `ADMIN_SOCIAL_PASSWORD` | Pages **secret** | Yes | Login gate (HttpOnly session cookie) |
-| `ZERNIO_API_KEY` | Pages **secret** | No | Post-from-admin via Zernio to `@theyehbro` |
+| `ADMIN_SOCIAL_PASSWORD` | Worker **secret** | Yes | Login gate (HttpOnly session cookie) |
+| `ZERNIO_API_KEY` | Worker **secret** | No | Post-from-admin via Zernio to `@theyehbro` |
 | `ADMIN_SOCIAL_FIXTURE` | Env var `"1"` | No | Force fixture sample data |
 | `IG_QUEUE` | KV binding | Yes (prod) | Per-day manifest/status JSON |
 | `IG_MEDIA` | R2 binding | Yes (prod) | PNG bytes (never in `public/`) |
@@ -85,11 +86,11 @@ npm run preview
 # Then open /admin/social?fixture=1
 ```
 
-Or with Functions (when wrangler + stubs are configured):
+Or with the Worker + assets (when wrangler + stubs are configured):
 
 ```bash
 npm run pages:dev
-# Set ADMIN_SOCIAL_PASSWORD in the wrangler session / .dev.vars (gitignored)
+# Set ADMIN_SOCIAL_PASSWORD in .dev.vars (gitignored)
 ```
 
 Create `.dev.vars` locally (gitignored) with `ADMIN_SOCIAL_PASSWORD=…` — never commit it. Without KV/R2 bindings, Functions auto-enter **fixture mode**.

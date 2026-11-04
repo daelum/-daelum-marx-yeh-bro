@@ -1,0 +1,7 @@
+# Never upload Worker / Pages control files as public static assets.
+_worker.js
+_worker.js.map
+_routes.json
+**/node_modules
+**/.DS_Store
+**/.git
