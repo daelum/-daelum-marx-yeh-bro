@@ -1,7 +1,7 @@
 export const SITE_TITLE = 'Yeh Bro';
 /** Unique homepage <title> (includes brand). */
-export const SITE_TITLE_HOME = 'Yeh Bro System + Food Bro — free coach-grade tools';
+export const SITE_TITLE_HOME = 'Yeh Bro — Cuts, bulks, bloodwork — free Yeh Bro System + Food Bro';
 export const SITE_DESCRIPTION =
-	'Free coach-grade Yeh Bro System and Food Bro — training templates, weekly checklists, and cut / maintain / lean bulk calories. Gym-literate guides when you want depth.';
-export const SITE_TAGLINE = 'Coach-grade system. Paid quality. Yours free.';
+	'How I’d think about the cut, the bulk, and the bloodwork — free Yeh Bro System and Food Bro for training, food, and recovery. Gym-literate guides when you want depth.';
+export const SITE_TAGLINE = 'How I’d think about the cut, the bulk, and the bloodwork.';
 export const SITE_URL = 'https://yehbro.com';

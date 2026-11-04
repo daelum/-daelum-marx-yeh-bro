@@ -59,12 +59,18 @@ import HeaderLink from './HeaderLink.astro';
 		align-items: center;
 		text-decoration: none;
 		color: var(--yb-offwhite);
+		/* Transparent mark — never a square badge behind the spikes */
+		background: transparent;
+		padding: 0;
+		border: none;
+		border-radius: 0;
 		opacity: 0.96;
-		transition: opacity 0.2s ease;
+		transition: opacity 0.2s ease, filter 0.2s ease;
 	}
 	.brand:hover {
 		color: var(--yb-offwhite);
 		opacity: 1;
+		filter: brightness(1.08);
 	}
 	.nav-menu {
 		display: flex;

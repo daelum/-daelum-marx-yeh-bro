@@ -1,20 +1,22 @@
 :root {
-	--yb-black: #0a0a0a;
-	--yb-charcoal: #121212;
+	--yb-black: #080808;
+	--yb-charcoal: #111110;
 	--yb-offwhite: #f2f2f0;
-	--yb-muted: #8a8a86;
+	--yb-muted: #8e8e88;
 	--yb-lime: #c8f135;
 	--yb-teal: #2ee6a6;
 	--yb-danger: #e85d4c;
-	--yb-surface: #141414;
-	--yb-surface-2: #1c1c1c;
-	--yb-edge: rgba(242, 242, 240, 0.1);
+	--yb-steel: #9a9588;
+	--yb-surface: #131312;
+	--yb-surface-2: #1a1a18;
+	--yb-edge: rgba(242, 242, 240, 0.11);
 	--font-display: 'Archivo Black', 'Arial Narrow', sans-serif;
 	--font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
 	--max-prose: 42rem;
 	--max-wide: 68rem;
+	/* Finer grit — reads as brushed plate, not generic AI noise overlay */
 	--noise:
-		url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+		url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
 }
 
 *,
@@ -36,11 +38,11 @@ body {
 	color: var(--yb-offwhite);
 	background-color: var(--yb-black);
 	background-image:
-		linear-gradient(180deg, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0.96)),
+		linear-gradient(180deg, rgba(8, 8, 8, 0.9), rgba(8, 8, 8, 0.96)),
 		var(--noise),
-		radial-gradient(ellipse 70% 45% at 85% -5%, rgba(200, 241, 53, 0.07), transparent 55%),
-		radial-gradient(ellipse 55% 40% at 5% 15%, rgba(46, 230, 166, 0.05), transparent 50%),
-		linear-gradient(180deg, #0a0a0a 0%, #101010 45%, #0a0a0a 100%);
+		radial-gradient(ellipse 65% 40% at 90% -8%, rgba(200, 241, 53, 0.06), transparent 55%),
+		radial-gradient(ellipse 50% 35% at 0% 20%, rgba(154, 149, 136, 0.06), transparent 50%),
+		linear-gradient(180deg, #080808 0%, #10100e 48%, #080808 100%);
 	background-attachment: fixed;
 	word-wrap: break-word;
 	overflow-wrap: break-word;

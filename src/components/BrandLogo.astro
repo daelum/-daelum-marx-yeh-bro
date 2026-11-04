@@ -9,22 +9,24 @@ interface Props {
 
 const { size = 'nav', decorative = false, class: className } = Astro.props;
 
+/** Transparent PNG/WebP lockups — no black tile, no watermark. */
 const srcBySize = {
 	nav: '/brand/yehbro-logo-nav.webp',
 	md: '/brand/yehbro-logo-md.webp',
 	hero: '/brand/yehbro-logo.webp',
 } as const;
 
+/** Intrinsic pixel sizes of the exported lockups (721×920 source aspect). */
 const widthBySize = {
-	nav: 77,
-	md: 128,
-	hero: 784,
+	nav: 50,
+	md: 126,
+	hero: 728,
 } as const;
 
 const heightBySize = {
-	nav: 96,
+	nav: 64,
 	md: 160,
-	hero: 1168,
+	hero: 921,
 } as const;
 ---
 
@@ -47,26 +49,30 @@ const heightBySize = {
 		max-width: 100%;
 		object-fit: contain;
 		object-position: left center;
+		/* Transparent mark — no box, no fill behind the spikes */
+		background: transparent;
 	}
 	.brand-logo--nav {
-		height: 2.35rem;
+		height: 2.5rem;
 		width: auto;
+		filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
 	}
 	.brand-logo--md {
-		height: 3.5rem;
+		height: 3.25rem;
 		width: auto;
 	}
 	.brand-logo--hero {
-		/* Tall metal wordmark — constrain by height so it stays a hero signal, not a scroll wall */
-		height: clamp(7.5rem, 28vh, 13.5rem);
+		/* Tall spiked mark — height-led so it reads as brand, not a tile */
+		height: clamp(8.5rem, 34vh, 16rem);
 		width: auto;
-		max-width: min(100%, 18rem);
-		filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
+		max-width: min(100%, 17.5rem);
+		/* Soft depth only — avoid heavy black bloom that reads as a tile */
+		filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.35));
 	}
 	@media (min-width: 720px) {
 		.brand-logo--hero {
 			max-width: min(100%, 20rem);
-			height: clamp(9rem, 32vh, 15rem);
+			height: clamp(10rem, 38vh, 17.5rem);
 		}
 	}
 </style>
