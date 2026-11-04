@@ -36,7 +36,7 @@ export const SYSTEM_PHASES: SystemPhase[] = [
 		weeks: 'Weeks 3–6',
 		job: 'Same split, same big lifts, show up when life is average.',
 		focus: [
-			'Run Full Body 3× or Upper/Lower 4× — stop program-hopping.',
+			'Run 3-day PPL or 4-day PPLU — stop program-hopping.',
 			'Leave 1–3 reps in the tank (RIR) most working sets.',
 			'Walk most days; one harder conditioning session only if recovery allows.',
 		],
@@ -110,112 +110,102 @@ export interface TrainingTemplate {
 	progression: string[];
 }
 
+/** Shared day templates — commercial gym machines, cables, DBs, Smith, barbell. */
+const DAY_PUSH: TrainingDay = {
+	id: 'push',
+	label: 'Push',
+	lifts: [
+		{ name: 'Dumbbell seated bent-arm lateral raise', sets: '3', reps: '8–15' },
+		{ name: 'Machine fly', sets: '3', reps: '8–15' },
+		{
+			name: 'Incline Smith press',
+			sets: '3',
+			reps: '6–12',
+			notes: 'No Smith → incline dumbbell press',
+		},
+		{ name: 'Machine chest press (flat)', sets: '2', reps: '10–15' },
+		{ name: 'Cable single-arm tricep pushdown', sets: '2', reps: '6–12' },
+		{ name: 'Cable rope overhead triceps extension', sets: '3', reps: '8–15' },
+	],
+};
+
+const DAY_PULL: TrainingDay = {
+	id: 'pull',
+	label: 'Pull',
+	lifts: [
+		{ name: 'Seated cable row', sets: '3', reps: '6–12' },
+		{ name: 'Dumbbell bent-over row', sets: '2', reps: '8–12' },
+		{ name: 'Barbell bent-over row (pronated)', sets: '3', reps: '5–10' },
+		{ name: 'Cable neutral-grip lat pulldown', sets: '2', reps: '8–15' },
+		{ name: 'Reverse machine fly', sets: '2', reps: '10–20' },
+		{ name: 'Dumbbell hammer curl', sets: '3', reps: '6–12' },
+		{ name: 'Barbell curls', sets: '2', reps: '8–12' },
+	],
+};
+
+const DAY_LEGS: TrainingDay = {
+	id: 'legs',
+	label: 'Legs',
+	lifts: [
+		{ name: 'Lying leg curl', sets: '3', reps: '8–12' },
+		{ name: '45° leg press', sets: '2', reps: '8–12' },
+		{ name: 'Leg extensions', sets: '3', reps: '10–20' },
+		{ name: 'Goblet squat', sets: '2', reps: '10–15' },
+		{ name: 'Seated calf raise', sets: '3', reps: '8–15' },
+		{ name: 'Seated crunch', sets: '3', reps: '8–15' },
+	],
+};
+
+const DAY_UPPER: TrainingDay = {
+	id: 'upper',
+	label: 'Upper',
+	lifts: [
+		{ name: 'Machine shoulder press', sets: '2', reps: '10–15' },
+		{ name: 'Standing unilateral cable lateral raise', sets: '3', reps: '6–12' },
+		{ name: 'Flat dumbbell bench press', sets: '3', reps: '6–12' },
+		{
+			name: 'Machine incline hammer chest press',
+			sets: '2',
+			reps: '10–15',
+			notes: 'No hammer machine → incline dumbbell press',
+		},
+		{ name: 'Machine tricep pushdown', sets: '3', reps: '8–12' },
+		{ name: 'Single-arm preacher curl', sets: '3', reps: '8–12' },
+	],
+};
+
+const PPL_PROGRESSION = [
+	'Leave 1–3 reps in reserve (RIR) on most working sets — not a grind every set.',
+	'When you hit the top of the rep range for all sets with solid form, add a small load next time.',
+	'Miss a day? Shift the week; don’t “make up” with a hero double session.',
+	'Every 6–8 hard weeks, deload volume ~30% for one week if joints or sleep are fried.',
+];
+
 export const TRAINING_TEMPLATES: TrainingTemplate[] = [
 	{
-		id: 'full-body',
-		name: 'Full body',
-		level: 'Beginner → early intermediate',
+		id: 'ppl',
+		name: 'PPL (Push / Pull / Legs)',
+		level: 'Beginner → intermediate',
 		daysPerWeek: 3,
 		blurb:
-			'Three sessions a week. Hit squat/hinge, push, pull, and a carry or core each day. Best when life is messy and you need one template that still works.',
-		days: [
-			{
-				id: 'a',
-				label: 'Day A',
-				lifts: [
-					{ name: 'Squat pattern (goblet / back squat / leg press)', sets: '3', reps: '6–10' },
-					{ name: 'Horizontal push (bench / push-up / DB press)', sets: '3', reps: '6–10' },
-					{ name: 'Horizontal pull (row)', sets: '3', reps: '8–12' },
-					{ name: 'Hinge assist (RDL / hip hinge)', sets: '2–3', reps: '8–12' },
-					{ name: 'Carry or core (farmer / plank)', sets: '2–3', reps: '30–60s' },
-				],
-			},
-			{
-				id: 'b',
-				label: 'Day B',
-				lifts: [
-					{ name: 'Hinge main (deadlift variation / trap bar)', sets: '3', reps: '4–8' },
-					{ name: 'Vertical push (OHP / landmine / DB)', sets: '3', reps: '6–10' },
-					{ name: 'Vertical pull (lat pulldown / assisted pull-up)', sets: '3', reps: '6–10' },
-					{ name: 'Single-leg or lunge pattern', sets: '2–3', reps: '8–12/side' },
-					{ name: 'Arms or rear delt finisher (optional)', sets: '2', reps: '10–15' },
-				],
-			},
-			{
-				id: 'c',
-				label: 'Day C',
-				lifts: [
-					{ name: 'Squat pattern (lighter or different stance)', sets: '3', reps: '8–12' },
-					{ name: 'Horizontal push (incline / DB)', sets: '3', reps: '8–12' },
-					{ name: 'Horizontal pull (chest-supported / cable)', sets: '3', reps: '8–12' },
-					{ name: 'Hip thrust / glute bridge', sets: '2–3', reps: '8–12' },
-					{ name: 'Carry or core', sets: '2–3', reps: '30–60s' },
-				],
-			},
-		],
+			'Three days a week — Push, Pull, Legs. Rotate through the week (e.g. Mon / Wed / Fri). Simple commercial-gym machines, cables, dumbbells, Smith, and barbell. Stick with it for months.',
+		days: [DAY_PUSH, DAY_PULL, DAY_LEGS],
+		progression: PPL_PROGRESSION,
+	},
+	{
+		id: 'pplu',
+		name: 'PPLU (Push / Pull / Legs / Upper)',
+		level: 'Beginner → intermediate',
+		daysPerWeek: 4,
+		blurb:
+			'Four days — Push, Pull, Legs, then a second Upper day for extra chest, shoulders, and arms. Same gym-bro equipment as 3-day PPL. Add the fourth day when recovery and schedule allow.',
+		days: [DAY_PUSH, DAY_PULL, DAY_LEGS, DAY_UPPER],
 		progression: [
 			'Leave 1–3 reps in reserve (RIR) on most working sets — not a grind every set.',
 			'When you hit the top of the rep range for all sets with solid form, add a small load next time.',
 			'Miss a day? Shift the week; don’t “make up” with a hero double session.',
+			'Upper day is volume, not ego — keep shoulders happy and leave room to recover into next Push.',
 			'Every 6–8 hard weeks, deload volume ~30% for one week if joints or sleep are fried.',
-		],
-	},
-	{
-		id: 'upper-lower',
-		name: 'Upper / Lower',
-		level: 'Beginner → intermediate',
-		daysPerWeek: 4,
-		blurb:
-			'Four days: Upper, Lower, Upper, Lower. More practice on the big patterns without living in the gym. Use this once three full-body days feel easy to recover from.',
-		days: [
-			{
-				id: 'upper-1',
-				label: 'Upper 1',
-				lifts: [
-					{ name: 'Horizontal push (bench / DB press)', sets: '3–4', reps: '5–8' },
-					{ name: 'Horizontal pull (row)', sets: '3–4', reps: '6–10' },
-					{ name: 'Vertical push (OHP)', sets: '3', reps: '6–10' },
-					{ name: 'Vertical pull (pulldown / pull-up)', sets: '3', reps: '6–10' },
-					{ name: 'Biceps + triceps (optional)', sets: '2', reps: '10–15' },
-				],
-			},
-			{
-				id: 'lower-1',
-				label: 'Lower 1',
-				lifts: [
-					{ name: 'Squat pattern', sets: '3–4', reps: '5–8' },
-					{ name: 'Hinge (RDL / deadlift variation)', sets: '3', reps: '5–8' },
-					{ name: 'Single-leg (split squat / lunge)', sets: '2–3', reps: '8–12/side' },
-					{ name: 'Calves or core', sets: '2–3', reps: '8–15' },
-				],
-			},
-			{
-				id: 'upper-2',
-				label: 'Upper 2',
-				lifts: [
-					{ name: 'Horizontal push (incline / closer grip)', sets: '3', reps: '8–12' },
-					{ name: 'Horizontal pull (chest-supported)', sets: '3', reps: '8–12' },
-					{ name: 'Lateral raise / rear delt', sets: '2–3', reps: '12–15' },
-					{ name: 'Vertical pull (neutral grip)', sets: '3', reps: '8–12' },
-					{ name: 'Arms finisher (optional)', sets: '2', reps: '10–15' },
-				],
-			},
-			{
-				id: 'lower-2',
-				label: 'Lower 2',
-				lifts: [
-					{ name: 'Hinge main or squat secondary', sets: '3', reps: '6–10' },
-					{ name: 'Leg press / hack / belt squat', sets: '3', reps: '8–12' },
-					{ name: 'Hip thrust / glute bridge', sets: '2–3', reps: '8–12' },
-					{ name: 'Carry + core', sets: '2–3', reps: '30–60s' },
-				],
-			},
-		],
-		progression: [
-			'Progress one lever at a time: load, then reps, then an extra set if recovery is excellent.',
-			'Upper days: keep shoulders happy — full ROM beats ego load.',
-			'Lower days: if low back is fried, swap hinge volume for leg press / hip thrust that week.',
-			'Same deload rule as full body when the week stops recovering.',
 		],
 	},
 ];
@@ -237,10 +227,10 @@ export const WEEKLY_CHECKLIST: ChecklistGroup[] = [
 		id: 'training',
 		title: 'Training',
 		items: [
-			{ id: 't1', label: 'Session 1 completed', hint: 'Log main lifts' },
-			{ id: 't2', label: 'Session 2 completed' },
-			{ id: 't3', label: 'Session 3 completed' },
-			{ id: 't4', label: 'Session 4 completed (if on Upper/Lower)' },
+			{ id: 't1', label: 'Push completed', hint: 'Log main lifts' },
+			{ id: 't2', label: 'Pull completed' },
+			{ id: 't3', label: 'Legs completed' },
+			{ id: 't4', label: 'Upper completed', hint: '4-day PPLU only' },
 			{ id: 't5', label: 'Progression noted (load, reps, or hold)', hint: 'One line in the logbook' },
 		],
 	},

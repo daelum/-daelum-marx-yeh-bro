@@ -30,6 +30,26 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 			<button type="button" class="btn btn-secondary" id="week-reset">Reset this week</button>
 		</div>
 
+		<fieldset class="split-picker" id="split-picker">
+			<legend class="split-legend">Training days this week</legend>
+			<div class="split-options" role="radiogroup" aria-label="Training days this week">
+				<label class="split-option">
+					<input type="radio" name="days-per-week" value="3" data-split="ppl" checked />
+					<span>
+						<strong>3-day PPL</strong>
+						<span class="split-hint">Push · Pull · Legs</span>
+					</span>
+				</label>
+				<label class="split-option">
+					<input type="radio" name="days-per-week" value="4" data-split="pplu" />
+					<span>
+						<strong>4-day PPLU</strong>
+						<span class="split-hint">Push · Pull · Legs · Upper</span>
+					</span>
+				</label>
+			</div>
+		</fieldset>
+
 		<form id="week-form" class="week-form" autocomplete="off">
 			{
 				WEEKLY_CHECKLIST.map((group) => (
@@ -37,7 +57,7 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 						<h2 id={`g-${group.id}`}>{group.title}</h2>
 						<ul class="check-list">
 							{group.items.map((item) => (
-								<li>
+								<li data-check-item={item.id} class={item.id === 't4' ? 'pplu-only' : undefined}>
 									<label class="check-row" for={item.id}>
 										<input type="checkbox" id={item.id} name={item.id} data-check-id={item.id} />
 										<span class="check-copy">
@@ -71,11 +91,14 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 
 <script>
 	const STORAGE_KEY = 'yehbro-start-here-weekly-v1';
+	const SPLIT_KEY = 'yehbro-start-here-split-v1';
 
 	type WeekState = {
 		weekId: string;
 		checked: Record<string, boolean>;
 	};
+
+	type SplitId = 'ppl' | 'pplu';
 
 	function currentWeekId(): string {
 		const now = new Date();
@@ -105,19 +128,57 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 	}
 
-	function updateStatus(state: WeekState) {
-		const boxes = document.querySelectorAll<HTMLInputElement>('[data-check-id]');
-		const total = boxes.length;
-		const done = [...boxes].filter((b) => b.checked).length;
+	function loadSplit(): SplitId {
+		try {
+			const raw = localStorage.getItem(SPLIT_KEY);
+			if (raw === 'pplu' || raw === 'ppl') return raw;
+		} catch {
+			/* ignore */
+		}
+		return 'ppl';
+	}
+
+	function saveSplit(split: SplitId) {
+		localStorage.setItem(SPLIT_KEY, split);
+	}
+
+	const state = load();
+	const form = document.getElementById('week-form');
+	const boxes = document.querySelectorAll<HTMLInputElement>('[data-check-id]');
+
+	function updateStatus() {
+		const visible = [...document.querySelectorAll<HTMLInputElement>('[data-check-id]')].filter(
+			(b) => {
+				const row = b.closest('[data-check-item]');
+				return !row || !row.hasAttribute('hidden');
+			},
+		);
+		const total = visible.length;
+		const done = visible.filter((b) => b.checked).length;
 		const el = document.getElementById('week-status');
 		if (el) {
 			el.textContent = `${state.weekId.replace('-', ' ')} · ${done} / ${total} done`;
 		}
 	}
 
-	const state = load();
-	const form = document.getElementById('week-form');
-	const boxes = document.querySelectorAll<HTMLInputElement>('[data-check-id]');
+	function applySplit(split: SplitId) {
+		const upperRow = document.querySelector<HTMLElement>('[data-check-item="t4"]');
+		const upperBox = document.querySelector<HTMLInputElement>('#t4');
+		const isPplu = split === 'pplu';
+		if (upperRow) {
+			upperRow.hidden = !isPplu;
+			upperRow.classList.toggle('is-hidden', !isPplu);
+		}
+		if (upperBox && !isPplu) {
+			upperBox.checked = false;
+			state.checked.t4 = false;
+			save(state);
+		}
+		document.querySelectorAll<HTMLInputElement>('input[name="days-per-week"]').forEach((radio) => {
+			radio.checked = radio.dataset.split === split;
+		});
+		updateStatus();
+	}
 
 	boxes.forEach((box) => {
 		const id = box.dataset.checkId;
@@ -126,11 +187,20 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 		box.addEventListener('change', () => {
 			state.checked[id] = box.checked;
 			save(state);
-			updateStatus(state);
+			updateStatus();
 		});
 	});
 
-	updateStatus(state);
+	applySplit(loadSplit());
+
+	document.querySelectorAll<HTMLInputElement>('input[name="days-per-week"]').forEach((radio) => {
+		radio.addEventListener('change', () => {
+			if (!radio.checked) return;
+			const next = radio.dataset.split === 'pplu' ? 'pplu' : 'ppl';
+			saveSplit(next);
+			applySplit(next);
+		});
+	});
 
 	document.getElementById('week-reset')?.addEventListener('click', () => {
 		state.checked = {};
@@ -139,7 +209,7 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 		});
 		state.weekId = currentWeekId();
 		save(state);
-		updateStatus(state);
+		updateStatus();
 	});
 
 	form?.addEventListener('submit', (e) => e.preventDefault());
@@ -166,6 +236,77 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 		font-weight: 700;
 		letter-spacing: 0.02em;
 		color: var(--yb-teal);
+	}
+	.split-picker {
+		margin: 1.25rem 0 0.5rem;
+		padding: 0;
+		border: 0;
+		max-width: 40rem;
+	}
+	.split-legend {
+		padding: 0;
+		margin: 0 0 0.65rem;
+		font-size: 0.78rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+		font-weight: 600;
+	}
+	.split-options {
+		display: grid;
+		gap: 0.5rem;
+		grid-template-columns: 1fr 1fr;
+	}
+	@media (max-width: 520px) {
+		.split-options {
+			grid-template-columns: 1fr;
+		}
+	}
+	.split-option {
+		display: flex;
+		gap: 0.75rem;
+		align-items: flex-start;
+		padding: 0.85rem 0.95rem;
+		background: var(--yb-surface);
+		border: 1px solid rgba(242, 242, 240, 0.1);
+		cursor: pointer;
+		transition:
+			border-color 0.2s ease,
+			background 0.2s ease;
+	}
+	.split-option:hover {
+		border-color: rgba(200, 241, 53, 0.35);
+	}
+	.split-option:has(input:checked) {
+		border-color: rgba(46, 230, 166, 0.45);
+		background: rgba(46, 230, 166, 0.06);
+	}
+	.split-option:focus-within {
+		border-color: var(--yb-lime);
+		outline: 2px solid rgba(200, 241, 53, 0.35);
+		outline-offset: 2px;
+	}
+	.split-option input {
+		width: 1.1rem;
+		height: 1.1rem;
+		margin-top: 0.2rem;
+		accent-color: var(--yb-lime);
+		flex-shrink: 0;
+	}
+	.split-option strong {
+		display: block;
+		font-weight: 700;
+		color: var(--yb-offwhite);
+	}
+	.split-hint {
+		display: block;
+		font-size: 0.88rem;
+		color: var(--yb-muted);
+		margin-top: 0.15rem;
+	}
+	.pplu-only.is-hidden,
+	.pplu-only[hidden] {
+		display: none;
 	}
 	.check-group {
 		margin: 2rem 0;
