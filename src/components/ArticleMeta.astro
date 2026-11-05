@@ -1,0 +1,135 @@
+---
+import FormattedDate from './FormattedDate.astro';
+import {
+	contentTypeLabel,
+	pillarLabel,
+	sameCalendarDay,
+	type ContentPillar,
+	type ContentType,
+	EDITORIAL_ATTRIBUTION,
+} from '../lib/editorial';
+
+interface Props {
+	pubDate: Date;
+	updatedDate?: Date;
+	contentType?: ContentType;
+	pillar?: ContentPillar;
+	attribution?: string;
+	readingMinutes?: number;
+	/** De-emphasize calendar dates (still in schema.org). */
+	evergreen?: boolean;
+	eyebrow?: string;
+}
+
+const {
+	pubDate,
+	updatedDate,
+	contentType = 'guide',
+	pillar,
+	attribution = EDITORIAL_ATTRIBUTION,
+	readingMinutes,
+	evergreen = false,
+	eyebrow,
+} = Astro.props;
+
+const showUpdated =
+	updatedDate !== undefined && !sameCalendarDay(updatedDate, pubDate);
+
+const derivedEyebrow =
+	eyebrow?.trim() ||
+	[contentTypeLabel(contentType), pillar ? pillarLabel(pillar) : null].filter(Boolean).join(' · ');
+---
+
+<header class="post-header">
+	<p class="eyebrow">{derivedEyebrow}</p>
+	<slot name="title" />
+	<slot name="lede" />
+	<div class="meta muted">
+		<span class="byline">{attribution}</span>
+		{
+			!evergreen && (
+				<>
+					<span class="sep" aria-hidden="true">
+						·
+					</span>
+					<span>
+						Published <FormattedDate date={pubDate} />
+					</span>
+				</>
+			)
+		}
+		{
+			evergreen && showUpdated && (
+				<>
+					<span class="sep" aria-hidden="true">
+						·
+					</span>
+					<span>
+						Updated <FormattedDate date={updatedDate!} />
+					</span>
+				</>
+			)
+		}
+		{
+			!evergreen && showUpdated && (
+				<>
+					<span class="sep" aria-hidden="true">
+						·
+					</span>
+					<span>
+						Updated <FormattedDate date={updatedDate!} />
+					</span>
+				</>
+			)
+		}
+		{
+			evergreen && !showUpdated && (
+				<>
+					<span class="sep" aria-hidden="true">
+						·
+					</span>
+					<span class="evergreen-label">Evergreen guide</span>
+				</>
+			)
+		}
+		{
+			readingMinutes !== undefined && (
+				<>
+					<span class="sep" aria-hidden="true">
+						·
+					</span>
+					<span>{readingMinutes} min read</span>
+				</>
+			)
+		}
+	</div>
+</header>
+
+<style>
+	.post-header {
+		margin-bottom: 0.5rem;
+	}
+	.post-header :global(h1) {
+		margin-bottom: 0.75rem;
+	}
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.35rem 0.15rem;
+		font-size: 0.92rem;
+		margin-top: 0.75rem;
+		line-height: 1.45;
+	}
+	.byline {
+		font-weight: 600;
+		color: var(--yb-offwhite);
+	}
+	.sep {
+		margin: 0 0.35rem;
+		opacity: 0.55;
+	}
+	.evergreen-label {
+		letter-spacing: 0.02em;
+	}
+</style>

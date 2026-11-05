@@ -1,0 +1,64 @@
+---
+interface Props {
+	/** visual tone */
+	variant?: 'note' | 'evidence' | 'warning' | 'takeaway';
+	title?: string;
+}
+
+const { variant = 'note', title } = Astro.props;
+const label =
+	title ??
+	({
+		note: 'Note',
+		evidence: 'Evidence',
+		warning: 'Caution',
+		takeaway: 'Takeaway',
+	}[variant] as string);
+---
+
+<aside class:list={['callout', `callout--${variant}`]} role="note">
+	<p class="callout-label">{label}</p>
+	<div class="callout-body">
+		<slot />
+	</div>
+</aside>
+
+<style>
+	.callout {
+		margin: 1.5rem 0;
+		padding: 0.95rem 1rem 1rem 1.05rem;
+		border-left: 3px solid var(--yb-steel);
+		background: rgba(242, 242, 240, 0.03);
+	}
+	.callout--evidence {
+		border-left-color: var(--yb-teal);
+	}
+	.callout--warning {
+		border-left-color: var(--yb-danger);
+	}
+	.callout--takeaway {
+		border-left-color: var(--yb-lime);
+	}
+	.callout-label {
+		margin: 0 0 0.35rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--yb-lime);
+	}
+	.callout--warning .callout-label {
+		color: var(--yb-danger);
+	}
+	.callout--evidence .callout-label {
+		color: var(--yb-teal);
+	}
+	.callout-body :global(p:last-child) {
+		margin-bottom: 0;
+	}
+	.callout-body {
+		font-size: 0.95rem;
+		color: var(--yb-muted);
+		line-height: 1.55;
+	}
+</style>

@@ -1,25 +1,50 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import ArticleMeta from '../components/ArticleMeta.astro';
+import ArticleReferences from '../components/ArticleReferences.astro';
 import BaseHead from '../components/BaseHead.astro';
 import DisclosureNote from '../components/DisclosureNote.astro';
 import EnhancedContentDisclaimer from '../components/EnhancedContentDisclaimer.astro';
 import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import RelatedGuides from '../components/RelatedGuides.astro';
 import { SITE_TITLE, SITE_URL } from '../consts';
+import {
+	EDITORIAL_ATTRIBUTION,
+	estimateReadingMinutes,
+	resolveSeoDescription,
+	resolveSeoTitle,
+	type ContentPillar,
+	type ContentType,
+} from '../lib/editorial';
 
-type Props = CollectionEntry<'blog'>['data'] & { slug: string };
+type Props = CollectionEntry<'blog'>['data'] & {
+	slug: string;
+	/** Approximate body word count for reading time (optional). */
+	wordCount?: number;
+};
 
 const {
 	title,
 	description,
 	pubDate,
 	updatedDate,
-	eyebrow = 'Guide',
+	eyebrow,
 	enhancedEducation = false,
+	contentType = 'guide',
+	pillar,
+	attribution = EDITORIAL_ATTRIBUTION,
+	references,
+	relatedSlugs,
+	evergreen = false,
 	slug,
+	wordCount,
 } = Astro.props;
+
+const seoTitle = resolveSeoTitle(Astro.props);
+const seoDescription = resolveSeoDescription(Astro.props);
+const readingMinutes =
+	wordCount !== undefined ? estimateReadingMinutes(wordCount) : undefined;
 
 const canonicalPath = `/blog/${slug}`;
 const pageUrl = new URL(canonicalPath, SITE_URL).href;
@@ -27,11 +52,13 @@ const articleLd = {
 	'@context': 'https://schema.org',
 	'@type': 'Article',
 	headline: title,
-	description,
+	description: seoDescription,
 	datePublished: pubDate.toISOString(),
-	...(updatedDate ? { dateModified: updatedDate.toISOString() } : { dateModified: pubDate.toISOString() }),
+	...(updatedDate
+		? { dateModified: updatedDate.toISOString() }
+		: { dateModified: pubDate.toISOString() }),
 	mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
-	author: { '@type': 'Organization', name: SITE_TITLE, url: SITE_URL },
+	author: { '@type': 'Organization', name: attribution, url: SITE_URL },
 	publisher: {
 		'@type': 'Organization',
 		name: SITE_TITLE,
@@ -46,8 +73,8 @@ const articleLd = {
 <html lang="en-AU">
 	<head>
 		<BaseHead
-			title={title}
-			description={description}
+			title={seoTitle}
+			description={seoDescription}
 			ogType="article"
 			canonicalPath={canonicalPath}
 			jsonLd={articleLd}
@@ -56,28 +83,37 @@ const articleLd = {
 	<body>
 		<Header />
 		<main>
-			<article class="prose-wrap post">
-				<header class="post-header">
-					<p class="eyebrow">{eyebrow}</p>
-					<h1>{title}</h1>
-					<p class="lede">{description}</p>
-					<p class="date muted">
-						Published <FormattedDate date={pubDate} />
-						{
-							updatedDate && (
-								<>
-									{' '}
-									· Updated <FormattedDate date={updatedDate} />
-								</>
-							)
-						}
-					</p>
-				</header>
+			<article class="prose-wrap post" data-content-type={contentType} data-pillar={pillar}>
+				<ArticleMeta
+					pubDate={pubDate}
+					updatedDate={updatedDate}
+					contentType={contentType as ContentType}
+					pillar={pillar as ContentPillar | undefined}
+					attribution={attribution}
+					readingMinutes={readingMinutes}
+					evergreen={evergreen}
+					eyebrow={eyebrow}
+				>
+					<h1 slot="title">{title}</h1>
+					<p class="lede" slot="lede">{description}</p>
+				</ArticleMeta>
 				{enhancedEducation ? <EnhancedContentDisclaimer /> : <DisclosureNote compact />}
+				{
+					contentType === 'technical' && !(references && references.length > 0) && (
+						<aside class="evidence-posture" role="note">
+							<p>
+								<strong>Evidence posture:</strong> claims below are labelled in prose as
+								established, emerging, limited, or opinion. We don’t invent studies or authors
+								to fill a reference list.
+							</p>
+						</aside>
+					)
+				}
 				<div class="post-body">
 					<slot />
 				</div>
-				<RelatedGuides slug={slug} />
+				<ArticleReferences references={references} />
+				<RelatedGuides slug={slug} relatedSlugs={relatedSlugs} />
 				<p class="post-foot muted">
 					{enhancedEducation ? (
 						<>
@@ -107,16 +143,6 @@ const articleLd = {
 	.post {
 		padding: 2.5rem 0 4rem;
 	}
-	.post-header {
-		margin-bottom: 0.5rem;
-	}
-	.post-header h1 {
-		margin-bottom: 0.75rem;
-	}
-	.date {
-		font-size: 0.92rem;
-		margin-top: 0.75rem;
-	}
 	.post-body :global(h2) {
 		margin-top: 2.25rem;
 	}
@@ -144,10 +170,35 @@ const articleLd = {
 	.post-body :global(a[href^='/go/']) {
 		font-weight: 600;
 	}
+	.evidence-posture {
+		margin: 0.75rem 0 1.25rem;
+		padding: 0.75rem 0 0.75rem 0.95rem;
+		border-left: 3px solid var(--yb-teal);
+		font-size: 0.92rem;
+		line-height: 1.5;
+		color: var(--yb-muted);
+	}
+	.evidence-posture p {
+		margin: 0;
+	}
+	.evidence-posture strong {
+		color: var(--yb-offwhite);
+	}
 	.post-foot {
 		margin-top: 3rem;
 		padding-top: 1.25rem;
 		border-top: 1px solid rgba(242, 242, 240, 0.12);
 		font-size: 0.92rem;
+	}
+	@media (max-width: 640px) {
+		.post {
+			padding: 1.75rem 0 3rem;
+		}
+		.post-body :global(table) {
+			font-size: 0.88rem;
+			display: block;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+		}
 	}
 </style>

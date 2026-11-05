@@ -1,0 +1,62 @@
+---
+interface Ref {
+	label: string;
+	url?: string;
+	note?: string;
+}
+
+interface Props {
+	references?: Ref[];
+}
+
+const { references = [] } = Astro.props;
+---
+
+{
+	references.length > 0 && (
+		<section class="refs" aria-label="References">
+			<h2>References</h2>
+			<p class="muted refs-note">
+				Only sources we can point to. Gaps stay gaps — we don’t invent studies or authors.
+			</p>
+			<ol>
+				{references.map((ref) => (
+					<li>
+						{ref.url ? (
+							<a href={ref.url} rel="noopener noreferrer">
+								{ref.label}
+							</a>
+						) : (
+							<span>{ref.label}</span>
+						)}
+						{ref.note ? <span class="muted"> — {ref.note}</span> : null}
+					</li>
+				))}
+			</ol>
+		</section>
+	)
+}
+
+<style>
+	.refs {
+		margin-top: 2.5rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.refs h2 {
+		margin-bottom: 0.35rem;
+	}
+	.refs-note {
+		margin: 0 0 0.85rem;
+		font-size: 0.92rem;
+	}
+	.refs ol {
+		margin: 0;
+		padding-left: 1.25rem;
+		display: grid;
+		gap: 0.45rem;
+	}
+	.refs a {
+		font-weight: 600;
+	}
+</style>

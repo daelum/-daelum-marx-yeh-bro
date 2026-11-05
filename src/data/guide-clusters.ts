@@ -15,10 +15,14 @@ export type GuideClusterId =
 	| 'blueprint'
 	| 'culture';
 
+/** Maps clusters onto site IA pillars (Train / Fuel / Recover / Culture). */
+export type ClusterPillar = 'train' | 'fuel' | 'recover' | 'culture';
+
 export interface GuideCluster {
 	id: GuideClusterId;
 	label: string;
 	blurb: string;
+	pillar: ClusterPillar;
 	/** Order for /blog index; first slug is the cluster “pillar” when linking hubs. */
 	slugs: string[];
 }
@@ -28,6 +32,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'training',
 		label: 'Training',
 		blurb: 'Simple programs, progressive overload, deloads.',
+		pillar: 'train',
 		slugs: [
 			'beginner-full-body-program',
 			'upper-lower-split',
@@ -58,6 +63,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'food',
 		label: 'Food',
 		blurb: 'Start with Food Bro (/food-bro), then protein, cuts, lean bulks — without the app obsession.',
+		pillar: 'fuel',
 		slugs: [
 			'calories-and-macros-for-lifters',
 			'what-calories-are-for-lifters',
@@ -93,6 +99,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'recovery',
 		label: 'Recovery',
 		blurb: 'Sleep, walking, stress — the boring work that pays.',
+		pillar: 'recover',
 		slugs: [
 			'sleep-for-lifters',
 			'sleep-hygiene-late-shift-lifters',
@@ -111,6 +118,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'creatine',
 		label: 'Creatine',
 		blurb: 'Monohydrate first. Dose, myths, forms, beginners.',
+		pillar: 'fuel',
 		slugs: [
 			'best-creatine-australia',
 			'how-to-dose-creatine',
@@ -129,6 +137,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'protein',
 		label: 'Protein powder',
 		blurb: 'Scoop maths, WPC vs WPI, plant, budget tubs.',
+		pillar: 'fuel',
 		slugs: [
 			'best-protein-powder-australia',
 			'whey-concentrate-vs-isolate-australia',
@@ -144,6 +153,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'pre',
 		label: 'Pre / caffeine',
 		blurb: 'Clear doses, stim-free options, coffee vs tub.',
+		pillar: 'fuel',
 		slugs: [
 			'best-stim-free-pre-workout-australia',
 			'pre-workout-without-hype',
@@ -158,6 +168,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'stack',
 		label: 'Stacks & shopping',
 		blurb: 'Beginner order of operations, picks, shops, mistakes.',
+		pillar: 'fuel',
 		slugs: [
 			'beginner-supplement-stack-australia',
 			'yeh-bro-current-picks',
@@ -174,6 +185,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'basics',
 		label: 'Basics (optional)',
 		blurb: 'Magnesium, omega-3, vitamin D — conservative framing.',
+		pillar: 'fuel',
 		slugs: [
 			'magnesium-for-lifters-australia',
 			'omega-3-for-lifters-australia',
@@ -184,6 +196,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'blueprint',
 		label: 'Bodybuilding blueprint',
 		blurb: 'Cut → health pivot → lean bulk, plus safety.',
+		pillar: 'culture',
 		slugs: [
 			'bodybuilding-blueprint',
 			'bodybuilding-blueprint-phase-1-cut',
@@ -196,6 +209,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 		id: 'culture',
 		label: 'Culture & PED literacy',
 		blurb: 'Optional later — risks, bloodwork, coming off under care.',
+		pillar: 'culture',
 		slugs: [
 			'ped-harm-reduction-australia',
 			'bodybuilding-culture-education',

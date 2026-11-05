@@ -13,7 +13,9 @@
     "astro": "astro",
     "pages:dev": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
-    "sync:ig-queue": "python3 scripts/sync-ig-queue-to-cf.py"
+    "sync:ig-queue": "python3 scripts/sync-ig-queue-to-cf.py",
+    "editorial:gate": "node scripts/editorial-quality-gate.mjs",
+    "editorial:test-visibility": "node scripts/editorial-visibility-test.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.1.2",

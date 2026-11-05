@@ -1,15 +1,18 @@
 ---
 import { getClusterForSlug, relatedSlugsFor } from '../data/guide-clusters';
+import { getPublicPosts } from '../lib/editorial';
 import { getCollection } from 'astro:content';
 
 interface Props {
 	slug: string;
+	/** Frontmatter override — contextual related only; never fake popularity. */
+	relatedSlugs?: string[];
 }
 
-const { slug } = Astro.props;
+const { slug, relatedSlugs } = Astro.props;
 const cluster = getClusterForSlug(slug);
-const related = relatedSlugsFor(slug, 6);
-const posts = await getCollection('blog');
+const related = relatedSlugs?.length ? relatedSlugs.slice(0, 6) : relatedSlugsFor(slug, 6);
+const posts = getPublicPosts(await getCollection('blog'));
 const byId = new Map(posts.map((p) => [p.id, p]));
 const items = related
 	.map((id) => {

@@ -3,8 +3,9 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductPath from '../components/ProductPath.astro';
 import { GUIDE_CLUSTERS } from '../data/guide-clusters';
+import { getPublicPosts } from '../lib/editorial';
 
-const posts = await getCollection('blog');
+const posts = getPublicPosts(await getCollection('blog'));
 const byId = new Map(posts.map((p) => [p.id, p]));
 const foodCluster = GUIDE_CLUSTERS.find((c) => c.id === 'food');
 const foodPosts =

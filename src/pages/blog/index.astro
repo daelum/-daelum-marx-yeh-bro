@@ -1,10 +1,11 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
+import RecentlyPublished from '../../components/RecentlyPublished.astro';
 import { GUIDE_CLUSTERS } from '../../data/guide-clusters';
+import { getPublicPosts, pillarLabel } from '../../lib/editorial';
 
-const posts = await getCollection('blog');
+const posts = getPublicPosts(await getCollection('blog'));
 const byId = new Map(posts.map((p) => [p.id, p]));
 const clustered = new Set(GUIDE_CLUSTERS.flatMap((c) => c.slugs));
 const unclustered = posts
@@ -23,7 +24,7 @@ const unclustered = posts
 		<p class="lede">
 			New? Start in <a href="/train">Train</a> and <a href="/fuel">Fuel</a> — or open the{' '}
 			<a href="/start-here">Yeh Bro System</a> and <a href="/food-bro">Food Bro</a> directly.
-			Everything below is depth when you need it. Every guide on this site is listed here.
+			Everything below is depth when you need it. Every public guide on this site is listed here.
 		</p>
 
 		{
@@ -34,6 +35,7 @@ const unclustered = posts
 				if (items.length === 0) return null;
 				return (
 					<section class="cluster" id={cluster.id}>
+						<p class="cluster-pillar muted">{pillarLabel(cluster.pillar)}</p>
 						<h2>{cluster.label}</h2>
 						<p class="muted cluster-blurb">{cluster.blurb}</p>
 						<ul class="guide-links">
@@ -41,9 +43,7 @@ const unclustered = posts
 								<li>
 									<a href={`/blog/${post.id}`}>
 										{post.data.title}
-										<span>
-											<FormattedDate date={post.data.pubDate} /> — {post.data.description}
-										</span>
+										<span>{post.data.description}</span>
 									</a>
 								</li>
 							))}
@@ -62,9 +62,7 @@ const unclustered = posts
 							<li>
 								<a href={`/blog/${post.id}`}>
 									{post.data.title}
-									<span>
-										<FormattedDate date={post.data.pubDate} /> — {post.data.description}
-									</span>
+									<span>{post.data.description}</span>
 								</a>
 							</li>
 						))}
@@ -72,6 +70,8 @@ const unclustered = posts
 				</section>
 			)
 		}
+
+		<RecentlyPublished posts={posts} limit={8} />
 	</section>
 </BaseLayout>
 
@@ -84,6 +84,13 @@ const unclustered = posts
 		padding-top: 1.5rem;
 		border-top: 1px solid rgba(242, 242, 240, 0.12);
 		scroll-margin-top: 5rem;
+	}
+	.cluster-pillar {
+		margin: 0 0 0.2rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 	}
 	.cluster h2 {
 		margin-bottom: 0.35rem;

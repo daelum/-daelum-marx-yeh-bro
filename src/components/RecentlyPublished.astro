@@ -1,0 +1,68 @@
+---
+/**
+ * Recent public posts only — never fake "popular" rankings without usage data.
+ */
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	posts: CollectionEntry<'blog'>[];
+	limit?: number;
+}
+
+const { posts, limit = 6 } = Astro.props;
+const recent = [...posts]
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, limit);
+---
+
+{
+	recent.length > 0 && (
+		<nav class="recent" aria-label="Recently published">
+			<p class="eyebrow">Recently published</p>
+			<ul>
+				{recent.map((post) => (
+					<li>
+						<a href={`/blog/${post.id}`}>
+							{post.data.title}
+							<span class="muted">
+								<FormattedDate date={post.data.pubDate} />
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		</nav>
+	)
+}
+
+<style>
+	.recent {
+		margin-top: 2.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.recent ul {
+		list-style: none;
+		margin: 0.75rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 0.55rem;
+	}
+	.recent a {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.35rem 1rem;
+		color: var(--yb-offwhite);
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.recent a:hover {
+		color: var(--yb-lime);
+	}
+	.recent span {
+		font-weight: 400;
+		font-size: 0.88rem;
+	}
+</style>
