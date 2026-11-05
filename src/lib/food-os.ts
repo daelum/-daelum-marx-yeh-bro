@@ -343,11 +343,7 @@ const COACH_BASE_MEALS: CoachMealSlot[] = [
 		carbsG: 53.7,
 		fatG: 7.8,
 		ingredients: [
-			{
-				name: '5% Fat Extra Lean Mince Beef',
-				amount: '120 g',
-				note: 'Founder logged Coles; Woolworths ~5% lean mince is fine',
-			},
+			{ name: '5% Fat Extra Lean Mince Beef', amount: '120 g' },
 			{ name: 'Spirals Pasta By Woolworths', amount: '60 g' },
 			{ name: 'Italian Tomato Passata By Woolworths', amount: '100 ml' },
 			{ name: 'Zucchini', amount: '75 g' },
@@ -364,11 +360,7 @@ const INTRA_WORKOUT: CoachMealSlot = {
 	fatG: 0,
 	intra: true,
 	ingredients: [
-		{
-			name: '100% Pure Coconut Water By Woolworths',
-			amount: '1000 ml',
-			note: 'App logged 999.99 ml — use 1 L',
-		},
+		{ name: '100% Pure Coconut Water By Woolworths', amount: '1000 ml' },
 	],
 };
 
@@ -430,11 +422,7 @@ export const COACH_DAY_PLANS: CoachDayPlan[] = [
 				fatG: 14.8,
 				ingredients: [
 					{ name: 'Chicken Breast Cooked', amount: '120 g' },
-					{
-						name: "Express Mexican Style Rice By Uncle Ben's",
-						amount: '225 g',
-						note: 'Up from 175 g on base days',
-					},
+					{ name: "Express Mexican Style Rice By Uncle Ben's", amount: '225 g' },
 					{ name: 'Australian Carrots Peas & Corn', amount: '100 g' },
 					{ name: "Perinaise By Nando's", amount: '15 ml' },
 				],
@@ -446,11 +434,7 @@ export const COACH_DAY_PLANS: CoachDayPlan[] = [
 				carbsG: 46.7,
 				fatG: 7.9,
 				ingredients: [
-					{
-						name: 'Uncle Tobys Kit Kat Muesli Bar',
-						amount: '2 bars',
-						note: 'Up from 1 bar on base days',
-					},
+					{ name: 'Uncle Tobys Kit Kat Muesli Bar', amount: '2 bars' },
 					{ name: 'Kiwi', amount: '100 g' },
 				],
 			},
@@ -461,11 +445,7 @@ export const COACH_DAY_PLANS: CoachDayPlan[] = [
 				carbsG: 91.4,
 				fatG: 6.2,
 				ingredients: [
-					{
-						name: "Rice Bubbles by Kellogg's",
-						amount: '90 g',
-						note: 'Up from 60 g on base days',
-					},
+					{ name: "Rice Bubbles by Kellogg's", amount: '90 g' },
 					{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '20 g' },
 					{ name: 'Banana', amount: '50 g' },
 					{ name: "Smooth Peanut Butter by Mayver's", amount: '10 g' },
@@ -478,16 +458,8 @@ export const COACH_DAY_PLANS: CoachDayPlan[] = [
 				carbsG: 68.5,
 				fatG: 8.2,
 				ingredients: [
-					{
-						name: '5% Fat Extra Lean Mince Beef',
-						amount: '120 g',
-						note: 'Founder logged Coles; Woolworths ~5% lean mince is fine',
-					},
-					{
-						name: 'Spirals Pasta By Woolworths',
-						amount: '80 g',
-						note: 'Up from 60 g on base days',
-					},
+					{ name: '5% Fat Extra Lean Mince Beef', amount: '120 g' },
+					{ name: 'Spirals Pasta By Woolworths', amount: '80 g' },
 					{ name: 'Italian Tomato Passata By Woolworths', amount: '100 ml' },
 					{ name: 'Zucchini', amount: '75 g' },
 					{ name: 'Mushrooms', amount: '75 g' },
@@ -505,7 +477,7 @@ export const SHOPPING_WEEK_REST_DAYS = 3;
 
 /**
  * Typical week Woolworths list (4 lift / 3 rest). Phone-copyable totals.
- * No invented SKUs — founder product names only.
+ * No invented SKUs — product names as listed on the templates.
  */
 export const SHOPPING_LIST_TYPICAL_WEEK: ShoppingListLine[] = [
 	{ name: 'Oats', amount: '420 g', note: '60 g × 7 days' },
@@ -527,11 +499,7 @@ export const SHOPPING_LIST_TYPICAL_WEEK: ShoppingListLine[] = [
 	{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '140 g', note: '20 g × 7' },
 	{ name: 'Banana', amount: '350 g', note: '50 g × 7' },
 	{ name: "Smooth Peanut Butter by Mayver's", amount: '70 g', note: '10 g × 7' },
-	{
-		name: '5% Fat Extra Lean Mince Beef',
-		amount: '840 g',
-		note: '120 g × 7 — founder logged Coles; Woolworths ~5% lean mince OK',
-	},
+	{ name: '5% Fat Extra Lean Mince Beef', amount: '840 g', note: '120 g × 7' },
 	{ name: 'Spirals Pasta By Woolworths', amount: '420 g', note: '60 g × 7' },
 	{ name: 'Italian Tomato Passata By Woolworths', amount: '700 ml', note: '100 ml × 7' },
 	{ name: 'Zucchini', amount: '525 g', note: '75 g × 7' },
@@ -569,11 +537,7 @@ export const SHOPPING_LIST_DIET_BREAK_WEEK: ShoppingListLine[] = [
 	{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '140 g', note: '20 g × 7' },
 	{ name: 'Banana', amount: '350 g', note: '50 g × 7' },
 	{ name: "Smooth Peanut Butter by Mayver's", amount: '70 g', note: '10 g × 7' },
-	{
-		name: '5% Fat Extra Lean Mince Beef',
-		amount: '840 g',
-		note: '120 g × 7 — Woolworths ~5% lean mince OK',
-	},
+	{ name: '5% Fat Extra Lean Mince Beef', amount: '840 g', note: '120 g × 7' },
 	{ name: 'Spirals Pasta By Woolworths', amount: '560 g', note: '80 g × 7' },
 	{ name: 'Italian Tomato Passata By Woolworths', amount: '700 ml', note: '100 ml × 7' },
 	{ name: 'Zucchini', amount: '525 g', note: '75 g × 7' },
@@ -599,7 +563,7 @@ export function formatShoppingListPlain(
 	const header = [
 		opts?.title ?? 'Food Bro — Woolworths week (4 training / 3 rest)',
 		opts?.blurb ??
-			'Example profile 36 / 80 kg / 178 cm. Scale days if your split differs. No invented SKUs.',
+			'Baseline template 36 / 80 kg / 178 cm. Scale days if your split differs. No invented SKUs.',
 		'',
 	];
 	const body = lines.map((l) => {
@@ -809,7 +773,7 @@ export function scaleCoachDayPlans(
 
 	const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const { profileLine, profileNote } = coachProfileCopy(result, factors, profile);
-	const lede = `Day structures from the founder coach log (${age} / ${weightKg} kg / ${heightCm} cm). Your calculator sets the kcal and portions — pick a day type below.`;
+	const lede = `Day structures from the coach templates (baseline ${age} / ${weightKg} kg / ${heightCm} cm). Your calculator sets the kcal and portions — pick a day type below.`;
 
 	return { plans, factors, profileLine, profileNote, lede };
 }
@@ -820,9 +784,8 @@ function scaleShoppingLine(line: ShoppingListLine, scale: number, opts?: { skipC
 	return {
 		...line,
 		amount: scalePortionAmount(line.amount, scale),
-		note: line.note
-			? `${line.note} · scaled ×${scale.toFixed(2)} from baseline`
-			: `Scaled ×${scale.toFixed(2)} from baseline template`,
+		// Keep portion-math notes only — no “scaled × baseline” diary on every line.
+		note: line.note,
 	};
 }
 
