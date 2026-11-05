@@ -60,7 +60,7 @@ export const SYSTEM_PHASES: SystemPhase[] = [
 	{
 		id: 'food',
 		number: 4,
-		name: 'Food dial-in',
+		name: 'Food',
 		weeks: 'Weeks 3–12 (overlap)',
 		job: 'Protein first, then calories for cut / maintain / lean bulk.',
 		focus: [
@@ -76,7 +76,7 @@ export const SYSTEM_PHASES: SystemPhase[] = [
 		number: 5,
 		name: 'Recovery',
 		weeks: 'Ongoing',
-		job: 'Sleep and steps as unpaid coaches — not optional lifestyle fluff.',
+		job: 'Sleep and steps as non-negotiables — not optional lifestyle fluff.',
 		focus: [
 			'Protect 7–9 hours most nights; same bedtime beats weekend catch-up.',
 			'Daily steps / walking as the default cardio base.',
@@ -265,5 +265,5 @@ export const SYSTEM_PRODUCT = {
 	name: 'Yeh Bro System',
 	tagline: 'The natural playbook — best shape of your life without the circus.',
 	oneLiner:
-		'Phased training, food dial-in, and weekly checklists you’d normally pay a coach for. Free on Yeh Bro.',
+		'Phased training, food setup, and weekly checklists — the same structure you’d run with a good coach. Free on Yeh Bro.',
 };

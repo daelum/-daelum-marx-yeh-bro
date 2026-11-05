@@ -1,0 +1,17 @@
+---
+import PillarHub from '../components/PillarHub.astro';
+import { getPillar } from '../data/pillars';
+
+const pillar = getPillar('recover');
+---
+
+<PillarHub
+	pillar={pillar}
+	title="Recover — Yeh Bro"
+	description="Sleep, deloads, fatigue, and recovery guides for lifters — the boring work that keeps progress going."
+>
+	<div class="cta-row" style="margin-top: 2rem">
+		<a class="btn btn-primary" href="/blog/sleep-for-lifters">Sleep for lifters</a>
+		<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
+	</div>
+</PillarHub>

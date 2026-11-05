@@ -1,0 +1,17 @@
+---
+import PillarHub from '../components/PillarHub.astro';
+import { getPillar } from '../data/pillars';
+
+const pillar = getPillar('fuel');
+---
+
+<PillarHub
+	pillar={pillar}
+	title="Fuel — Yeh Bro"
+	description="Food Bro calorie and macro calculator, scaled meal templates, shopping lists, and sports nutrition literacy."
+>
+	<div class="cta-row" style="margin-top: 2rem">
+		<a class="btn btn-primary" href="/food-bro">Open Food Bro</a>
+		<a class="btn btn-secondary" href="/food-bro/shopping">Shopping list</a>
+	</div>
+</PillarHub>

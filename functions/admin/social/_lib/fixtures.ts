@@ -81,7 +81,7 @@ export function fixtureDay(date: string): DayManifest {
 				'Train something you can repeat when life is loud.',
 				'Eat calories and protein you can hit on tired days.',
 				'Protect sleep and recovery before advanced levers.',
-				'Yeh Bro System on yehbro.com — free, coach-grade.',
+				'Yeh Bro System on yehbro.com — free. No signup, no card.',
 			],
 		),
 		carousel(

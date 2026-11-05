@@ -92,7 +92,7 @@ export const GUIDE_CLUSTERS: GuideCluster[] = [
 	{
 		id: 'recovery',
 		label: 'Recovery',
-		blurb: 'Sleep, walking, stress — the unpaid coaches.',
+		blurb: 'Sleep, walking, stress — the boring work that pays.',
 		slugs: [
 			'sleep-for-lifters',
 			'sleep-hygiene-late-shift-lifters',

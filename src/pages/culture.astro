@@ -1,0 +1,21 @@
+---
+import PillarHub from '../components/PillarHub.astro';
+import { getPillar } from '../data/pillars';
+
+const pillar = getPillar('culture');
+---
+
+<PillarHub
+	pillar={pillar}
+	title="Culture — Yeh Bro"
+	description="Gym and bodybuilding culture education, including PED harm-reduction literacy — risks, bloodwork, legality. Not sourcing."
+>
+	<p class="muted" style="margin-top: 1.5rem; max-width: 36rem">
+		Education only. We don’t source AAS, SARMs, peptides, or underground gear. Not medical advice —
+		bloodwork and clinical decisions stay with a clinician.
+	</p>
+	<div class="cta-row" style="margin-top: 1.5rem">
+		<a class="btn btn-primary" href="/blog/bodybuilding-culture-education">Culture guide</a>
+		<a class="btn btn-secondary" href="/blog/ped-harm-reduction-australia">PED education</a>
+	</div>
+</PillarHub>

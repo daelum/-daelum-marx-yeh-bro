@@ -1,5 +1,6 @@
 ---
 import BrandLogo from './BrandLogo.astro';
+import { NAV_PILLARS } from '../data/pillars';
 
 const year = new Date().getFullYear();
 ---
@@ -9,6 +10,7 @@ const year = new Date().getFullYear();
 		<a class="footer-brand" href="/" aria-label="Yeh Bro home">
 			<BrandLogo size="md" decorative />
 		</a>
+		<p class="footer-tagline">TRAIN HARD. EAT BIG. LIVE UNAPOLOGETICALLY.</p>
 		<p class="footer-disclosure">
 			Gym education · not medical advice.{' '}
 			<a href="/disclosure">Disclosure</a>
@@ -16,18 +18,16 @@ const year = new Date().getFullYear();
 			<a href="/privacy">Privacy</a>
 		</p>
 		<nav class="footer-nav" aria-label="Footer">
+			{NAV_PILLARS.map((item) => (
+				<a href={item.href}>{item.label}</a>
+			))}
 			<a href="/start-here">Yeh Bro System</a>
 			<a href="/food-bro">Food Bro</a>
-			<a href="/shop">Shop</a>
-			<a href="/food">Food hub</a>
-			<a href="/start-here/training">Training templates</a>
-			<a href="/start-here/weekly">Weekly checklist</a>
 			<a href="/blog">Guides</a>
-			<a href="/blog/ped-harm-reduction-australia">PED education</a>
 			<a href="/about">About</a>
+			<a href="/contact">Contact</a>
 			<a href="/disclosure">Disclosure</a>
 			<a href="/privacy">Privacy</a>
-			<a href="/contact">Contact</a>
 		</nav>
 		<p class="footer-meta muted">
 			© {year} Yeh Bro. Some links may earn a commission. As an Amazon Associate we earn from
@@ -58,6 +58,14 @@ const year = new Date().getFullYear();
 	}
 	.footer-brand:hover {
 		opacity: 1;
+	}
+	.footer-tagline {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: rgba(242, 242, 240, 0.55);
 	}
 	.footer-disclosure {
 		margin: 0;

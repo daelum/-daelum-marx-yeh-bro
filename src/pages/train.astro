@@ -1,0 +1,17 @@
+---
+import PillarHub from '../components/PillarHub.astro';
+import { getPillar } from '../data/pillars';
+
+const pillar = getPillar('train');
+---
+
+<PillarHub
+	pillar={pillar}
+	title="Train — Yeh Bro"
+	description="Training programs, Yeh Bro System, PPL and PPLU templates, and progressive overload — free tools for people who train seriously."
+>
+	<div class="cta-row" style="margin-top: 2rem">
+		<a class="btn btn-primary" href="/start-here">Open Yeh Bro System</a>
+		<a class="btn btn-secondary" href="/start-here/training">Training templates</a>
+	</div>
+</PillarHub>

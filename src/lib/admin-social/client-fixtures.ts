@@ -97,7 +97,7 @@ export function buildFixtureDay(date = DATE): FixtureDay {
 				'Train something you can repeat when life is loud.',
 				'Eat calories and protein you can hit on tired days.',
 				'Protect sleep and recovery before advanced levers.',
-				'Yeh Bro System on yehbro.com — free, coach-grade.',
+				'Yeh Bro System on yehbro.com — free. No signup, no card.',
 			],
 			mediaUrls: media(date, ['c01-1.png', 'c01-2.png', 'c01-3.png', 'c01-4.png', 'c01-5.png']),
 		},
