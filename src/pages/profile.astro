@@ -1,0 +1,641 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FreeOffer from '../components/FreeOffer.astro';
+import ProductPath from '../components/ProductPath.astro';
+import {
+	ACTIVITY_LABELS,
+	GOAL_DEFAULTS,
+	type Activity,
+	type Goal,
+} from '../lib/food-os';
+
+const activities = Object.entries(ACTIVITY_LABELS) as [Activity, string][];
+const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goal]][];
+---
+
+<BaseLayout
+	title="Your profile — Yeh Bro"
+	description="Central Yeh Bro profile — body, training days, calorie and macro targets, and Food Bro settings. Saved in this browser. No signup."
+	canonicalPath="/profile"
+>
+	<ProductPath
+		crumbs={[
+			{ href: '/fuel', label: 'Fuel' },
+			{ href: '/profile', label: 'Profile', current: true },
+			{ href: '/food-bro', label: 'Food Bro' },
+		]}
+	/>
+
+	<article class="wrap profile-page">
+		<header class="prof-hero">
+			<p class="eyebrow anim-rise">Your setup</p>
+			<h1 class="anim-rise">Profile</h1>
+			<div class="anim-rise">
+				<FreeOffer />
+			</div>
+			<p class="lede anim-rise-delay">
+				One place for body stats, training days, calorie targets, and Food Bro settings. Change here —
+				Food Bro, shopping, meal templates, and your personalized PDF all follow. Stays in this
+				browser.
+			</p>
+			<p class="return-note muted" id="return-note" hidden></p>
+		</header>
+
+		<form id="profile-form" class="prof-form" novalidate>
+			<fieldset class="prof-fieldset">
+				<legend>Body</legend>
+				<div class="prof-fields">
+					<label class="prof-field">
+						<span>Current weight (kg)</span>
+						<input type="number" name="weightKg" id="weightKg" inputmode="decimal" min="35" max="250" step="0.1" required />
+					</label>
+					<label class="prof-field">
+						<span>Goal weight (kg)</span>
+						<input type="number" name="goalWeightKg" id="goalWeightKg" inputmode="decimal" min="35" max="250" step="0.1" />
+					</label>
+					<label class="prof-field">
+						<span>Height (cm)</span>
+						<input type="number" name="heightCm" id="heightCm" inputmode="numeric" min="120" max="230" step="1" required />
+					</label>
+					<label class="prof-field">
+						<span>Age</span>
+						<input type="number" name="age" id="age" inputmode="numeric" min="16" max="90" step="1" required />
+					</label>
+					<fieldset class="prof-seg" id="sex-field">
+						<legend class="prof-seg-legend">Sex (for resting estimate)</legend>
+						<label class="seg-opt">
+							<input type="radio" name="sex" value="male" required />
+							<span>Male</span>
+						</label>
+						<label class="seg-opt">
+							<input type="radio" name="sex" value="female" />
+							<span>Female</span>
+						</label>
+					</fieldset>
+				</div>
+			</fieldset>
+
+			<fieldset class="prof-fieldset">
+				<legend>Activity & training</legend>
+				<label class="prof-field prof-field-full">
+					<span>Activity</span>
+					<select name="activity" id="activity" required>
+						{activities.map(([value, label]) => <option value={value}>{label}</option>)}
+					</select>
+				</label>
+
+				<fieldset class="prof-seg" id="goal-field">
+					<legend class="prof-seg-legend">Goal</legend>
+					{
+						goals.map(([value, meta]) => (
+							<label class="seg-opt">
+								<input type="radio" name="goal" value={value} required />
+								<span>
+									<strong>{meta.label}</strong>
+									<small>{meta.blurb}</small>
+								</span>
+							</label>
+						))
+					}
+				</fieldset>
+
+				<label class="prof-field prof-field-full" id="adj-wrap" hidden>
+					<span id="adj-label">Adjustment</span>
+					<input type="range" name="adjustment" id="adjustment" min="10" max="25" step="1" />
+					<span class="adj-readout" id="adj-readout"></span>
+				</label>
+
+				<fieldset class="prof-seg" id="training-field">
+					<legend class="prof-seg-legend">Training days / week</legend>
+					<label class="seg-opt">
+						<input type="radio" name="trainingDays" value="3" />
+						<span>
+							<strong>3-day PPL</strong>
+							<small>Push / Pull / Legs · 4 rest days</small>
+						</span>
+					</label>
+					<label class="seg-opt">
+						<input type="radio" name="trainingDays" value="4" />
+						<span>
+							<strong>4-day PPLU</strong>
+							<small>Add Upper · 3 rest days</small>
+						</span>
+					</label>
+				</fieldset>
+			</fieldset>
+
+			<fieldset class="prof-fieldset" id="targets-field">
+				<legend>Calorie & macro targets</legend>
+				<p class="prof-note muted" id="calc-preview" aria-live="polite">
+					Enter body stats to see calculated targets.
+				</p>
+				<div class="target-source" role="radiogroup" aria-label="Target source">
+					<label class="seg-opt">
+						<input type="radio" name="targetSource" value="calculated" checked />
+						<span>
+							<strong>Use calculated</strong>
+							<small>Updates when body / activity / goal change.</small>
+						</span>
+					</label>
+					<label class="seg-opt">
+						<input type="radio" name="targetSource" value="user" />
+						<span>
+							<strong>Enter my own</strong>
+							<small>Locked until you switch back — we won’t overwrite them.</small>
+						</span>
+					</label>
+				</div>
+				<div class="prof-fields" id="user-targets" hidden>
+					<label class="prof-field">
+						<span>Calories (kcal)</span>
+						<input type="number" name="calories" id="calories" inputmode="numeric" min="1200" max="8000" step="10" />
+					</label>
+					<label class="prof-field">
+						<span>Protein (g)</span>
+						<input type="number" name="proteinG" id="proteinG" inputmode="numeric" min="40" max="400" step="1" />
+					</label>
+					<label class="prof-field">
+						<span>Carbs (g)</span>
+						<input type="number" name="carbsG" id="carbsG" inputmode="numeric" min="0" max="800" step="1" />
+					</label>
+					<label class="prof-field">
+						<span>Fat (g)</span>
+						<input type="number" name="fatG" id="fatG" inputmode="numeric" min="20" max="250" step="1" />
+					</label>
+				</div>
+			</fieldset>
+
+			<fieldset class="prof-fieldset">
+				<legend>Dietary preferences</legend>
+				<label class="prof-field prof-field-full">
+					<span>Pattern</span>
+					<select name="dietaryPattern" id="dietaryPattern">
+						<option value="none">No special pattern</option>
+						<option value="vegetarian">Vegetarian</option>
+						<option value="pescatarian">Pescatarian</option>
+						<option value="vegan">Vegan</option>
+						<option value="other">Other</option>
+					</select>
+				</label>
+				<label class="prof-field prof-field-full">
+					<span>Excludes / allergies</span>
+					<input type="text" name="excludes" id="excludes" maxlength="200" placeholder="e.g. dairy, shellfish" />
+				</label>
+				<label class="prof-field prof-field-full">
+					<span>Notes for Food Bro</span>
+					<textarea name="dietaryNotes" id="dietaryNotes" rows="2" maxlength="400" placeholder="Anything else that should shape meals"></textarea>
+				</label>
+			</fieldset>
+
+			<div class="prof-actions">
+				<button type="submit" class="btn btn-primary" id="save-btn">Save profile</button>
+				<button type="button" class="btn btn-secondary" id="clear-btn">Clear profile</button>
+			</div>
+			<p class="prof-save-note muted" id="save-note" aria-live="polite"></p>
+		</form>
+
+		<section class="prof-next">
+			<p class="eyebrow">Connected tools</p>
+			<h2>Where this feeds</h2>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="/food-bro">Food Bro</a>
+				<a class="btn btn-secondary" href="/food-bro/shopping">Shopping list</a>
+				<a class="btn btn-secondary" href="/food-bro/plan">Personalized PDF</a>
+				<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
+				<a class="btn btn-secondary" href="/start-here/training">Training templates</a>
+			</div>
+		</section>
+	</article>
+</BaseLayout>
+
+<script>
+	import { GOAL_DEFAULTS, type Activity, type Goal, type Sex, type TrainingDaysPref } from '../lib/food-os';
+	import {
+		EXAMPLE_PROFILE_HINT,
+		calcFromProfile,
+		clearProfile,
+		getEffectiveTargets,
+		profileUrl,
+		readProfile,
+		safeReturnTo,
+		writeProfile,
+		type DietaryPattern,
+		type MacroTargets,
+		type YehBroProfile,
+	} from '../lib/user-store';
+
+	const form = document.getElementById('profile-form') as HTMLFormElement | null;
+	const adjWrap = document.getElementById('adj-wrap') as HTMLLabelElement | null;
+	const adjInput = document.getElementById('adjustment') as HTMLInputElement | null;
+	const adjLabel = document.getElementById('adj-label');
+	const adjReadout = document.getElementById('adj-readout');
+	const userTargets = document.getElementById('user-targets');
+	const calcPreview = document.getElementById('calc-preview');
+	const saveNote = document.getElementById('save-note');
+	const returnNote = document.getElementById('return-note');
+
+	const params = new URLSearchParams(location.search);
+	const returnTo = safeReturnTo(params.get('returnTo'));
+	if (returnTo && returnNote) {
+		returnNote.hidden = false;
+		returnNote.textContent = `After you save, we’ll send you back to continue where you left off.`;
+	}
+
+	function selectedRadio(name: string): string | null {
+		const el = form?.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+		return el?.value ?? null;
+	}
+
+	function syncAdjustmentUi(goal: Goal, cutPct: number, bulkPct: number) {
+		if (!adjWrap || !adjInput || !adjLabel || !adjReadout) return;
+		if (goal === 'maintain') {
+			adjWrap.hidden = true;
+			return;
+		}
+		adjWrap.hidden = false;
+		if (goal === 'cut') {
+			adjInput.min = '10';
+			adjInput.max = '25';
+			adjInput.value = String(cutPct);
+			adjLabel.textContent = 'Deficit (% below maintenance)';
+			adjReadout.textContent = `−${cutPct}%`;
+		} else {
+			adjInput.min = '5';
+			adjInput.max = '15';
+			adjInput.value = String(bulkPct);
+			adjLabel.textContent = 'Surplus (% above maintenance)';
+			adjReadout.textContent = `+${bulkPct}%`;
+		}
+	}
+
+	function syncTargetSourceUi(source: string) {
+		if (!userTargets) return;
+		userTargets.hidden = source !== 'user';
+	}
+
+	function applyToForm(data: YehBroProfile) {
+		if (!form) return;
+		const setNum = (name: string, v: number | undefined, placeholder?: number) => {
+			const el = form.elements.namedItem(name) as HTMLInputElement | null;
+			if (!el) return;
+			el.value = v != null && Number.isFinite(v) ? String(v) : '';
+			if (placeholder != null) el.placeholder = String(placeholder);
+		};
+		setNum('weightKg', data.weightKg, EXAMPLE_PROFILE_HINT.weightKg);
+		setNum('goalWeightKg', data.goalWeightKg, EXAMPLE_PROFILE_HINT.goalWeightKg);
+		setNum('heightCm', data.heightCm, EXAMPLE_PROFILE_HINT.heightCm);
+		setNum('age', data.age, EXAMPLE_PROFILE_HINT.age);
+		if (data.sex) {
+			const sex = form.querySelector<HTMLInputElement>(`input[name="sex"][value="${data.sex}"]`);
+			if (sex) sex.checked = true;
+		}
+		if (data.activity) {
+			(form.elements.namedItem('activity') as HTMLSelectElement).value = data.activity;
+		}
+		if (data.goal) {
+			const goal = form.querySelector<HTMLInputElement>(`input[name="goal"][value="${data.goal}"]`);
+			if (goal) goal.checked = true;
+		}
+		const days = data.trainingDays === 4 ? '4' : '3';
+		const td = form.querySelector<HTMLInputElement>(`input[name="trainingDays"][value="${days}"]`);
+		if (td) td.checked = true;
+		const src = data.targets.source === 'user' ? 'user' : 'calculated';
+		const srcEl = form.querySelector<HTMLInputElement>(`input[name="targetSource"][value="${src}"]`);
+		if (srcEl) srcEl.checked = true;
+		syncTargetSourceUi(src);
+		setNum('calories', data.targets.calories);
+		setNum('proteinG', data.targets.proteinG);
+		setNum('carbsG', data.targets.carbsG);
+		setNum('fatG', data.targets.fatG);
+		(form.elements.namedItem('dietaryPattern') as HTMLSelectElement).value = data.dietary.pattern;
+		(form.elements.namedItem('excludes') as HTMLInputElement).value = data.dietary.excludes;
+		(form.elements.namedItem('dietaryNotes') as HTMLTextAreaElement).value = data.dietary.notes;
+		syncAdjustmentUi(data.goal ?? 'maintain', data.cutPct, data.bulkPct);
+		refreshPreview();
+	}
+
+	function collectPartial(): Partial<YehBroProfile> {
+		if (!form) return {};
+		const weightKg = Number((form.elements.namedItem('weightKg') as HTMLInputElement).value);
+		const heightCm = Number((form.elements.namedItem('heightCm') as HTMLInputElement).value);
+		const age = Number((form.elements.namedItem('age') as HTMLInputElement).value);
+		const goalWeightRaw = (form.elements.namedItem('goalWeightKg') as HTMLInputElement).value;
+		const goalWeightKg = goalWeightRaw ? Number(goalWeightRaw) : undefined;
+		const sex = selectedRadio('sex') as Sex | null;
+		const activity = (form.elements.namedItem('activity') as HTMLSelectElement).value as Activity;
+		const goal = selectedRadio('goal') as Goal | null;
+		const trainingRaw = selectedRadio('trainingDays');
+		const trainingDays = (trainingRaw === '4' ? 4 : 3) as TrainingDaysPref;
+		const prev = readProfile();
+		const cutPct =
+			goal === 'cut' && adjInput ? Number(adjInput.value) || prev?.cutPct || 18 : prev?.cutPct || 18;
+		const bulkPct =
+			goal === 'lean-bulk' && adjInput
+				? Number(adjInput.value) || prev?.bulkPct || 10
+				: prev?.bulkPct || 10;
+		const targetSource = (selectedRadio('targetSource') as 'calculated' | 'user') || 'calculated';
+		const targets: MacroTargets = { source: targetSource };
+		if (targetSource === 'user') {
+			const cal = Number((form.elements.namedItem('calories') as HTMLInputElement).value);
+			const p = Number((form.elements.namedItem('proteinG') as HTMLInputElement).value);
+			const c = Number((form.elements.namedItem('carbsG') as HTMLInputElement).value);
+			const f = Number((form.elements.namedItem('fatG') as HTMLInputElement).value);
+			if (Number.isFinite(cal)) targets.calories = cal;
+			if (Number.isFinite(p)) targets.proteinG = p;
+			if (Number.isFinite(c)) targets.carbsG = c;
+			if (Number.isFinite(f)) targets.fatG = f;
+		}
+		const dietaryPattern = (form.elements.namedItem('dietaryPattern') as HTMLSelectElement)
+			.value as DietaryPattern;
+		return {
+			weightKg: Number.isFinite(weightKg) ? weightKg : undefined,
+			heightCm: Number.isFinite(heightCm) ? heightCm : undefined,
+			age: Number.isFinite(age) ? age : undefined,
+			goalWeightKg: goalWeightKg != null && Number.isFinite(goalWeightKg) ? goalWeightKg : undefined,
+			sex: sex ?? undefined,
+			activity: activity || undefined,
+			goal: goal ?? undefined,
+			cutPct,
+			bulkPct,
+			trainingDays,
+			targets,
+			dietary: {
+				pattern: dietaryPattern || 'none',
+				excludes: (form.elements.namedItem('excludes') as HTMLInputElement).value.trim(),
+				notes: (form.elements.namedItem('dietaryNotes') as HTMLTextAreaElement).value.trim(),
+			},
+		};
+	}
+
+	function refreshPreview() {
+		const partial = collectPartial();
+		const probe: YehBroProfile = {
+			version: 1,
+			updatedAt: new Date().toISOString(),
+			weightKg: partial.weightKg,
+			heightCm: partial.heightCm,
+			age: partial.age,
+			sex: partial.sex,
+			goalWeightKg: partial.goalWeightKg,
+			activity: partial.activity,
+			goal: partial.goal,
+			cutPct: partial.cutPct ?? 18,
+			bulkPct: partial.bulkPct ?? 10,
+			trainingDays: (partial.trainingDays ?? 3) as TrainingDaysPref,
+			targets: partial.targets ?? { source: 'calculated' },
+			dietary: partial.dietary ?? { pattern: 'none', excludes: '', notes: '' },
+		};
+		const result = calcFromProfile(probe);
+		const effective = getEffectiveTargets(probe);
+		if (!calcPreview) return;
+		if (!result || !effective || !partial.goal) {
+			calcPreview.textContent = 'Enter body stats, activity, and goal to see calculated targets.';
+			return;
+		}
+		const goalLabel = GOAL_DEFAULTS[partial.goal].label;
+		const src =
+			effective.source === 'user'
+				? `Your entered targets · calculated would be ~${effective.calculated?.calories ?? result.calories} kcal`
+				: `Calculated · est. maintenance ≈ ${result.tdee} kcal`;
+		calcPreview.textContent = `${goalLabel}: ~${effective.calories} kcal · P ${effective.proteinG}g · C ${effective.carbsG}g · F ${effective.fatG}g — ${src}`;
+
+		if (partial.targets?.source === 'calculated') {
+			const cal = form?.elements.namedItem('calories') as HTMLInputElement | null;
+			const p = form?.elements.namedItem('proteinG') as HTMLInputElement | null;
+			const c = form?.elements.namedItem('carbsG') as HTMLInputElement | null;
+			const f = form?.elements.namedItem('fatG') as HTMLInputElement | null;
+			if (cal && !cal.value) cal.placeholder = String(result.calories);
+			if (p && !p.value) p.placeholder = String(result.proteinG);
+			if (c && !c.value) c.placeholder = String(result.carbsG);
+			if (f && !f.value) f.placeholder = String(result.fatG);
+		}
+	}
+
+	const existing = readProfile();
+	if (existing) {
+		applyToForm(existing);
+		if (saveNote) saveNote.textContent = 'Loaded your saved profile.';
+	} else {
+		applyToForm({
+			version: 1,
+			updatedAt: new Date().toISOString(),
+			cutPct: 18,
+			bulkPct: 10,
+			trainingDays: 3,
+			targets: { source: 'calculated' },
+			dietary: { pattern: 'none', excludes: '', notes: '' },
+			activity: 'moderate',
+			goal: 'maintain',
+			sex: undefined,
+		});
+		if (saveNote) {
+			saveNote.textContent = `Example coach baseline was ${EXAMPLE_PROFILE_HINT.age} / ${EXAMPLE_PROFILE_HINT.weightKg} kg / ${EXAMPLE_PROFILE_HINT.heightCm} cm — enter yours and save.`;
+		}
+	}
+
+	const focus = params.get('focus');
+	if (focus === 'targets') {
+		document.getElementById('targets-field')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	form?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const partial = collectPartial();
+		if (
+			partial.weightKg == null ||
+			partial.heightCm == null ||
+			partial.age == null ||
+			!partial.sex ||
+			!partial.activity ||
+			!partial.goal
+		) {
+			if (saveNote) saveNote.textContent = 'Fill height, weight, age, sex, activity, and goal.';
+			return;
+		}
+		if (partial.targets?.source === 'user' && partial.targets.calories == null) {
+			if (saveNote) saveNote.textContent = 'Enter at least calories for your own targets, or switch to calculated.';
+			return;
+		}
+		writeProfile(partial);
+		// Sync weekly split preference
+		try {
+			localStorage.setItem(
+				'yehbro-start-here-split-v1',
+				partial.trainingDays === 4 ? 'pplu' : 'ppl',
+			);
+		} catch {
+			/* ignore */
+		}
+		if (saveNote) saveNote.textContent = 'Saved on this device.';
+		if (returnTo) {
+			location.assign(returnTo);
+		}
+	});
+
+	form?.addEventListener('change', () => {
+		const goal = selectedRadio('goal') as Goal | null;
+		const prev = readProfile();
+		if (goal) syncAdjustmentUi(goal, prev?.cutPct ?? 18, prev?.bulkPct ?? 10);
+		syncTargetSourceUi(selectedRadio('targetSource') || 'calculated');
+		refreshPreview();
+	});
+	adjInput?.addEventListener('input', () => {
+		const goal = selectedRadio('goal') as Goal | null;
+		if (!goal || !adjReadout || !adjInput) return;
+		if (goal === 'cut') adjReadout.textContent = `−${adjInput.value}%`;
+		else if (goal === 'lean-bulk') adjReadout.textContent = `+${adjInput.value}%`;
+		refreshPreview();
+	});
+	form?.addEventListener('input', () => refreshPreview());
+
+	document.getElementById('clear-btn')?.addEventListener('click', () => {
+		if (!confirm('Clear your Yeh Bro profile from this browser?')) return;
+		clearProfile();
+		location.assign(profileUrl(returnTo));
+	});
+</script>
+
+<style>
+	.profile-page {
+		padding-top: 2rem;
+		padding-bottom: 3rem;
+	}
+	.prof-hero {
+		margin-bottom: 2rem;
+		max-width: 42rem;
+	}
+	.return-note {
+		margin-top: 0.85rem;
+		padding: 0.75rem 0.9rem;
+		border-left: 3px solid var(--yb-lime);
+		background: rgba(200, 241, 53, 0.06);
+	}
+	.prof-form {
+		display: grid;
+		gap: 1.5rem;
+		max-width: 40rem;
+	}
+	.prof-fieldset {
+		margin: 0;
+		padding: 1.15rem 1.1rem 1.25rem;
+		border: 1px solid rgba(242, 242, 240, 0.12);
+		background: var(--yb-surface);
+	}
+	.prof-fieldset > legend {
+		font-family: var(--font-display);
+		font-size: 0.95rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		padding: 0 0.35rem;
+		color: var(--yb-lime);
+	}
+	.prof-fields {
+		display: grid;
+		gap: 0.85rem;
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	}
+	.prof-field {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.prof-field-full {
+		grid-column: 1 / -1;
+		margin-top: 0.75rem;
+	}
+	.prof-field input,
+	.prof-field select,
+	.prof-field textarea {
+		font: inherit;
+		font-weight: 500;
+		padding: 0.7rem 0.75rem;
+		border: 1px solid rgba(242, 242, 240, 0.2);
+		border-radius: 2px;
+		background: var(--yb-charcoal);
+		color: var(--yb-offwhite);
+	}
+	.prof-field textarea {
+		resize: vertical;
+		min-height: 4rem;
+	}
+	.prof-field input:focus,
+	.prof-field select:focus,
+	.prof-field textarea:focus {
+		outline: 2px solid var(--yb-lime);
+		outline-offset: 2px;
+		border-color: var(--yb-lime);
+	}
+	.prof-note {
+		margin: 0 0 0.85rem;
+		font-size: 0.9rem;
+	}
+	.prof-seg {
+		border: none;
+		padding: 0;
+		margin: 0.25rem 0 0;
+		grid-column: 1 / -1;
+		display: grid;
+		gap: 0.5rem;
+	}
+	.prof-seg-legend {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: rgba(242, 242, 240, 0.88);
+		margin-bottom: 0.25rem;
+		padding: 0;
+	}
+	.target-source {
+		display: grid;
+		gap: 0.5rem;
+		margin-bottom: 0.85rem;
+	}
+	.seg-opt {
+		display: flex;
+		gap: 0.65rem;
+		align-items: flex-start;
+		padding: 0.7rem 0.75rem;
+		border: 1px solid rgba(242, 242, 240, 0.12);
+		background: rgba(0, 0, 0, 0.2);
+		cursor: pointer;
+	}
+	.seg-opt:has(input:checked) {
+		border-color: rgba(200, 241, 53, 0.55);
+		background: rgba(200, 241, 53, 0.07);
+	}
+	.seg-opt input {
+		margin-top: 0.2rem;
+		accent-color: var(--yb-lime);
+	}
+	.seg-opt span {
+		display: grid;
+		gap: 0.15rem;
+	}
+	.seg-opt small {
+		font-weight: 400;
+		color: var(--yb-muted);
+		font-size: 0.84rem;
+	}
+	.adj-readout {
+		font-size: 0.9rem;
+		color: var(--yb-lime);
+		font-weight: 700;
+	}
+	.prof-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+	.prof-save-note {
+		min-height: 1.25em;
+		margin: 0;
+		font-size: 0.9rem;
+	}
+	.prof-next {
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		max-width: 40rem;
+	}
+</style>

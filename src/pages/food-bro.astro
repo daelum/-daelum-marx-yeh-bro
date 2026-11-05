@@ -27,7 +27,7 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			{ href: '/fuel', label: 'Fuel' },
 			{ href: '/food-bro', label: 'Food Bro', current: true },
 			{ href: '/food-bro/shopping', label: 'Shopping' },
-			{ href: '/food', label: 'Food hub' },
+			{ href: '/profile', label: 'Profile' },
 		]}
 	/>
 
@@ -41,7 +41,11 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			<p class="lede anim-rise-delay">
 				Set daily calories and macros for a cut, maintain, or lean bulk — then run the recommended
 				coach day templates: non-training, training, or a 1–2 week diet break (~maintenance when
-				you’re flat). Inputs stick in this browser.
+				you’re flat). Reads your central Yeh Bro profile in this browser.
+			</p>
+			<p class="fos-profile-link muted">
+				<a href="/profile?returnTo=/food-bro">Edit full profile</a> (goal weight, dietary prefs, locked
+				targets).
 			</p>
 		</header>
 
@@ -162,8 +166,10 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 
 				<div class="fos-actions">
 					<button type="submit" class="btn btn-primary">Update targets</button>
-					<button type="button" class="btn btn-secondary" id="fos-reset">Reset defaults</button>
+					<a class="btn btn-secondary" href="/profile?returnTo=/food-bro&focus=targets">Locked targets</a>
+					<button type="button" class="btn btn-secondary" id="fos-reset">Reset example</button>
 				</div>
+				<p class="fos-target-source muted" id="fos-target-source" aria-live="polite"></p>
 				<p class="fos-save-note muted" id="fos-save-note" aria-live="polite"></p>
 			</form>
 
@@ -293,9 +299,9 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			</p>
 			<div class="cta-row">
 				<a class="btn btn-primary" href="/start-here">Yeh Bro System</a>
+				<a class="btn btn-secondary" href="/profile">Your profile</a>
 				<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
 				<a class="btn btn-secondary" href="/food-bro/shopping">Shopping list</a>
-				<a class="btn btn-secondary" href="/food">Food hub</a>
 			</div>
 			<p class="compliance muted">
 				Education only — not medical advice or a personal prescription. Estimates vary; adjust from
@@ -310,8 +316,6 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	import {
 		DEFAULT_INPUTS,
 		GOAL_DEFAULTS,
-		STORAGE_KEY,
-		calcFoodOs,
 		scaleCoachDayPlans,
 		type Activity,
 		type CoachDayPlan,
@@ -320,6 +324,17 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		type StoredFoodOs,
 		type TrainingDaysPref,
 	} from '../lib/food-os';
+	import {
+		EXAMPLE_PROFILE_HINT,
+		getEffectiveTargets,
+		isProfileReady,
+		profileUrl,
+		readProfile,
+		scaleResultFromProfile,
+		toStoredFoodOs,
+		writeProfile,
+		type YehBroProfile,
+	} from '../lib/user-store';
 
 	const form = document.getElementById('fos-form') as HTMLFormElement | null;
 	const adjWrap = document.getElementById('adj-wrap') as HTMLLabelElement | null;
@@ -327,6 +342,7 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const adjLabel = document.getElementById('adj-label');
 	const adjReadout = document.getElementById('adj-readout');
 	const saveNote = document.getElementById('fos-save-note');
+	const targetSourceNote = document.getElementById('fos-target-source');
 	const empty = document.getElementById('fos-empty');
 	const output = document.getElementById('fos-output');
 	const plansLede = document.getElementById('plans-lede');
@@ -334,24 +350,6 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const plansProfileNote = document.getElementById('plans-profile-note');
 	const pdfLink = document.getElementById('fos-pdf-link') as HTMLAnchorElement | null;
 	const pdfGate = document.getElementById('fos-pdf-gate');
-
-	function readStored(): StoredFoodOs {
-		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
-			if (raw) {
-				const parsed = JSON.parse(raw) as Partial<StoredFoodOs>;
-				return { ...DEFAULT_INPUTS, ...parsed };
-			}
-		} catch {
-			/* ignore */
-		}
-		return { ...DEFAULT_INPUTS };
-	}
-
-	function writeStored(data: StoredFoodOs) {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-		if (saveNote) saveNote.textContent = 'Saved on this device.';
-	}
 
 	function selectedRadio(name: string): string | null {
 		const el = form?.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
@@ -374,7 +372,7 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		syncAdjustmentUi(data);
 	}
 
-	function syncAdjustmentUi(data: StoredFoodOs) {
+	function syncAdjustmentUi(data: Pick<StoredFoodOs, 'goal' | 'cutPct' | 'bulkPct'>) {
 		if (!adjWrap || !adjInput || !adjLabel || !adjReadout) return;
 		if (data.goal === 'maintain') {
 			adjWrap.hidden = true;
@@ -407,28 +405,22 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		const trainingRaw = selectedRadio('trainingDays');
 		const trainingDays = (trainingRaw === '4' ? 4 : 3) as TrainingDaysPref;
 		if (!sex || !goal) return null;
-		const prev = readStored();
+		if (!Number.isFinite(weightKg) || !Number.isFinite(heightCm) || !Number.isFinite(age)) return null;
+		const prev = readProfile();
 		const cutPct =
-			goal === 'cut' && adjInput ? Number(adjInput.value) || prev.cutPct : prev.cutPct;
+			goal === 'cut' && adjInput
+				? Number(adjInput.value) || prev?.cutPct || DEFAULT_INPUTS.cutPct
+				: prev?.cutPct || DEFAULT_INPUTS.cutPct;
 		const bulkPct =
-			goal === 'lean-bulk' && adjInput ? Number(adjInput.value) || prev.bulkPct : prev.bulkPct;
+			goal === 'lean-bulk' && adjInput
+				? Number(adjInput.value) || prev?.bulkPct || DEFAULT_INPUTS.bulkPct
+				: prev?.bulkPct || DEFAULT_INPUTS.bulkPct;
 		return { weightKg, heightCm, age, sex, activity, goal, cutPct, bulkPct, trainingDays };
 	}
 
-	function profileReady(data: StoredFoodOs): boolean {
-		return (
-			Number.isFinite(data.weightKg) &&
-			Number.isFinite(data.heightCm) &&
-			Number.isFinite(data.age) &&
-			data.weightKg >= 35 &&
-			data.heightCm >= 120 &&
-			data.age >= 16
-		);
-	}
-
-	function syncPdfGate(data: StoredFoodOs, ok: boolean) {
+	function syncPdfGate(ok: boolean) {
 		if (!pdfLink || !pdfGate) return;
-		if (ok && profileReady(data)) {
+		if (ok) {
 			pdfLink.classList.remove('is-disabled');
 			pdfLink.removeAttribute('aria-disabled');
 			pdfLink.href = '/food-bro/plan';
@@ -436,8 +428,11 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		} else {
 			pdfLink.classList.add('is-disabled');
 			pdfLink.setAttribute('aria-disabled', 'true');
-			pdfLink.href = '#personal-plan';
-			pdfGate.textContent = 'Complete your profile first — height, weight, age, activity, and goal.';
+			pdfLink.href = profileUrl('/food-bro/plan');
+			pdfGate.innerHTML =
+				'Complete your profile first — height, weight, age, activity, and goal. <a href="' +
+				profileUrl('/food-bro/plan') +
+				'">Open profile</a>.';
 		}
 	}
 
@@ -482,11 +477,54 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		`;
 	}
 
-	function renderPlans(data: StoredFoodOs, result: NonNullable<ReturnType<typeof calcFoodOs>>) {
+	function renderFromProfile(profile: YehBroProfile) {
+		const stored = toStoredFoodOs(profile);
+		const result = scaleResultFromProfile(profile);
+		const effective = getEffectiveTargets(profile);
+		if (!stored || !result || !effective) {
+			empty && (empty.hidden = false);
+			output && (output.hidden = true);
+			if (empty) empty.textContent = 'Check the inputs — weight, height, and age need to be in range.';
+			syncPdfGate(false);
+			return;
+		}
+		if (empty) empty.hidden = true;
+		if (output) output.hidden = false;
+		const set = (id: string, text: string) => {
+			const el = document.getElementById(id);
+			if (el) el.textContent = text;
+		};
+		set('out-cal', String(effective.calories));
+		const sourceBit =
+			effective.source === 'user'
+				? ` · your entered targets (calc ~${effective.calculated?.calories ?? result.calories})`
+				: '';
+		set(
+			'out-tdee',
+			`Est. maintenance ≈ ${effective.tdee} kcal · resting ≈ ${effective.bmr} kcal · ${GOAL_DEFAULTS[stored.goal].label}${sourceBit}`,
+		);
+		set('out-p', `${effective.proteinG} g`);
+		set('out-c', `${effective.carbsG} g`);
+		set('out-f', `${effective.fatG} g`);
+		if (targetSourceNote) {
+			targetSourceNote.textContent =
+				effective.source === 'user'
+					? 'Using locked targets from your profile — body changes won’t overwrite them.'
+					: 'Targets calculated from your profile — lock custom numbers on the profile page.';
+		}
+		const why = document.getElementById('out-why');
+		if (why) {
+			why.innerHTML = '';
+			effective.why.forEach((line) => {
+				const li = document.createElement('li');
+				li.textContent = line;
+				why.appendChild(li);
+			});
+		}
 		const scaled = scaleCoachDayPlans(result, {
-			weightKg: data.weightKg,
-			heightCm: data.heightCm,
-			age: data.age,
+			weightKg: stored.weightKg,
+			heightCm: stored.heightCm,
+			age: stored.age,
 		});
 		if (plansLede) plansLede.textContent = scaled.lede;
 		if (plansProfileLine) plansProfileLine.textContent = scaled.profileLine;
@@ -503,101 +541,118 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			const panel = document.querySelector<HTMLElement>(`[data-plan-panel="${plan.id}"]`);
 			if (panel) renderPlanPanel(panel, plan);
 		});
+		syncPdfGate(isProfileReady(profile));
 	}
 
-	function render(data: StoredFoodOs) {
-		const adjustment =
-			data.goal === 'cut'
-				? -(data.cutPct / 100)
-				: data.goal === 'lean-bulk'
-					? data.bulkPct / 100
-					: 0;
-		const result = calcFoodOs({
-			weightKg: data.weightKg,
-			heightCm: data.heightCm,
-			age: data.age,
-			sex: data.sex,
-			activity: data.activity,
-			goal: data.goal,
-			adjustment,
-		});
-		if (!result) {
-			empty && (empty.hidden = false);
-			output && (output.hidden = true);
-			if (empty) empty.textContent = 'Check the inputs — weight, height, and age need to be in range.';
-			syncPdfGate(data, false);
-			return;
+	function clearResultsPending() {
+		if (empty) {
+			empty.hidden = false;
+			empty.textContent = `Enter your details and hit Update — we won’t pretend you’re ${EXAMPLE_PROFILE_HINT.weightKg} kg.`;
 		}
-		if (empty) empty.hidden = true;
-		if (output) output.hidden = false;
-		const set = (id: string, text: string) => {
-			const el = document.getElementById(id);
-			if (el) el.textContent = text;
-		};
-		set('out-cal', String(result.calories));
-		set(
-			'out-tdee',
-			`Est. maintenance ≈ ${result.tdee} kcal · resting ≈ ${result.bmr} kcal · ${GOAL_DEFAULTS[data.goal].label}`,
-		);
-		set('out-p', `${result.proteinG} g`);
-		set('out-c', `${result.carbsG} g`);
-		set('out-f', `${result.fatG} g`);
-		const why = document.getElementById('out-why');
-		if (why) {
-			why.innerHTML = '';
-			result.why.forEach((line) => {
-				const li = document.createElement('li');
-				li.textContent = line;
-				why.appendChild(li);
-			});
-		}
-		renderPlans(data, result);
-		syncPdfGate(data, true);
+		if (output) output.hidden = true;
+		if (targetSourceNote) targetSourceNote.textContent = '';
+		syncPdfGate(false);
 	}
 
-	function refresh() {
+	function refresh(persist: boolean) {
 		const data = collect();
 		if (!data) {
-			syncPdfGate(DEFAULT_INPUTS, false);
+			syncPdfGate(false);
 			return;
 		}
 		syncAdjustmentUi(data);
-		writeStored(data);
-		render(data);
+		const prev = readProfile();
+		const next = persist
+			? writeProfile({
+					...data,
+					goalWeightKg: prev?.goalWeightKg,
+					targets: prev?.targets ?? { source: 'calculated' },
+					dietary: prev?.dietary,
+				})
+			: {
+					version: 1 as const,
+					updatedAt: new Date().toISOString(),
+					...data,
+					goalWeightKg: prev?.goalWeightKg,
+					targets: prev?.targets ?? { source: 'calculated' as const },
+					dietary: prev?.dietary ?? { pattern: 'none' as const, excludes: '', notes: '' },
+					cutPct: data.cutPct,
+					bulkPct: data.bulkPct,
+					trainingDays: data.trainingDays,
+				};
+		if (persist) {
+			try {
+				localStorage.setItem(
+					'yehbro-start-here-split-v1',
+					data.trainingDays === 4 ? 'pplu' : 'ppl',
+				);
+			} catch {
+				/* ignore */
+			}
+			if (saveNote) saveNote.textContent = 'Saved to your Yeh Bro profile.';
+		}
+		renderFromProfile(next);
 	}
 
-	const initial = readStored();
-	applyToForm(initial);
-	render(initial);
-	if (saveNote && localStorage.getItem(STORAGE_KEY)) {
-		saveNote.textContent = 'Loaded your last saved setup.';
+	const existing = readProfile();
+	if (existing && isProfileReady(existing)) {
+		const stored = toStoredFoodOs(existing)!;
+		applyToForm(stored);
+		renderFromProfile(existing);
+		if (saveNote) saveNote.textContent = 'Loaded your Yeh Bro profile.';
+	} else {
+		// Empty form — placeholders only, no silent saved defaults.
+		if (form) {
+			(form.elements.namedItem('weightKg') as HTMLInputElement).placeholder = String(
+				EXAMPLE_PROFILE_HINT.weightKg,
+			);
+			(form.elements.namedItem('heightCm') as HTMLInputElement).placeholder = String(
+				EXAMPLE_PROFILE_HINT.heightCm,
+			);
+			(form.elements.namedItem('age') as HTMLInputElement).placeholder = String(EXAMPLE_PROFILE_HINT.age);
+			(form.elements.namedItem('activity') as HTMLSelectElement).value = 'moderate';
+			const maintain = form.querySelector<HTMLInputElement>('input[name="goal"][value="maintain"]');
+			if (maintain) maintain.checked = true;
+			const td3 = form.querySelector<HTMLInputElement>('input[name="trainingDays"][value="3"]');
+			if (td3) td3.checked = true;
+			syncAdjustmentUi({ goal: 'maintain', cutPct: 18, bulkPct: 10 });
+		}
+		clearResultsPending();
+		if (saveNote) {
+			saveNote.textContent = `No saved profile yet — example coach baseline was ${EXAMPLE_PROFILE_HINT.age} / ${EXAMPLE_PROFILE_HINT.weightKg} kg / ${EXAMPLE_PROFILE_HINT.heightCm} cm.`;
+		}
 	}
 
 	form?.addEventListener('submit', (e) => {
 		e.preventDefault();
-		refresh();
+		refresh(true);
 	});
-	form?.addEventListener('change', () => refresh());
+	form?.addEventListener('change', () => refresh(true));
 	adjInput?.addEventListener('input', () => {
 		const data = collect();
 		if (!data || !adjReadout) return;
 		if (data.goal === 'cut') adjReadout.textContent = `−${adjInput.value}%`;
 		else if (data.goal === 'lean-bulk') adjReadout.textContent = `+${adjInput.value}%`;
-		refresh();
+		refresh(true);
 	});
 
 	document.getElementById('fos-reset')?.addEventListener('click', () => {
-		const defaults = { ...DEFAULT_INPUTS };
+		const defaults = { ...DEFAULT_INPUTS, age: EXAMPLE_PROFILE_HINT.age };
 		applyToForm(defaults);
-		writeStored(defaults);
-		render(defaults);
-		if (saveNote) saveNote.textContent = 'Reset to defaults.';
+		const next = writeProfile({
+			...defaults,
+			targets: { source: 'calculated' },
+			dietary: { pattern: 'none', excludes: '', notes: '' },
+			goalWeightKg: undefined,
+		});
+		renderFromProfile(next);
+		if (saveNote) saveNote.textContent = 'Reset to example baseline and saved.';
 	});
 
 	pdfLink?.addEventListener('click', (e) => {
 		if (pdfLink.getAttribute('aria-disabled') === 'true') {
 			e.preventDefault();
-			if (pdfGate) pdfGate.textContent = 'Complete your profile first — height, weight, age, activity, and goal.';
+			location.assign(profileUrl('/food-bro/plan'));
 		}
 	});
 
@@ -627,6 +682,17 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	}
 	.fos-hero {
 		margin-bottom: 2rem;
+	}
+	.fos-profile-link {
+		margin: 0.85rem 0 0;
+		font-size: 0.92rem;
+	}
+	.fos-profile-link a {
+		color: var(--yb-lime);
+	}
+	.fos-target-source {
+		margin: 0.35rem 0 0;
+		font-size: 0.9rem;
 	}
 	.fos-name {
 		margin: 0 0 0.85rem;

@@ -23,8 +23,10 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 		<h1 class="anim-rise">Weekly checklist</h1>
 		<p class="lede anim-rise-delay">
 			Tick what you did. State saves in this browser (localStorage) so returning feels sticky — not
-			another PDF you ignore. Reset when you start a new week.
+			another PDF you ignore. Training days sync with your Yeh Bro profile. Reset when you start a new
+			week.
 		</p>
+		<p class="week-profile-link muted" id="week-profile-link"></p>
 		<div class="week-toolbar anim-rise-delay-2">
 			<p class="week-status" id="week-status" aria-live="polite">Loading…</p>
 			<button type="button" class="btn btn-secondary" id="week-reset">Reset this week</button>
@@ -82,14 +84,23 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 			</p>
 			<div class="cta-row">
 				<a class="btn btn-primary" href="/food-bro">Open Food Bro</a>
+				<a class="btn btn-secondary" href="/profile?returnTo=/start-here/weekly">Your profile</a>
 				<a class="btn btn-secondary" href="/start-here/training">Training templates</a>
-				<a class="btn btn-secondary" href="/start-here">Back to system</a>
 			</div>
 		</section>
 	</article>
 </BaseLayout>
 
 <script>
+	import {
+		profileSummaryLine,
+		profileUrl,
+		readProfile,
+		splitToTrainingDays,
+		trainingDaysToSplit,
+		writeProfile,
+	} from '../../lib/user-store';
+
 	const STORAGE_KEY = 'yehbro-start-here-weekly-v1';
 	const SPLIT_KEY = 'yehbro-start-here-split-v1';
 
@@ -129,6 +140,10 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 	}
 
 	function loadSplit(): SplitId {
+		const profile = readProfile();
+		if (profile?.trainingDays === 3 || profile?.trainingDays === 4) {
+			return trainingDaysToSplit(profile.trainingDays);
+		}
 		try {
 			const raw = localStorage.getItem(SPLIT_KEY);
 			if (raw === 'pplu' || raw === 'ppl') return raw;
@@ -140,6 +155,17 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 
 	function saveSplit(split: SplitId) {
 		localStorage.setItem(SPLIT_KEY, split);
+		writeProfile({ trainingDays: splitToTrainingDays(split) });
+	}
+
+	const profileLink = document.getElementById('week-profile-link');
+	const profile = readProfile();
+	if (profileLink) {
+		if (profile) {
+			profileLink.innerHTML = `Profile: ${profileSummaryLine(profile)} · <a href="${profileUrl('/start-here/weekly')}">Edit</a>`;
+		} else {
+			profileLink.innerHTML = `No profile yet — <a href="${profileUrl('/start-here/weekly')}">set training days once</a> so Food Bro and this checklist stay aligned.`;
+		}
 	}
 
 	const state = load();
@@ -219,6 +245,14 @@ import { WEEKLY_CHECKLIST } from '../../data/start-here-system';
 	.week-page {
 		padding-top: 2rem;
 		padding-bottom: 3rem;
+	}
+	.week-profile-link {
+		margin: 0.65rem 0 0;
+		font-size: 0.92rem;
+		max-width: 40rem;
+	}
+	.week-profile-link :global(a) {
+		color: var(--yb-lime);
 	}
 	.week-toolbar {
 		display: flex;

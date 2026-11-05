@@ -18,7 +18,7 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 
 <BaseLayout
 	title="Weekly shopping list — Food Bro"
-	description="Woolworths shopping list for Food Bro coach meal plans — phone-copyable weights scaled from your Food Bro profile when saved."
+	description="Woolworths shopping list for Food Bro coach meal plans — phone-copyable weights scaled from your Yeh Bro profile when saved."
 	canonicalPath="/food-bro/shopping"
 >
 	<ProductPath
@@ -26,7 +26,7 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 			{ href: '/fuel', label: 'Fuel' },
 			{ href: '/food-bro', label: 'Food Bro' },
 			{ href: '/food-bro/shopping', label: 'Shopping', current: true },
-			{ href: '/food', label: 'Food hub' },
+			{ href: '/profile', label: 'Profile' },
 		]}
 	/>
 
@@ -36,77 +36,145 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 			<h1 class="anim-rise">Weekly shopping list</h1>
 			<p class="lede anim-rise-delay" id="shop-lede">
 				Phone-copyable Woolworths totals for the coach day templates. Typical week ={' '}
-				{SHOPPING_WEEK_TRAINING_DAYS} training + {SHOPPING_WEEK_REST_DAYS} rest. Amounts follow your
-				saved Food Bro profile (baseline structure {age} / {weightKg} kg / {heightCm} cm).
+				{SHOPPING_WEEK_TRAINING_DAYS} training + {SHOPPING_WEEK_REST_DAYS} rest when your profile is
+				set. Baseline structure {age} / {weightKg} kg / {heightCm} cm.
 			</p>
 			<div class="shop-meta" id="shop-meta" aria-live="polite">
 				<p class="shop-scale-line" id="shop-scale-line"></p>
 			</div>
 		</header>
 
-		<section class="shop-block" id="typical-week">
-			<p class="eyebrow">Default week</p>
-			<h2>
-				{SHOPPING_WEEK_TRAINING_DAYS} training · {SHOPPING_WEEK_REST_DAYS} rest
-			</h2>
-			<p class="muted shop-note">
-				Coconut water only on training days (Intra). Everything else is the shared base day, scaled
-				to your work-day calorie target.
+		<section class="shop-gate" id="shop-gate" hidden>
+			<p class="shop-gate-lede">
+				Let’s personalise your shopping list so the amounts match your body, goal, and training days —
+				not a one-size example week.
 			</p>
-			<button type="button" class="btn btn-primary" id="copy-typical" data-copy="typical">
-				Copy list
-			</button>
-			<p class="copy-status muted" id="status-typical" aria-live="polite"></p>
-			<ul class="shop-list" id="list-typical">
-				{
-					SHOPPING_LIST_TYPICAL_WEEK.map((line) => (
-						<li class="shop-row">
-							<div class="shop-row-main">
-								<span class="shop-name">{line.name}</span>
-								<span class="shop-amt">{line.amount}</span>
-							</div>
-							{line.note ? <span class="shop-line-note muted">{line.note}</span> : null}
-						</li>
-					))
-				}
-			</ul>
-			<pre class="shop-plain" id="plain-typical" hidden>{typicalPlain}</pre>
+			<div class="shop-gate-actions">
+				<a class="btn btn-primary" id="gate-profile-link" href="/profile?returnTo=/food-bro/shopping"
+					>Complete your profile</a
+				>
+				<button type="button" class="btn btn-secondary" id="gate-inline-toggle">Enter details here</button>
+			</div>
+			<form id="shop-inline-form" class="shop-inline" hidden novalidate>
+				<div class="shop-inline-fields">
+					<label>
+						<span>Weight (kg)</span>
+						<input type="number" name="weightKg" min="35" max="250" step="0.1" required />
+					</label>
+					<label>
+						<span>Height (cm)</span>
+						<input type="number" name="heightCm" min="120" max="230" step="1" required />
+					</label>
+					<label>
+						<span>Age</span>
+						<input type="number" name="age" min="16" max="90" step="1" required />
+					</label>
+					<label>
+						<span>Sex</span>
+						<select name="sex" required>
+							<option value="male">Male</option>
+							<option value="female">Female</option>
+						</select>
+					</label>
+					<label>
+						<span>Activity</span>
+						<select name="activity" required>
+							<option value="sedentary">Mostly desk</option>
+							<option value="light">1–3 lift days</option>
+							<option value="moderate" selected>3–5 lift days</option>
+							<option value="active">5–6 hard days</option>
+							<option value="very-active">Two-a-days / physical job</option>
+						</select>
+					</label>
+					<label>
+						<span>Goal</span>
+						<select name="goal" required>
+							<option value="cut">Cut</option>
+							<option value="maintain" selected>Maintain</option>
+							<option value="lean-bulk">Lean bulk</option>
+						</select>
+					</label>
+					<label>
+						<span>Training days</span>
+						<select name="trainingDays" required>
+							<option value="3">3 (PPL)</option>
+							<option value="4" selected>4 (PPLU)</option>
+						</select>
+					</label>
+				</div>
+				<div class="shop-inline-actions">
+					<button type="submit" class="btn btn-primary">Save &amp; personalise</button>
+					<a class="btn btn-secondary" href="/profile?returnTo=/food-bro/shopping">Full profile</a>
+				</div>
+				<p class="shop-inline-note muted" id="shop-inline-note" aria-live="polite"></p>
+			</form>
 		</section>
 
-		<section class="shop-block" id="diet-break-week">
-			<p class="eyebrow">Diet-break week</p>
-			<h2>1–2 weeks when flat</h2>
-			<p class="muted shop-note" id="diet-note">
-				≈ your estimated maintenance. Bigger rice / cereal / pasta / bars + 1 L coconut water every
-				day. Run then return to the typical week list — not a forever surplus.
-			</p>
-			<button type="button" class="btn btn-secondary" id="copy-diet" data-copy="diet">
-				Copy diet-break list
-			</button>
-			<p class="copy-status muted" id="status-diet" aria-live="polite"></p>
-			<ul class="shop-list" id="list-diet">
-				{
-					SHOPPING_LIST_DIET_BREAK_WEEK.map((line) => (
-						<li class="shop-row">
-							<div class="shop-row-main">
-								<span class="shop-name">{line.name}</span>
-								<span class="shop-amt">{line.amount}</span>
-							</div>
-							{line.note ? <span class="shop-line-note muted">{line.note}</span> : null}
-						</li>
-					))
-				}
-			</ul>
-			<pre class="shop-plain" id="plain-diet" hidden>{dietBreakPlain}</pre>
-		</section>
+		<div id="shop-lists">
+			<section class="shop-block" id="typical-week">
+				<p class="eyebrow">Default week</p>
+				<h2 id="typical-heading">
+					{SHOPPING_WEEK_TRAINING_DAYS} training · {SHOPPING_WEEK_REST_DAYS} rest
+				</h2>
+				<p class="muted shop-note">
+					Coconut water only on training days (Intra). Everything else is the shared base day, scaled
+					to your work-day calorie target.
+				</p>
+				<button type="button" class="btn btn-primary" id="copy-typical" data-copy="typical">
+					Copy list
+				</button>
+				<p class="copy-status muted" id="status-typical" aria-live="polite"></p>
+				<ul class="shop-list" id="list-typical">
+					{
+						SHOPPING_LIST_TYPICAL_WEEK.map((line) => (
+							<li class="shop-row">
+								<div class="shop-row-main">
+									<span class="shop-name">{line.name}</span>
+									<span class="shop-amt">{line.amount}</span>
+								</div>
+								{line.note ? <span class="shop-line-note muted">{line.note}</span> : null}
+							</li>
+						))
+					}
+				</ul>
+				<pre class="shop-plain" id="plain-typical" hidden>{typicalPlain}</pre>
+			</section>
+
+			<section class="shop-block" id="diet-break-week">
+				<p class="eyebrow">Diet-break week</p>
+				<h2>1–2 weeks when flat</h2>
+				<p class="muted shop-note" id="diet-note">
+					≈ your estimated maintenance. Bigger rice / cereal / pasta / bars + 1 L coconut water every
+					day. Run then return to the typical week list — not a forever surplus.
+				</p>
+				<button type="button" class="btn btn-secondary" id="copy-diet" data-copy="diet">
+					Copy diet-break list
+				</button>
+				<p class="copy-status muted" id="status-diet" aria-live="polite"></p>
+				<ul class="shop-list" id="list-diet">
+					{
+						SHOPPING_LIST_DIET_BREAK_WEEK.map((line) => (
+							<li class="shop-row">
+								<div class="shop-row-main">
+									<span class="shop-name">{line.name}</span>
+									<span class="shop-amt">{line.amount}</span>
+								</div>
+								{line.note ? <span class="shop-line-note muted">{line.note}</span> : null}
+							</li>
+						))
+					}
+				</ul>
+				<pre class="shop-plain" id="plain-diet" hidden>{dietBreakPlain}</pre>
+			</section>
+		</div>
 
 		<section class="shop-next">
-			<p class="eyebrow">Back to Food Bro</p>
+			<p class="eyebrow">Connected</p>
 			<div class="cta-row">
 				<a class="btn btn-primary" href="/food-bro#recommended-plans">Day templates</a>
+				<a class="btn btn-secondary" href="/profile">Your profile</a>
 				<a class="btn btn-secondary" href="/food-bro">Calculator</a>
 				<a class="btn btn-secondary" href="/food-bro/plan">Personalized PDF</a>
-				<a class="btn btn-secondary" href="/food">Food hub</a>
 			</div>
 			<p class="compliance muted">
 				Education only — not medical advice. Product names as listed on the templates; we don’t invent
@@ -118,26 +186,36 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 
 <script>
 	import {
-		DEFAULT_INPUTS,
-		STORAGE_KEY,
-		calcFoodOs,
 		scaleShoppingLists,
-		type StoredFoodOs,
+		type Activity,
+		type Goal,
+		type Sex,
+		type TrainingDaysPref,
 	} from '../../lib/food-os';
+	import {
+		isProfileReady,
+		profileUrl,
+		readProfile,
+		restDays,
+		scaleResultFromProfile,
+		writeProfile,
+		type YehBroProfile,
+	} from '../../lib/user-store';
 
 	const payloads: Record<string, string> = {
 		typical: document.getElementById('plain-typical')?.textContent ?? '',
 		diet: document.getElementById('plain-diet')?.textContent ?? '',
 	};
 
-	function readStored(): StoredFoodOs | null {
-		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
-			if (!raw) return null;
-			return { ...DEFAULT_INPUTS, ...(JSON.parse(raw) as Partial<StoredFoodOs>) };
-		} catch {
-			return null;
-		}
+	const gate = document.getElementById('shop-gate');
+	const lists = document.getElementById('shop-lists');
+	const inlineForm = document.getElementById('shop-inline-form') as HTMLFormElement | null;
+	const inlineToggle = document.getElementById('gate-inline-toggle');
+	const gateProfileLink = document.getElementById('gate-profile-link') as HTMLAnchorElement | null;
+	const returnPath = '/food-bro/shopping' + (location.hash || '');
+
+	if (gateProfileLink) {
+		gateProfileLink.href = profileUrl(returnPath);
 	}
 
 	function renderList(ul: HTMLElement | null, lines: { name: string; amount: string; note?: string }[]) {
@@ -155,48 +233,126 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 			.join('');
 	}
 
-	const stored = readStored();
-	if (stored) {
-		const adjustment =
-			stored.goal === 'cut'
-				? -(stored.cutPct / 100)
-				: stored.goal === 'lean-bulk'
-					? stored.bulkPct / 100
-					: 0;
-		const result = calcFoodOs({
-			weightKg: stored.weightKg,
-			heightCm: stored.heightCm,
-			age: stored.age,
-			sex: stored.sex,
-			activity: stored.activity,
-			goal: stored.goal,
-			adjustment,
-		});
-		if (result) {
-			const scaled = scaleShoppingLists(result, {
-				weightKg: stored.weightKg,
-				heightCm: stored.heightCm,
-			});
-			renderList(document.getElementById('list-typical'), scaled.typical);
-			renderList(document.getElementById('list-diet'), scaled.dietBreak);
-			const plainT = document.getElementById('plain-typical');
-			const plainD = document.getElementById('plain-diet');
-			if (plainT) plainT.textContent = scaled.typicalPlain;
-			if (plainD) plainD.textContent = scaled.dietBreakPlain;
-			payloads.typical = scaled.typicalPlain;
-			payloads.diet = scaled.dietBreakPlain;
-			const scaleLine = document.getElementById('shop-scale-line');
-			if (scaleLine) scaleLine.textContent = scaled.blurb;
-			const lede = document.getElementById('shop-lede');
-			if (lede) {
-				lede.textContent = `Phone-copyable Woolworths totals for your ${stored.weightKg} kg · ${stored.heightCm} cm profile. Typical week = 4 training + 3 rest. Coconut water stays 1 L per Intra day.`;
+	function applyScaled(profile: YehBroProfile) {
+		const result = scaleResultFromProfile(profile);
+		if (!result) return false;
+		const days = (profile.trainingDays === 4 ? 4 : 3) as TrainingDaysPref;
+		const scaled = scaleShoppingLists(
+			result,
+			{ weightKg: profile.weightKg!, heightCm: profile.heightCm! },
+			{ trainingDays: days },
+		);
+		renderList(document.getElementById('list-typical'), scaled.typical);
+		renderList(document.getElementById('list-diet'), scaled.dietBreak);
+		const plainT = document.getElementById('plain-typical');
+		const plainD = document.getElementById('plain-diet');
+		if (plainT) plainT.textContent = scaled.typicalPlain;
+		if (plainD) plainD.textContent = scaled.dietBreakPlain;
+		payloads.typical = scaled.typicalPlain;
+		payloads.diet = scaled.dietBreakPlain;
+		const scaleLine = document.getElementById('shop-scale-line');
+		if (scaleLine) scaleLine.textContent = scaled.blurb;
+		const lede = document.getElementById('shop-lede');
+		if (lede) {
+			lede.textContent = `Phone-copyable Woolworths totals for your ${profile.weightKg} kg · ${profile.heightCm} cm profile. Typical week = ${days} training + ${restDays(days)} rest. Coconut water stays 1 L per Intra day.`;
+		}
+		const heading = document.getElementById('typical-heading');
+		if (heading) heading.textContent = `${days} training · ${restDays(days)} rest`;
+		if (profile.dietary?.excludes) {
+			const dietNote = document.getElementById('diet-note');
+			if (dietNote) {
+				dietNote.textContent = `${dietNote.textContent} Your excludes: ${profile.dietary.excludes}.`;
 			}
 		}
+		return true;
 	}
+
+	function showGate() {
+		if (gate) gate.hidden = false;
+		if (lists) lists.setAttribute('aria-disabled', 'true');
+		const scaleLine = document.getElementById('shop-scale-line');
+		if (scaleLine) {
+			scaleLine.textContent =
+				'Baseline example quantities below — save your profile to scale portions to you.';
+		}
+	}
+
+	function hideGate() {
+		if (gate) gate.hidden = true;
+		if (lists) lists.removeAttribute('aria-disabled');
+	}
+
+	const stored = readProfile();
+	if (isProfileReady(stored)) {
+		hideGate();
+		applyScaled(stored!);
+	} else {
+		showGate();
+	}
+
+	inlineToggle?.addEventListener('click', () => {
+		if (!inlineForm) return;
+		inlineForm.hidden = !inlineForm.hidden;
+		inlineToggle.textContent = inlineForm.hidden ? 'Enter details here' : 'Hide details';
+	});
+
+	inlineForm?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const fd = new FormData(inlineForm);
+		const weightKg = Number(fd.get('weightKg'));
+		const heightCm = Number(fd.get('heightCm'));
+		const age = Number(fd.get('age'));
+		const sex = String(fd.get('sex')) as Sex;
+		const activity = String(fd.get('activity')) as Activity;
+		const goal = String(fd.get('goal')) as Goal;
+		const trainingDays = (String(fd.get('trainingDays')) === '4' ? 4 : 3) as TrainingDaysPref;
+		const note = document.getElementById('shop-inline-note');
+		if (
+			!Number.isFinite(weightKg) ||
+			!Number.isFinite(heightCm) ||
+			!Number.isFinite(age) ||
+			!sex ||
+			!activity ||
+			!goal
+		) {
+			if (note) note.textContent = 'Fill every field to personalise.';
+			return;
+		}
+		const next = writeProfile({
+			weightKg,
+			heightCm,
+			age,
+			sex,
+			activity,
+			goal,
+			trainingDays,
+			targets: { source: 'calculated' },
+		});
+		try {
+			localStorage.setItem('yehbro-start-here-split-v1', trainingDays === 4 ? 'pplu' : 'ppl');
+		} catch {
+			/* ignore */
+		}
+		if (isProfileReady(next) && applyScaled(next)) {
+			hideGate();
+			if (note) note.textContent = 'Saved — list updated for your profile.';
+			if (location.hash) {
+				document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' });
+			}
+		} else if (note) {
+			note.textContent = 'Check the numbers are in range.';
+		}
+	});
 
 	async function copyKey(key: string) {
 		const text = payloads[key];
 		const status = document.getElementById(key === 'typical' ? 'status-typical' : 'status-diet');
+		if (!isProfileReady(readProfile())) {
+			if (status) status.textContent = 'Save your profile first so you’re not copying the example week.';
+			showGate();
+			gate?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			return;
+		}
 		if (!text) return;
 		try {
 			await navigator.clipboard.writeText(text);
@@ -232,6 +388,60 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 		letter-spacing: 0.02em;
 		color: rgba(242, 242, 240, 0.88);
 	}
+	.shop-gate {
+		margin: 0 0 2rem;
+		padding: 1.25rem 1.15rem;
+		border: 1px solid rgba(200, 241, 53, 0.35);
+		background: rgba(200, 241, 53, 0.06);
+		max-width: 40rem;
+	}
+	.shop-gate-lede {
+		margin: 0 0 1rem;
+		font-size: 1.05rem;
+		line-height: 1.45;
+		color: rgba(242, 242, 240, 0.92);
+	}
+	.shop-gate-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.65rem;
+	}
+	.shop-inline {
+		margin-top: 1.15rem;
+		padding-top: 1.15rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.shop-inline-fields {
+		display: grid;
+		gap: 0.75rem;
+		grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+	}
+	.shop-inline label {
+		display: grid;
+		gap: 0.3rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+	}
+	.shop-inline input,
+	.shop-inline select {
+		font: inherit;
+		padding: 0.6rem 0.65rem;
+		border: 1px solid rgba(242, 242, 240, 0.2);
+		border-radius: 2px;
+		background: var(--yb-charcoal);
+		color: var(--yb-offwhite);
+	}
+	.shop-inline-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.65rem;
+		margin-top: 1rem;
+	}
+	.shop-inline-note {
+		min-height: 1.25em;
+		margin: 0.65rem 0 0;
+		font-size: 0.9rem;
+	}
 	.shop-block {
 		margin-top: 2.5rem;
 		padding-top: 1.75rem;
@@ -259,7 +469,6 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 		display: grid;
 		gap: 0;
 	}
-	/* Rows may be re-rendered client-side after scale — keep :global. */
 	.shop-list :global(.shop-row) {
 		margin: 0;
 		padding: 0.95rem 0;

@@ -795,28 +795,49 @@ export interface ScaledShoppingBundle {
 	typicalPlain: string;
 	dietBreakPlain: string;
 	blurb: string;
+	trainingDays: TrainingDaysPref;
+	restDays: number;
+}
+
+function withTrainingDayCoconut(
+	lines: ShoppingListLine[],
+	trainingDays: TrainingDaysPref,
+): ShoppingListLine[] {
+	const rest = 7 - trainingDays;
+	return lines.map((line) => {
+		if (!/coconut water/i.test(line.name)) return { ...line };
+		return {
+			...line,
+			amount: `${trainingDays} L`,
+			note: `1000 ml × ${trainingDays} training days — skip ${rest} rest day${rest === 1 ? '' : 's'}`,
+		};
+	});
 }
 
 /** Scale Woolworths weekly lists with the same factors as the day templates. */
 export function scaleShoppingLists(
 	result: Pick<FoodOsResult, 'calories' | 'tdee'>,
 	profile: { weightKg: number; heightCm: number },
+	opts?: { trainingDays?: TrainingDaysPref },
 ): ScaledShoppingBundle {
+	const trainingDays: TrainingDaysPref = opts?.trainingDays === 4 ? 4 : opts?.trainingDays === 3 ? 3 : 4;
+	const restDays = 7 - trainingDays;
 	const factors = coachScaleFactors(result);
-	const typical = SHOPPING_LIST_TYPICAL_WEEK.map((line) =>
+	const typicalBase = withTrainingDayCoconut(SHOPPING_LIST_TYPICAL_WEEK, trainingDays);
+	const typical = typicalBase.map((line) =>
 		scaleShoppingLine(line, factors.work, { skipCoconut: true }),
 	);
 	const dietBreak = SHOPPING_LIST_DIET_BREAK_WEEK.map((line) =>
 		scaleShoppingLine(line, factors.dietBreak, { skipCoconut: true }),
 	);
-	const blurb = `${profile.weightKg} kg · ${profile.heightCm} cm · portions ×${factors.work.toFixed(2)} (work week) / ×${factors.dietBreak.toFixed(2)} (diet-break). Baseline ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg template. Coconut water stays 1 L per Intra day.`;
+	const blurb = `${profile.weightKg} kg · ${profile.heightCm} cm · ${trainingDays} train / ${restDays} rest · portions ×${factors.work.toFixed(2)} (work week) / ×${factors.dietBreak.toFixed(2)} (diet-break). Baseline ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg template. Coconut water stays 1 L per Intra day.`;
 	const typicalPlain = formatShoppingListPlain(typical, {
-		title: 'Food Bro — Woolworths week (4 training / 3 rest)',
+		title: `Food Bro — Woolworths week (${trainingDays} training / ${restDays} rest)`,
 		blurb,
 	});
 	const dietBreakPlain = formatShoppingListPlain(dietBreak, {
 		title: 'Food Bro — diet-break week (7× diet-break day)',
 		blurb: `${blurb} Use for 1–2 weeks when flat / glycogen depleted (~your maintenance), then return to the typical week list.`,
 	});
-	return { typical, dietBreak, typicalPlain, dietBreakPlain, blurb };
+	return { typical, dietBreak, typicalPlain, dietBreakPlain, blurb, trainingDays, restDays };
 }

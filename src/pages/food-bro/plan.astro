@@ -16,7 +16,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 			</p>
 			<div class="cta-row" id="plan-actions" hidden>
 				<button type="button" class="btn btn-primary" id="btn-print">Save as PDF / Print</button>
-				<a class="btn btn-secondary" href="/food-bro">Edit profile</a>
+				<a class="btn btn-secondary" href="/profile?returnTo=/food-bro/plan">Edit profile</a>
 				<a class="btn btn-secondary" href="/food-bro/shopping">Shopping list</a>
 			</div>
 			<p class="muted print-hint" id="print-hint" hidden>
@@ -27,10 +27,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 		<div id="plan-missing" class="plan-missing" hidden>
 			<p class="lede">
-				Complete your profile first — height, weight, age, activity, and goal on{' '}
-				<a href="/food-bro">Food Bro</a> — then come back to download.
+				Complete your profile first — height, weight, age, activity, and goal — then come back to
+				download. We’ll return you here after you save.
 			</p>
-			<a class="btn btn-primary" href="/food-bro">Open Food Bro</a>
+			<a class="btn btn-primary" id="plan-profile-link" href="/profile?returnTo=/food-bro/plan"
+				>Complete your profile</a
+			>
+			<a class="btn btn-secondary" href="/food-bro">Open Food Bro</a>
 		</div>
 
 		<div id="plan-doc" class="plan-doc" hidden>
@@ -40,41 +43,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-	import {
-		ACTIVITY_LABELS,
-		DEFAULT_INPUTS,
-		GOAL_DEFAULTS,
-		STORAGE_KEY,
-		calcFoodOs,
-		type Activity,
-		type Goal,
-		type Sex,
-		type StoredFoodOs,
-		type TrainingDaysPref,
-	} from '../../lib/food-os';
+	import { ACTIVITY_LABELS, GOAL_DEFAULTS, type TrainingDaysPref } from '../../lib/food-os';
 	import { buildPersonalPlan, type PersonalPlanDoc } from '../../lib/personal-plan';
-
-	function readStored(): StoredFoodOs | null {
-		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
-			if (!raw) return null;
-			const parsed = JSON.parse(raw) as Partial<StoredFoodOs>;
-			return { ...DEFAULT_INPUTS, ...parsed };
-		} catch {
-			return null;
-		}
-	}
-
-	function profileComplete(data: StoredFoodOs): boolean {
-		return (
-			Number.isFinite(data.weightKg) &&
-			Number.isFinite(data.heightCm) &&
-			Number.isFinite(data.age) &&
-			!!data.sex &&
-			!!data.activity &&
-			!!data.goal
-		);
-	}
+	import {
+		isProfileReady,
+		profileUrl,
+		readProfile,
+		scaleResultFromProfile,
+		toStoredFoodOs,
+	} from '../../lib/user-store';
 
 	function esc(s: string): string {
 		return s
@@ -187,12 +164,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 					<li><span class="lab">Sex (BMR)</span><span class="val">${esc(doc.profile.sex)}</span></li>
 					<li><span class="lab">Activity</span><span class="val">${esc(doc.profile.activityLabel)}</span></li>
 					<li><span class="lab">Goal</span><span class="val">${esc(doc.profile.goalLabel)} (${esc(adj)})</span></li>
+					${
+						doc.profile.goalWeightKg != null
+							? `<li><span class="lab">Goal weight</span><span class="val">${doc.profile.goalWeightKg} kg</span></li>`
+							: ''
+					}
 				</ul>
 				<p class="targets">
 					<strong>~${doc.targets.calories} kcal / day</strong>
 					· P ${doc.targets.proteinG}g · C ${doc.targets.carbsG}g · F ${doc.targets.fatG}g
 					· Est. maintenance ≈ ${doc.targets.tdee} kcal · resting ≈ ${doc.targets.bmr} kcal
+					${doc.targets.source === 'user' ? ' · <em>your entered targets</em>' : ''}
 				</p>
+				${
+					doc.dietaryNote
+						? `<p class="muted">${esc(doc.dietaryNote)}</p>`
+						: ''
+				}
 			</section>
 
 			<section class="pd-section" id="goal-plan">
@@ -243,33 +231,31 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 	const actions = document.getElementById('plan-actions');
 	const hint = document.getElementById('print-hint');
 	const docEl = document.getElementById('plan-doc');
+	const profileLink = document.getElementById('plan-profile-link') as HTMLAnchorElement | null;
+	if (profileLink) profileLink.href = profileUrl('/food-bro/plan');
 
-	const stored = readStored();
-	if (!stored || !profileComplete(stored)) {
+	const profile = readProfile();
+	const stored = profile ? toStoredFoodOs(profile) : null;
+	if (!profile || !stored || !isProfileReady(profile)) {
 		if (gateMsg) gateMsg.textContent = 'Complete your profile first.';
 		missing && (missing.hidden = false);
 	} else {
-		const adjustment =
-			stored.goal === 'cut'
-				? -(stored.cutPct / 100)
-				: stored.goal === 'lean-bulk'
-					? stored.bulkPct / 100
-					: 0;
-		const result = calcFoodOs({
-			weightKg: stored.weightKg,
-			heightCm: stored.heightCm,
-			age: stored.age,
-			sex: stored.sex,
-			activity: stored.activity,
-			goal: stored.goal,
-			adjustment,
-		});
+		const result = scaleResultFromProfile(profile);
 		if (!result || !docEl) {
 			if (gateMsg) gateMsg.textContent = 'Complete your profile first.';
 			missing && (missing.hidden = false);
 		} else {
 			const days = (stored.trainingDays === 4 ? 4 : 3) as TrainingDaysPref;
-			const doc = buildPersonalPlan({ ...stored, trainingDays: days }, result);
+			const doc = buildPersonalPlan(
+				{
+					...stored,
+					trainingDays: days,
+					goalWeightKg: profile.goalWeightKg,
+					targetsSource: profile.targets.source,
+					dietary: profile.dietary,
+				},
+				result,
+			);
 			docEl.innerHTML = renderDoc(doc);
 			docEl.hidden = false;
 			actions && (actions.hidden = false);
@@ -285,10 +271,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 	}
 
 	document.getElementById('btn-print')?.addEventListener('click', () => window.print());
-
-	void Sex;
-	void Goal;
-	void Activity;
 </script>
 
 <style>

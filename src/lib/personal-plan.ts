@@ -18,10 +18,15 @@ import {
 	type Sex,
 	type StoredFoodOs,
 } from './food-os';
+import type { DietaryPrefs, TargetSource } from './user-store';
 
 export type TrainingDays = 3 | 4;
 
-export type PersonalPlanInputs = StoredFoodOs;
+export type PersonalPlanInputs = StoredFoodOs & {
+	goalWeightKg?: number;
+	targetsSource?: TargetSource;
+	dietary?: DietaryPrefs;
+};
 
 export interface TwelveWeekBlock {
 	weeks: string;
@@ -47,6 +52,7 @@ export interface PersonalPlanDoc {
 		goal: Goal;
 		cutPct: number;
 		bulkPct: number;
+		goalWeightKg?: number;
 	};
 	targets: {
 		calories: number;
@@ -57,6 +63,7 @@ export interface PersonalPlanDoc {
 		fatG: number;
 		adjustmentPct: number;
 		why: string[];
+		source: TargetSource;
 	};
 	training: TrainingTemplate;
 	nutritionDays: CoachDayPlan[];
@@ -68,6 +75,7 @@ export interface PersonalPlanDoc {
 	};
 	twelveWeek: TwelveWeekBlock[];
 	nextPhase: NextPhaseRec;
+	dietaryNote?: string;
 	disclaimer: string;
 }
 
@@ -211,6 +219,12 @@ export function buildPersonalPlan(inputs: PersonalPlanInputs, result: FoodOsResu
 		heightCm: inputs.heightCm,
 		age: inputs.age,
 	});
+	const dietaryBits: string[] = [];
+	if (inputs.dietary && inputs.dietary.pattern !== 'none') {
+		dietaryBits.push(`Dietary pattern: ${inputs.dietary.pattern}`);
+	}
+	if (inputs.dietary?.excludes) dietaryBits.push(`Excludes: ${inputs.dietary.excludes}`);
+	if (inputs.dietary?.notes) dietaryBits.push(inputs.dietary.notes);
 	return {
 		generatedAt: new Date().toISOString().slice(0, 10),
 		profile: {
@@ -223,6 +237,7 @@ export function buildPersonalPlan(inputs: PersonalPlanInputs, result: FoodOsResu
 			goal: inputs.goal,
 			cutPct: inputs.cutPct,
 			bulkPct: inputs.bulkPct,
+			goalWeightKg: inputs.goalWeightKg,
 		},
 		targets: {
 			calories: result.calories,
@@ -233,6 +248,7 @@ export function buildPersonalPlan(inputs: PersonalPlanInputs, result: FoodOsResu
 			fatG: result.fatG,
 			adjustmentPct: result.adjustmentPct,
 			why: result.why,
+			source: inputs.targetsSource === 'user' ? 'user' : 'calculated',
 		},
 		training,
 		nutritionDays: scaled.plans,
@@ -240,6 +256,7 @@ export function buildPersonalPlan(inputs: PersonalPlanInputs, result: FoodOsResu
 		goalFraming: buildGoalFraming(inputs.goal, training, result.calories),
 		twelveWeek: buildTwelveWeekBlocks(inputs.goal, training),
 		nextPhase: buildNextPhase(inputs.goal, result.tdee),
+		dietaryNote: dietaryBits.length ? dietaryBits.join(' · ') : undefined,
 		disclaimer:
 			'Yeh Bro System + Food Bro — education only, not medical advice or a personal prescription. Estimates vary; adjust from your scale trend and how training feels. Under 18 or clinical conditions → talk to a clinician. We don’t source AAS / SARMs / grey-market gear.',
 	};

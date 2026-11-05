@@ -26,10 +26,12 @@ import { TRAINING_TEMPLATES } from '../../data/start-here-system';
 			Pick one. Run it for months. Progressive overload (adding load or reps over time) beats a new
 			split every Monday. Leave 1–3 reps in the tank on most sets.
 		</p>
+		<p class="train-rec muted anim-rise-delay" id="train-rec" hidden></p>
 		<div class="cta-row anim-rise-delay-2">
 			<a class="btn btn-primary" href="#ppl">3-day PPL</a>
 			<a class="btn btn-secondary" href="#pplu">4-day PPLU</a>
 			<a class="btn btn-secondary" href="/start-here/weekly">Weekly checklist</a>
+			<a class="btn btn-secondary" href="/profile?returnTo=/start-here/training">Your profile</a>
 		</div>
 
 		{
@@ -96,10 +98,35 @@ import { TRAINING_TEMPLATES } from '../../data/start-here-system';
 	</article>
 </BaseLayout>
 
+<script>
+	import { readProfile, trainingDaysToSplit } from '../../lib/user-store';
+
+	const rec = document.getElementById('train-rec');
+	const profile = readProfile();
+	if (rec && profile?.trainingDays) {
+		const split = trainingDaysToSplit(profile.trainingDays);
+		rec.hidden = false;
+		rec.innerHTML = `Your profile is set to <strong>${profile.trainingDays}-day ${split.toUpperCase()}</strong> — jump to <a href="#${split}">that template</a>. Change it anytime on your <a href="/profile?returnTo=/start-here/training">profile</a>.`;
+		document.getElementById(split)?.classList.add('is-recommended');
+	}
+</script>
+
 <style>
 	.train-page {
 		padding-top: 2rem;
 		padding-bottom: 3rem;
+	}
+	.train-rec {
+		margin: 0.85rem 0 0;
+		max-width: 40rem;
+		padding: 0.75rem 0.9rem;
+		border-left: 3px solid var(--yb-lime);
+		background: rgba(200, 241, 53, 0.06);
+	}
+	.tpl:global(.is-recommended),
+	:global(.tpl.is-recommended) {
+		outline: 1px solid rgba(200, 241, 53, 0.35);
+		outline-offset: 0.75rem;
 	}
 	.tpl {
 		margin-top: 3rem;
