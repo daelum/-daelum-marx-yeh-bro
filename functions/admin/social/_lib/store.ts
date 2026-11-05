@@ -1,18 +1,24 @@
 import { fixtureDay, fixtureDays, summarize } from './fixtures';
 import {
 	INDEX_KEY,
+	POOL_KEY,
+	REFILL_NEEDED_KEY,
 	dayKey,
+	mediaKey,
 	type DayManifest,
 	type DaySummary,
 	type Env,
 	type ItemStatus,
 	type QueueItem,
+	type RefillPool,
 } from './types';
 import { fixtureMode, hasQueueBindings } from './auth';
 import { hasZernio, publishApprovedItem } from './zernio';
 
 /** In-memory fixture mutations for the life of an isolate (local demo). */
 const fixtureState = new Map<string, DayManifest>();
+const fixturePool: RefillPool = { updatedAt: new Date(0).toISOString(), items: [] };
+let fixtureRefillNeeded = false;
 
 function cloneDay(day: DayManifest): DayManifest {
 	return structuredClone(day);
@@ -94,6 +100,159 @@ export async function setItemStatus(
 	if (status !== 'failed') delete item.failReason;
 	await writeDay(env, day);
 	return item;
+}
+
+export async function readPool(env: Env): Promise<RefillPool> {
+	if (fixtureMode(env)) {
+		return {
+			updatedAt: fixturePool.updatedAt,
+			items: fixturePool.items.map((i) => structuredClone(i)),
+		};
+	}
+	if (!hasQueueBindings(env)) return { updatedAt: new Date(0).toISOString(), items: [] };
+	const data = (await env.IG_QUEUE!.get(POOL_KEY, 'json')) as RefillPool | null;
+	if (!data || !Array.isArray(data.items)) {
+		return { updatedAt: new Date(0).toISOString(), items: [] };
+	}
+	return data;
+}
+
+export async function writePool(env: Env, pool: RefillPool): Promise<void> {
+	pool.updatedAt = new Date().toISOString();
+	if (fixtureMode(env)) {
+		fixturePool.updatedAt = pool.updatedAt;
+		fixturePool.items = pool.items.map((i) => structuredClone(i));
+		return;
+	}
+	if (!hasQueueBindings(env)) throw new Error('IG_QUEUE / IG_MEDIA bindings required');
+	await env.IG_QUEUE!.put(POOL_KEY, JSON.stringify(pool));
+}
+
+export async function isRefillNeeded(env: Env): Promise<boolean> {
+	if (fixtureMode(env)) return fixtureRefillNeeded;
+	if (!hasQueueBindings(env)) return false;
+	const raw = await env.IG_QUEUE!.get(REFILL_NEEDED_KEY);
+	return raw === '1' || raw === 'true';
+}
+
+export async function setRefillNeeded(env: Env, needed: boolean): Promise<void> {
+	if (fixtureMode(env)) {
+		fixtureRefillNeeded = needed;
+		return;
+	}
+	if (!hasQueueBindings(env)) return;
+	if (needed) await env.IG_QUEUE!.put(REFILL_NEEDED_KEY, '1');
+	else await env.IG_QUEUE!.delete(REFILL_NEEDED_KEY);
+}
+
+function nextRefillId(day: DayManifest, kind: QueueItem['kind']): string {
+	const prefix = kind === 'carousel' ? 'RC' : 'R';
+	let max = 0;
+	for (const item of day.items) {
+		const m = item.id.match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
+		if (m) max = Math.max(max, Number(m[1]));
+	}
+	return `${prefix}${String(max + 1).padStart(2, '0')}`;
+}
+
+export type RejectRefillResult = {
+	item: QueueItem;
+	day: DayManifest;
+	replaced: boolean;
+	replacement?: QueueItem;
+	poolRemaining: number;
+	refillNeeded: boolean;
+	message?: string;
+};
+
+/**
+ * Reject one item, then append the next refill-pool item at the bottom of the
+ * current day queue (constant pending supply). Reject never publishes.
+ */
+export async function rejectAndRefill(
+	env: Env,
+	date: string,
+	id: string,
+): Promise<RejectRefillResult | null> {
+	const day = await readDay(env, date);
+	if (!day) return null;
+	const item = day.items.find((i) => i.id === id);
+	if (!item) return null;
+	if (item.status === 'posted') {
+		return {
+			item,
+			day,
+			replaced: false,
+			poolRemaining: (await readPool(env)).items.length,
+			refillNeeded: await isRefillNeeded(env),
+			message: 'Already posted — cannot reject.',
+		};
+	}
+	if (item.status === 'rejected') {
+		const pool = await readPool(env);
+		return {
+			item,
+			day,
+			replaced: false,
+			poolRemaining: pool.items.length,
+			refillNeeded: await isRefillNeeded(env),
+			message: 'Already rejected.',
+		};
+	}
+
+	item.status = 'rejected';
+	delete item.failReason;
+
+	const pool = await readPool(env);
+	const next = pool.items.shift();
+	let replacement: QueueItem | undefined;
+	let replaced = false;
+	let refillNeeded = false;
+	let message: string | undefined;
+
+	if (next) {
+		replacement = {
+			...structuredClone(next),
+			id: nextRefillId(day, next.kind),
+			status: 'pending',
+		};
+		delete replacement.failReason;
+		delete replacement.postedAt;
+		delete replacement.zernioPostId;
+		delete replacement.igUrl;
+		day.items.push(replacement);
+		replaced = true;
+		await writePool(env, pool);
+		if (pool.items.length === 0) {
+			refillNeeded = true;
+			await setRefillNeeded(env, true);
+			message = `Rejected ${item.id}; appended ${replacement.id} from refill pool. Pool now empty — generating more.`;
+		} else {
+			await setRefillNeeded(env, false);
+			message = `Rejected ${item.id}; appended ${replacement.id} from refill pool (${pool.items.length} left).`;
+		}
+	} else {
+		refillNeeded = true;
+		await setRefillNeeded(env, true);
+		message = `Rejected ${item.id}. Refill pool empty — generating more.`;
+	}
+
+	day.publishLog = day.publishLog || [];
+	day.publishLog.push(
+		`${new Date().toISOString()} — ${item.id} rejected` +
+			(replacement ? `; refilled ${replacement.id}` : '; pool empty'),
+	);
+	await writeDay(env, day);
+
+	return {
+		item,
+		day,
+		replaced,
+		replacement,
+		poolRemaining: pool.items.length,
+		refillNeeded,
+		message,
+	};
 }
 
 export type ApprovePublishResult = {
@@ -184,9 +343,23 @@ export async function approveAndPublishItem(
 }
 
 export function itemMediaUrls(date: string, item: QueueItem): string[] {
-	return item.files.map(
-		(file) => `/admin/social/media/${encodeURIComponent(date)}/${encodeURIComponent(file)}`,
-	);
+	return item.files.map((file) => {
+		const key = mediaKey(date, file);
+		return `/admin/social/media/${key.split('/').map(encodeURIComponent).join('/')}`;
+	});
+}
+
+export async function poolSummary(env: Env): Promise<{
+	remaining: number;
+	refillNeeded: boolean;
+	updatedAt?: string;
+}> {
+	const pool = await readPool(env);
+	return {
+		remaining: pool.items.length,
+		refillNeeded: await isRefillNeeded(env),
+		updatedAt: pool.updatedAt,
+	};
 }
 
 export function enrichDay(day: DayManifest) {

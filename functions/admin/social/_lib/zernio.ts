@@ -28,6 +28,11 @@ async function zernioFetch(
 	return { status: res.status, body };
 }
 
+function redact(message: string): string {
+	// Never include secrets in reason strings surfaced to the UI/logs.
+	return message.replace(/Bearer\s+\S+/gi, '[redacted]');
+}
+
 async function uploadBytes(
 	apiKey: string,
 	filename: string,
@@ -37,25 +42,32 @@ async function uploadBytes(
 	const { status, body } = await zernioFetch(apiKey, '/media/presign', {
 		method: 'POST',
 		body: JSON.stringify({
-			filename,
+			filename: filename.split('/').pop() || filename,
 			contentType,
 			size: bytes.byteLength,
 		}),
 	});
 	if (status >= 400) {
-		throw new Error(`presign failed (${status})`);
+		const detail = body?.error || body?.message || body?.raw || '';
+		throw new Error(
+			`Zernio presign failed for ${filename} (HTTP ${status})${detail ? `: ${String(detail).slice(0, 180)}` : ''}`,
+		);
 	}
 	const data = (body as PresignResponse).data ?? body;
 	const uploadUrl = data.uploadUrl;
 	const publicUrl = data.publicUrl;
-	if (!uploadUrl || !publicUrl) throw new Error('presign missing urls');
+	if (!uploadUrl || !publicUrl) {
+		throw new Error(`Zernio presign missing uploadUrl/publicUrl for ${filename}`);
+	}
 
 	const put = await fetch(uploadUrl, {
 		method: 'PUT',
 		headers: { 'Content-Type': contentType },
 		body: bytes,
 	});
-	if (!put.ok) throw new Error(`upload PUT failed (${put.status})`);
+	if (!put.ok) {
+		throw new Error(`Zernio media upload PUT failed for ${filename} (HTTP ${put.status})`);
+	}
 	return publicUrl;
 }
 
@@ -66,8 +78,11 @@ async function readItemBytes(
 ): Promise<{ filename: string; bytes: ArrayBuffer; contentType: string }[]> {
 	const out: { filename: string; bytes: ArrayBuffer; contentType: string }[] = [];
 	for (const file of item.files) {
-		const obj = await env.IG_MEDIA!.get(mediaKey(date, file));
-		if (!obj) throw new Error(`missing media ${file}`);
+		const key = mediaKey(date, file);
+		const obj = await env.IG_MEDIA!.get(key);
+		if (!obj) {
+			throw new Error(`R2 media missing: ${key} (item ${item.id})`);
+		}
 		const bytes = await obj.arrayBuffer();
 		out.push({
 			filename: file,
@@ -84,9 +99,17 @@ export async function publishApprovedItem(
 	item: QueueItem,
 ): Promise<{ ok: true; zernioPostId?: string; igUrl?: string } | { ok: false; reason: string }> {
 	const apiKey = env.ZERNIO_API_KEY;
-	if (!apiKey) return { ok: false, reason: 'ZERNIO_API_KEY unset' };
+	if (!apiKey) {
+		return {
+			ok: false,
+			reason: 'ZERNIO_API_KEY unset on Worker — Approve marked approved only; ask agent to post.',
+		};
+	}
 
 	try {
+		if (!item.files?.length) {
+			return { ok: false, reason: `Item ${item.id} has no media files` };
+		}
 		const files = await readItemBytes(env, date, item);
 		const publicUrls: string[] = [];
 		for (const f of files) {
@@ -107,14 +130,26 @@ export async function publishApprovedItem(
 		if (status >= 400) {
 			return {
 				ok: false,
-				reason: body?.error || body?.message || `HTTP ${status}`,
+				reason: redact(
+					`Zernio create post failed (HTTP ${status}): ${
+						body?.error || body?.message || body?.raw || 'unknown error'
+					}`.slice(0, 280),
+				),
 			};
 		}
 		const post = body.post || body.data?.post || body;
 		const platforms = post.platforms || [];
 		const ig = platforms.find((p: any) => p.platform === 'instagram');
 		if (ig?.status === 'failed' || post.status === 'failed') {
-			return { ok: false, reason: ig?.errorMessage || 'publish failed' };
+			return {
+				ok: false,
+				reason: redact(
+					`Instagram publish failed: ${ig?.errorMessage || post?.error || 'publish failed'}`.slice(
+						0,
+						280,
+					),
+				),
+			};
 		}
 		return {
 			ok: true,
@@ -123,8 +158,7 @@ export async function publishApprovedItem(
 		};
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'publish error';
-		// Never include secrets in reason strings.
-		return { ok: false, reason: message.replace(/Bearer\s+\S+/gi, '[redacted]') };
+		return { ok: false, reason: redact(message).slice(0, 280) };
 	}
 }
 

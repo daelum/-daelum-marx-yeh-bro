@@ -52,7 +52,22 @@ export const ZERNIO_ACCOUNT_ID = '6aeb1fe121bff1684d110b8e';
 export const ZERNIO_ACCOUNT_HANDLE = 'theyehbro';
 export const ZERNIO_API_BASE = 'https://zernio.com/api/v1';
 export const INDEX_KEY = 'index:days';
+/** Pending Holyfield items waiting to replace rejects (constant supply). */
+export const POOL_KEY = 'pool:refill';
+/** Set to `"1"` when the refill pool is empty after a reject. */
+export const REFILL_NEEDED_KEY = 'refill:needed';
 /** Calendar days (`YYYY-MM-DD`) or slug packs (`intro-yeh-bro`). */
 export const DAY_KEY_RE = /^(?:\d{4}-\d{2}-\d{2}|[a-z][a-z0-9-]{1,62})$/;
 export const dayKey = (date: string) => `day:${date}`;
-export const mediaKey = (date: string, file: string) => `${date}/${file}`;
+/**
+ * R2 object key for an item file.
+ * Day queue files are `{date}/{file}`; refill-pool files are already absolute
+ * within the bucket (e.g. `pool/r01.png` or `pool/c01-1.png`).
+ */
+export const mediaKey = (date: string, file: string) =>
+	file.includes('/') ? file : `${date}/${file}`;
+
+export interface RefillPool {
+	updatedAt: string;
+	items: QueueItem[];
+}

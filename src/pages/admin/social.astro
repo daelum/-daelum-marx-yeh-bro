@@ -153,10 +153,18 @@ const fixtureBoot = {
 			let currentDate = boot.date;
 			let day: Day | null = forceFixture ? structuredClone(boot.day) : null;
 			let days: DaySummary[] = forceFixture ? structuredClone(boot.days) : [];
+			let poolRemaining = 0;
+			let refillNeeded = false;
 			/** blob: object URLs created for authenticated media — revoke on re-render */
 			const blobUrls = new Set<string>();
 			/** Blocks double-submit while any approve/post is in flight. */
 			let busy = false;
+
+			function applyPool(data: any) {
+				if (!data?.pool) return;
+				if (typeof data.pool.remaining === 'number') poolRemaining = data.pool.remaining;
+				if (typeof data.pool.refillNeeded === 'boolean') refillNeeded = data.pool.refillNeeded;
+			}
 
 			const els = {
 				app: document.getElementById('app')!,
@@ -308,9 +316,16 @@ const fixtureBoot = {
 				}
 			}
 
-			function mountAuthImg(img: HTMLImageElement, url: string, fallbackLabel: string) {
+			function mountAuthImg(
+				img: HTMLImageElement,
+				url: string,
+				fallbackLabel: string,
+				opts: { eager?: boolean } = {},
+			) {
 				img.alt = fallbackLabel;
-				img.loading = 'lazy';
+				// Carousel off-screen slides must load eagerly — native lazy never fires
+				// inside overflow:hidden tracks, which left slides 2+ blank.
+				img.loading = opts.eager ? 'eager' : 'lazy';
 				img.decoding = 'async';
 				img.referrerPolicy = 'same-origin';
 				img.classList.add('media-pending');
@@ -412,14 +427,17 @@ const fixtureBoot = {
 
 				const urls = item.mediaUrls.length ? item.mediaUrls : [];
 				const total = Math.max(urls.length, 1);
+				const slideCopy: string[] = [];
 				urls.forEach((url, i) => {
 					const slide = document.createElement('figure');
 					slide.className = 'carousel-slide';
 					slide.dataset.index = String(i);
 					const img = document.createElement('img');
-					mountAuthImg(img, url, `${item.id} slide ${i + 1}`);
+					mountAuthImg(img, url, `${item.id} slide ${i + 1}`, { eager: true });
+					const text = item.slides?.[i] || `Slide ${i + 1}`;
+					slideCopy.push(text);
 					const figcap = document.createElement('figcaption');
-					figcap.textContent = item.slides?.[i] || `Slide ${i + 1}`;
+					figcap.innerHTML = `<span class="slide-index">${i + 1}/${total}</span> ${escapeHtml(text)}`;
 					slide.append(img, figcap);
 					track.appendChild(slide);
 				});
@@ -428,6 +446,7 @@ const fixtureBoot = {
 					empty.className = 'carousel-slide media-broken';
 					empty.textContent = 'No slides';
 					track.appendChild(empty);
+					slideCopy.push('No slides');
 				}
 
 				const chrome = document.createElement('div');
@@ -457,12 +476,49 @@ const fixtureBoot = {
 				}
 				chrome.append(prev, counter, next, dots);
 
+				// Filmstrip: every slide visible without relying on swipe alone.
+				const strip = document.createElement('div');
+				strip.className = 'carousel-strip';
+				strip.setAttribute('role', 'list');
+				urls.forEach((url, i) => {
+					const thumb = document.createElement('button');
+					thumb.type = 'button';
+					thumb.className = 'carousel-thumb' + (i === 0 ? ' is-active' : '');
+					thumb.setAttribute('role', 'listitem');
+					thumb.setAttribute('aria-label', `Slide ${i + 1}: ${slideCopy[i] || ''}`);
+					thumb.dataset.goto = String(i);
+					const img = document.createElement('img');
+					mountAuthImg(img, url, `${item.id} thumb ${i + 1}`, { eager: true });
+					const label = document.createElement('span');
+					label.className = 'carousel-thumb-label';
+					label.textContent = `${i + 1}`;
+					thumb.append(img, label);
+					strip.appendChild(thumb);
+				});
+
+				const narrative = document.createElement('ol');
+				narrative.className = 'carousel-narrative';
+				slideCopy.forEach((text, i) => {
+					const li = document.createElement('li');
+					li.dataset.index = String(i);
+					if (i === 0) li.classList.add('is-active');
+					li.innerHTML = `<span class="n">${i + 1}</span><span class="t">${escapeHtml(text)}</span>`;
+					narrative.appendChild(li);
+				});
+
 				let index = 0;
 				const sync = () => {
-					const width = viewer.clientWidth || 1;
-					track.style.transform = `translateX(${-index * width}px)`;
+					// Percentage of the track's layout width (= viewer). Pixel
+					// clientWidth was 0/stale for off-screen slides after first.
+					track.style.transform = `translate3d(-${index * 100}%, 0, 0)`;
 					counter.textContent = `${index + 1}/${total}`;
 					dots.querySelectorAll('.carousel-dot').forEach((d, i) => {
+						d.classList.toggle('is-active', i === index);
+					});
+					strip.querySelectorAll('.carousel-thumb').forEach((d, i) => {
+						d.classList.toggle('is-active', i === index);
+					});
+					narrative.querySelectorAll('li').forEach((d, i) => {
 						d.classList.toggle('is-active', i === index);
 					});
 					prev.disabled = index <= 0;
@@ -475,10 +531,17 @@ const fixtureBoot = {
 
 				prev.addEventListener('click', () => go(index - 1));
 				next.addEventListener('click', () => go(index + 1));
-				dots.addEventListener('click', (e) => {
+				const gotoHandler = (e: Event) => {
 					const t = e.target as HTMLElement;
 					const btn = t.closest('[data-goto]') as HTMLElement | null;
 					if (btn?.dataset.goto != null) go(Number(btn.dataset.goto));
+				};
+				dots.addEventListener('click', gotoHandler);
+				strip.addEventListener('click', gotoHandler);
+				narrative.addEventListener('click', (e) => {
+					const t = e.target as HTMLElement;
+					const li = t.closest('li[data-index]') as HTMLElement | null;
+					if (li?.dataset.index != null) go(Number(li.dataset.index));
 				});
 
 				let startX = 0;
@@ -490,6 +553,7 @@ const fixtureBoot = {
 					axis = null;
 					startX = x;
 					startY = y;
+					track.style.transition = 'none';
 				};
 				const onMove = (x: number, y: number, ev?: Event) => {
 					if (!dragging) return;
@@ -501,17 +565,21 @@ const fixtureBoot = {
 					if (axis === 'x') {
 						ev?.preventDefault();
 						const width = viewer.clientWidth || 1;
-						track.style.transform = `translateX(${-index * width + dx}px)`;
+						const pct = ((-index * width + dx) / width) * 100;
+						track.style.transform = `translate3d(${pct}%, 0, 0)`;
 					}
 				};
 				const onUp = (x: number) => {
 					if (!dragging) return;
 					dragging = false;
+					track.style.transition = '';
 					if (axis === 'x') {
 						const dx = x - startX;
 						if (dx < -40) go(index + 1);
 						else if (dx > 40) go(index - 1);
 						else sync();
+					} else {
+						sync();
 					}
 					axis = null;
 				};
@@ -537,24 +605,26 @@ const fixtureBoot = {
 					onUp(t ? t.clientX : startX);
 				});
 				viewer.addEventListener('mousedown', (e) => {
+					e.preventDefault();
 					onDown(e.clientX, e.clientY);
 				});
-				window.addEventListener('mousemove', (e) => {
+				const onWinMove = (e: MouseEvent) => {
 					if (dragging) onMove(e.clientX, e.clientY, e);
-				});
-				window.addEventListener('mouseup', (e) => onUp(e.clientX));
+				};
+				const onWinUp = (e: MouseEvent) => onUp(e.clientX);
+				window.addEventListener('mousemove', onWinMove);
+				window.addEventListener('mouseup', onWinUp);
 				viewer.addEventListener('keydown', (e) => {
 					if (e.key === 'ArrowLeft') go(index - 1);
 					if (e.key === 'ArrowRight') go(index + 1);
 				});
 
 				requestAnimationFrame(sync);
-				window.addEventListener('resize', sync, { passive: true });
 
 				viewer.append(track);
 				const frame = document.createElement('div');
 				frame.className = 'carousel-frame';
-				frame.append(viewer, chrome);
+				frame.append(viewer, chrome, strip, narrative);
 
 				const cap = document.createElement('p');
 				cap.className = 'caption';
@@ -640,12 +710,19 @@ const fixtureBoot = {
 					}
 					return false;
 				}
+				applyPool(data);
 				if (data.day) day = data.day;
 				else await loadDay(currentDate);
 				await loadDays();
 				render();
 				if (data.publishFailed || (data.reason && !data.published)) {
-					setBanner(data.message || data.reason || `Publish failed for ${id}`, 'warn');
+					const detail = data.reason || data.message || data.item?.failReason;
+					setBanner(
+						detail
+							? `Publish failed for ${id}: ${detail}`
+							: `Publish failed for ${id} — use Retry post`,
+						'warn',
+					);
 					return false;
 				}
 				if (data.mode === 'status') {
@@ -653,7 +730,7 @@ const fixtureBoot = {
 					return false;
 				}
 				if (data.mode === 'agent') {
-					setBanner(data.message || `Approved ${id} — ask agent to post`, 'ok');
+					setBanner(data.message || `Approved ${id} — ask agent to post (ZERNIO_API_KEY missing on Worker)`, 'warn');
 					return true;
 				}
 				if (data.published) {
@@ -668,12 +745,32 @@ const fixtureBoot = {
 				if (!day) return;
 				if (mode === 'fixture') {
 					const item = day.items.find((i) => i.id === id);
-					if (!item || item.status === 'posted') return;
+					if (!item || item.status === 'posted' || item.status === 'rejected') return;
 					item.status = 'rejected';
 					delete item.failReason;
+					// Fixture: append a sample replacement so the desk never starves.
+					const replacement = {
+						id: `R${String(day.items.filter((i) => /^R\d/i.test(i.id)).length + 1).padStart(2, '0')}`,
+						kind: 'single' as const,
+						status: 'pending' as ItemStatus,
+						caption:
+							'Fixture refill — live desk pulls the next Holyfield item from the KV refill pool.',
+						angle: 'refill',
+						files: ['01.png'],
+						mediaUrls: boot.day.items[0]?.mediaUrls || [],
+					};
+					day.items.push(replacement);
 					day.updatedAt = new Date().toISOString();
 					days = [summarize(day)];
+					poolRemaining = Math.max(0, poolRemaining - 1);
+					refillNeeded = poolRemaining === 0;
 					render();
+					setBanner(
+						refillNeeded
+							? `Rejected ${id}; appended ${replacement.id}. Refill pool empty — generating more`
+							: `Rejected ${id}; appended ${replacement.id} at bottom (fixture).`,
+						refillNeeded ? 'warn' : 'ok',
+					);
 					return;
 				}
 				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}`, {
@@ -685,13 +782,28 @@ const fixtureBoot = {
 					return;
 				}
 				if (!res.ok) {
-					setBanner(data?.error || 'Reject failed', 'warn');
+					setBanner(data?.error || data?.message || 'Reject failed', 'warn');
 					return;
 				}
+				applyPool(data);
 				if (data.day) day = data.day;
 				else await loadDay(currentDate);
 				await loadDays();
 				render();
+				if (data.refillNeeded || data.pool?.refillNeeded) {
+					setBanner(
+						data.message || 'Refill pool empty — generating more',
+						'warn',
+					);
+				} else if (data.replaced && data.replacement) {
+					setBanner(
+						data.message ||
+							`Rejected ${id}; appended ${data.replacement.id} at bottom.`,
+						'ok',
+					);
+				} else {
+					setBanner(data.message || `Rejected ${id}`, 'info');
+				}
 			}
 
 
@@ -731,6 +843,7 @@ const fixtureBoot = {
 					return;
 				}
 				day = data.day;
+				applyPool(data);
 				render();
 			}
 
@@ -742,10 +855,18 @@ const fixtureBoot = {
 					);
 					return;
 				}
+				if (refillNeeded) {
+					setBanner('Refill pool empty — generating more', 'warn');
+					return;
+				}
+				const poolBit =
+					poolRemaining > 0
+						? ` · refill pool ${poolRemaining}`
+						: ' · refill pool empty';
 				setBanner(
 					zernio
-						? 'LIVE queue · Approve & post publishes that one item to @theyehbro (no bulk approve).'
-						: 'LIVE queue · No ZERNIO_API_KEY — Approve marks that one item approved and asks the agent to post.',
+						? `LIVE queue · Approve & post publishes that one item to @theyehbro (no bulk approve). Reject replaces from pool${poolBit}.`
+						: `LIVE queue · No ZERNIO_API_KEY — Approve marks that one item approved and asks the agent to post.${poolBit}`,
 					'info',
 				);
 			}
@@ -791,6 +912,7 @@ const fixtureBoot = {
 					}
 					zernio = Boolean(data.zernio);
 					bindingsOk = Boolean(data.bindingsOk);
+					applyPool(data);
 					// Explicit server fixture flag only — never silent client fixture.
 					if (data.fixture === true) {
 						mode = 'fixture';
@@ -845,6 +967,7 @@ const fixtureBoot = {
 				const session = await api('/session');
 				zernio = Boolean(session.data?.zernio);
 				bindingsOk = Boolean(session.data?.bindingsOk);
+				applyPool(session.data);
 				if (session.data?.fixture) mode = 'fixture';
 				if (session.data?.bindingsRequired && mode !== 'fixture') {
 					showBindingsRequired(session.data.message);
@@ -908,7 +1031,12 @@ const fixtureBoot = {
 			}
 		</script>
 
-		<style>
+		<!--
+			Desk UI is almost entirely JS-created. Astro scoped CSS (data-astro-cid)
+			never matches those nodes, which stacked carousel slides and buried
+			Prev/Next/filmstrip below the fold — slides 2+ looked “missing”.
+		-->
+		<style is:global>
 			.admin-body {
 				margin: 0;
 				min-height: 100vh;
@@ -1232,10 +1360,15 @@ const fixtureBoot = {
 			}
 			.carousel-viewer {
 				overflow: hidden;
+				width: 100%;
 				touch-action: pan-y;
 				border: 1px solid var(--yb-edge);
 				background: var(--yb-surface);
 				outline: none;
+				cursor: grab;
+			}
+			.carousel-viewer:active {
+				cursor: grabbing;
 			}
 			.carousel-viewer:focus-visible {
 				outline: 2px solid var(--yb-lime);
@@ -1243,6 +1376,7 @@ const fixtureBoot = {
 			}
 			.carousel-track {
 				display: flex;
+				width: 100%;
 				transition: transform 0.28s ease;
 				will-change: transform;
 			}
@@ -1251,12 +1385,89 @@ const fixtureBoot = {
 				flex: 0 0 100%;
 				width: 100%;
 				min-width: 100%;
+				max-width: 100%;
+				box-sizing: border-box;
 			}
 			.carousel-slide figcaption {
-				font-size: 0.78rem;
+				font-size: 0.82rem;
+				color: var(--yb-offwhite);
+				padding: 0.55rem 0.65rem 0.75rem;
+				line-height: 1.4;
+			}
+			.carousel-slide .slide-index {
+				display: inline-block;
+				margin-right: 0.45rem;
+				font-family: var(--font-display);
+				letter-spacing: 0.06em;
+				color: var(--yb-lime);
+				font-size: 0.75rem;
+			}
+			.carousel-strip {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+				gap: 0.4rem;
+			}
+			.carousel-thumb {
+				position: relative;
+				display: block;
+				padding: 0;
+				border: 1px solid var(--yb-edge);
+				background: var(--yb-surface);
+				cursor: pointer;
+				overflow: hidden;
+			}
+			.carousel-thumb img {
+				display: block;
+				width: 100%;
+				aspect-ratio: 4 / 5;
+				object-fit: cover;
+			}
+			.carousel-thumb.is-active {
+				border-color: var(--yb-lime);
+				box-shadow: inset 0 0 0 1px var(--yb-lime);
+			}
+			.carousel-thumb-label {
+				position: absolute;
+				left: 0.25rem;
+				top: 0.25rem;
+				font-family: var(--font-display);
+				font-size: 0.65rem;
+				letter-spacing: 0.04em;
+				color: var(--yb-black);
+				background: var(--yb-lime);
+				padding: 0.05rem 0.28rem;
+			}
+			.carousel-narrative {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+			}
+			.carousel-narrative li {
+				display: grid;
+				grid-template-columns: 1.5rem 1fr;
+				gap: 0.45rem;
+				align-items: start;
+				padding: 0.35rem 0.45rem;
+				border-left: 2px solid transparent;
 				color: var(--yb-muted);
-				padding: 0.45rem 0.55rem 0.65rem;
-				line-height: 1.35;
+				cursor: pointer;
+				font-size: 0.86rem;
+				line-height: 1.4;
+			}
+			.carousel-narrative li.is-active {
+				border-left-color: var(--yb-lime);
+				color: var(--yb-offwhite);
+				background: rgba(200, 241, 53, 0.06);
+			}
+			.carousel-narrative .n {
+				font-family: var(--font-display);
+				letter-spacing: 0.04em;
+				color: var(--yb-lime);
+				font-size: 0.75rem;
+				padding-top: 0.1rem;
 			}
 			.carousel-chrome {
 				display: grid;

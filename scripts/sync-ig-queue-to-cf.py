@@ -5,6 +5,13 @@ Reads Project-store (or any) day folder with manifest.md + PNGs, writes:
   R2 (binding IG_MEDIA):  {date}/{filename}
   KV  (binding IG_QUEUE): day:{date} JSON + index:days
 
+Refill pool (constant supply on Reject):
+  python3 scripts/sync-ig-queue-to-cf.py \\
+    --day-dir /path/to/pool-batch \\
+    --pool [--append] [--dry-run]
+
+  R2: pool/{file}   KV: pool:refill  (+ clears refill:needed when non-empty)
+
 Usage:
   python3 scripts/sync-ig-queue-to-cf.py \\
     --day-dir /path/to/instagram-tweet-queue/2026-11-05 \\
@@ -129,17 +136,32 @@ def run(cmd: list[str], dry_run: bool) -> None:
     subprocess.run(cmd, check=True)
 
 
-def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) -> None:
-    """Upload via `wrangler r2 object put` + `wrangler kv key put`."""
-    bucket = os.environ.get("CF_R2_BUCKET", "yehbro-ig-media")
-    kv_binding_hint = os.environ.get("CF_KV_NAMESPACE_ID", "")
+def kv_namespace_args() -> list[str]:
+    hint = os.environ.get("CF_KV_NAMESPACE_ID", "")
+    if hint:
+        return ["--namespace-id", hint]
+    return ["--binding", "IG_QUEUE"]
 
-    for item in manifest["items"]:
+
+def upload_files(
+    day_dir: Path,
+    items: list[dict],
+    *,
+    key_for_file,
+    dry_run: bool,
+) -> None:
+    bucket = os.environ.get("CF_R2_BUCKET", "yehbro-ig-media")
+    for item in items:
         for file in item["files"]:
-            src = day_dir / file
+            # Pool items may already rewrite files to pool/{name}; source is basename.
+            src_name = Path(file).name
+            src = day_dir / src_name
+            if not src.is_file():
+                # Fall back to relative path as written in manifest.
+                src = day_dir / file
             if not src.is_file():
                 raise SystemExit(f"Missing media file: {src}")
-            key = f"{date}/{file}"
+            key = key_for_file(file, src_name)
             run(
                 wrangler_cmd(
                     "r2",
@@ -155,72 +177,141 @@ def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) 
                 dry_run,
             )
 
+
+def kv_put_json(key: str, payload: object, dry_run: bool) -> None:
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
-        json.dump(manifest, tmp, indent=2)
+        json.dump(payload, tmp, indent=2)
         tmp_path = tmp.name
     try:
-        kv_cmd = wrangler_cmd(
-            "kv",
-            "key",
-            "put",
-            f"day:{date}",
-            "--path",
-            tmp_path,
-            "--remote",
-        )
-        if kv_binding_hint:
-            kv_cmd.extend(["--namespace-id", kv_binding_hint])
-        else:
-            kv_cmd.extend(["--binding", "IG_QUEUE"])
-        run(kv_cmd, dry_run)
-
-        # Merge index
-        index_cmd_get = wrangler_cmd(
-            "kv",
-            "key",
-            "get",
-            "index:days",
-            "--remote",
-        )
-        if kv_binding_hint:
-            index_cmd_get.extend(["--namespace-id", kv_binding_hint])
-        else:
-            index_cmd_get.extend(["--binding", "IG_QUEUE"])
-
-        index: list[str] = []
-        if not dry_run:
-            try:
-                out = subprocess.check_output(index_cmd_get, text=True, stderr=subprocess.DEVNULL)
-                index = json.loads(out) if out.strip() else []
-                if not isinstance(index, list):
-                    index = []
-            except (subprocess.CalledProcessError, json.JSONDecodeError):
-                index = []
-        if date not in index:
-            index.append(date)
-        index = sorted(set(index))
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as idx:
-            json.dump(index, idx)
-            idx_path = idx.name
-        try:
-            put_idx = wrangler_cmd(
-                "kv",
-                "key",
-                "put",
-                "index:days",
-                "--path",
-                idx_path,
-                "--remote",
-            )
-            if kv_binding_hint:
-                put_idx.extend(["--namespace-id", kv_binding_hint])
-            else:
-                put_idx.extend(["--binding", "IG_QUEUE"])
-            run(put_idx, dry_run)
-        finally:
-            os.unlink(idx_path)
+        cmd = wrangler_cmd("kv", "key", "put", key, "--path", tmp_path, "--remote")
+        cmd.extend(kv_namespace_args())
+        run(cmd, dry_run)
     finally:
         os.unlink(tmp_path)
+
+
+def kv_get_json(key: str) -> object | None:
+    cmd = wrangler_cmd("kv", "key", "get", key, "--remote")
+    cmd.extend(kv_namespace_args())
+    try:
+        out = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
+        if not out.strip():
+            return None
+        return json.loads(out)
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return None
+
+
+def kv_delete(key: str, dry_run: bool) -> None:
+    cmd = wrangler_cmd("kv", "key", "delete", key, "--remote")
+    cmd.extend(kv_namespace_args())
+    print("+", " ".join(cmd))
+    if dry_run:
+        return
+    # Non-interactive: older wrangler may prompt; empty stdin skips confirm soft-fail.
+    try:
+        subprocess.run(cmd, check=True, input="y\n", text=True)
+    except subprocess.CalledProcessError:
+        # Missing key is fine — pool top-up still succeeded.
+        print(f"(note) could not delete {key} — may already be absent", file=sys.stderr)
+
+
+def sync_with_wrangler(day_dir: Path, date: str, manifest: dict, dry_run: bool) -> None:
+    """Upload via `wrangler r2 object put` + `wrangler kv key put`."""
+    upload_files(
+        day_dir,
+        manifest["items"],
+        key_for_file=lambda file, _src: f"{date}/{Path(file).name}",
+        dry_run=dry_run,
+    )
+    # Normalize files to basename relative to day prefix.
+    for item in manifest["items"]:
+        item["files"] = [Path(f).name for f in item["files"]]
+
+    kv_put_json(f"day:{date}", manifest, dry_run)
+
+    index: list[str] = []
+    if not dry_run:
+        raw = kv_get_json("index:days")
+        if isinstance(raw, list):
+            index = [str(x) for x in raw]
+    if date not in index:
+        index.append(date)
+    index = sorted(set(index))
+    kv_put_json("index:days", index, dry_run)
+
+
+def sync_pool_with_wrangler(
+    day_dir: Path,
+    manifest: dict,
+    *,
+    append: bool,
+    dry_run: bool,
+) -> None:
+    """Push items into KV `pool:refill` + R2 `pool/{file}` for Reject replacements."""
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    prepared: list[dict] = []
+    for i, item in enumerate(manifest["items"], start=1):
+        new_files: list[str] = []
+        for file in item["files"]:
+            base = Path(file).name
+            # Unique within bucket so day syncs never collide with pool media.
+            pool_name = f"{stamp}-{i:02d}-{base}"
+            new_files.append(f"pool/{pool_name}")
+        clone = dict(item)
+        clone["files"] = new_files
+        clone["status"] = "pending"
+        clone.pop("failReason", None)
+        clone.pop("postedAt", None)
+        clone.pop("zernioPostId", None)
+        clone.pop("igUrl", None)
+        # Pool ids are temporary; desk assigns R## / RC## on consume.
+        clone["id"] = f"pool-{stamp}-{i:02d}"
+        prepared.append(clone)
+
+    bucket = os.environ.get("CF_R2_BUCKET", "yehbro-ig-media")
+    for src_item, prep in zip(manifest["items"], prepared):
+        for local_name, r2_key in zip(
+            [Path(f).name for f in src_item["files"]], prep["files"]
+        ):
+            src = day_dir / local_name
+            if not src.is_file():
+                raise SystemExit(f"Missing media file: {src}")
+            run(
+                wrangler_cmd(
+                    "r2",
+                    "object",
+                    "put",
+                    f"{bucket}/{r2_key}",
+                    "--file",
+                    str(src),
+                    "--content-type",
+                    "image/png",
+                    "--remote",
+                ),
+                dry_run,
+            )
+
+    existing: list[dict] = []
+    if append and not dry_run:
+        raw = kv_get_json("pool:refill")
+        if isinstance(raw, dict) and isinstance(raw.get("items"), list):
+            existing = list(raw["items"])
+        elif isinstance(raw, list):
+            existing = list(raw)
+
+    pool_doc = {
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "items": (existing + prepared) if append else prepared,
+    }
+    print(
+        f"Pool {'append' if append else 'replace'}: "
+        f"{len(prepared)} new → {len(pool_doc['items'])} total"
+    )
+    kv_put_json("pool:refill", pool_doc, dry_run)
+    if pool_doc["items"]:
+        # Clear the empty-pool flag so the desk banner resets.
+        kv_delete("refill:needed", dry_run)
 
 
 def main() -> int:
@@ -236,6 +327,16 @@ def main() -> int:
         type=str,
         default="",
         help="KV/R2 day key override (default: folder name). Slugs like intro-yeh-bro OK.",
+    )
+    ap.add_argument(
+        "--pool",
+        action="store_true",
+        help="Sync into refill pool (KV pool:refill + R2 pool/) instead of a day queue",
+    )
+    ap.add_argument(
+        "--append",
+        action="store_true",
+        help="With --pool, append to existing pool items (default: replace pool)",
     )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
@@ -261,7 +362,7 @@ def main() -> int:
         return 1
 
     date = (args.day_key or day_dir.name).strip()
-    if not DAY_KEY_RE.fullmatch(date):
+    if not args.pool and not DAY_KEY_RE.fullmatch(date):
         print(
             "day key must be YYYY-MM-DD or a slug like intro-yeh-bro "
             f"(got {date!r})",
@@ -269,15 +370,24 @@ def main() -> int:
         )
         return 1
 
-    manifest = parse_manifest(manifest_path.read_text(encoding="utf-8"), date)
-    print(f"Parsed {len(manifest['items'])} items for {date}")
+    # For --pool the date field is informational only.
+    manifest = parse_manifest(
+        manifest_path.read_text(encoding="utf-8"),
+        date if DAY_KEY_RE.fullmatch(date) else "pool",
+    )
+    print(f"Parsed {len(manifest['items'])} items for {'pool' if args.pool else date}")
 
     if args.json_out:
         args.json_out.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"Wrote {args.json_out}")
 
     if args.wrangler:
-        sync_with_wrangler(day_dir, date, manifest, args.dry_run)
+        if args.pool:
+            sync_pool_with_wrangler(
+                day_dir, manifest, append=args.append, dry_run=args.dry_run
+            )
+        else:
+            sync_with_wrangler(day_dir, date, manifest, args.dry_run)
     print("Done." if not args.dry_run else "Dry-run complete.")
     return 0
 

@@ -18,7 +18,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 	const date = parts[0]!;
 	const file = parts.slice(1).join('/');
 	if (!DAY_KEY_RE.test(date)) return notFound('Bad date');
-	if (file.includes('..') || file.startsWith('/')) return notFound('Bad file');
+	if (file.includes('..') || file.startsWith('/') || parts.some((p) => p === '..')) {
+		return notFound('Bad file');
+	}
 
 	if (fixtureMode(env)) {
 		const svg = fixtureSvg(file.replace(/\.png$/i, ''));
@@ -33,7 +35,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 	if (!hasQueueBindings(env)) return bindingsRequired();
 
-	const obj = await env.IG_MEDIA!.get(mediaKey(date, file));
+	// Full R2 key: day files (`{date}/{file}`) or pool files (`pool/...`).
+	const key = mediaKey(date, file);
+	const obj = await env.IG_MEDIA!.get(key);
 	if (!obj) return notFound('Media not found');
 
 	const headers = new Headers();

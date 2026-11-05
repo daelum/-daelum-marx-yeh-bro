@@ -10,7 +10,9 @@ import {
 import {
 	approveAndPublishItem,
 	enrichDay,
+	poolSummary,
 	readDay,
+	rejectAndRefill,
 	setItemStatus,
 } from '../../../_lib/store';
 import { DAY_KEY_RE, type Env, type ItemStatus } from '../../../_lib/types';
@@ -34,7 +36,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
 	const day = await readDay(env, date);
 	if (!day) return notFound('Day not found');
-	return json({ day: enrichDay(day), fixture: fixtureMode(env) });
+	const pool = await poolSummary(env);
+	return json({ day: enrichDay(day), fixture: fixtureMode(env), pool });
 };
 
 export const onRequestPatch: PagesFunction<Env> = async (context) => {
@@ -60,6 +63,7 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
 	if (status === 'approved') {
 		const result = await approveAndPublishItem(env, date, id);
 		if (!result) return notFound('Item not found');
+		const pool = await poolSummary(env);
 		return json({
 			ok: result.published || result.mode === 'agent',
 			published: result.published,
@@ -68,20 +72,43 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
 			reason: result.reason,
 			item: result.item,
 			day: enrichDay(result.day),
+			pool,
 			// Soft-fail publish: HTTP 200 with published:false so UI can show retry.
 			publishFailed: Boolean(result.reason && !result.published && result.mode === 'zernio'),
 		});
 	}
 
-	// Reject (and other status writes) never publish.
+	// Reject → never publish; append next refill-pool item at bottom when available.
+	if (status === 'rejected') {
+		const result = await rejectAndRefill(env, date, id);
+		if (!result) return notFound('Item not found');
+		return json({
+			ok: true,
+			published: false,
+			mode: 'reject',
+			message: result.message,
+			item: result.item,
+			replacement: result.replacement,
+			replaced: result.replaced,
+			pool: {
+				remaining: result.poolRemaining,
+				refillNeeded: result.refillNeeded,
+			},
+			day: enrichDay(result.day),
+		});
+	}
+
+	// Other status writes never publish.
 	const item = await setItemStatus(env, date, id, status);
 	if (!item) return notFound('Item not found');
 	const day = await readDay(env, date);
+	const pool = await poolSummary(env);
 	return json({
 		ok: true,
 		published: false,
-		mode: 'reject',
+		mode: 'status',
 		item,
 		day: day ? enrichDay(day) : undefined,
+		pool,
 	});
 };

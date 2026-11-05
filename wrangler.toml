@@ -6,13 +6,14 @@
 #
 # Secrets (dashboard or `wrangler secret put` — never commit values):
 #   ADMIN_SOCIAL_PASSWORD   required — password gate for /admin/social
-#   ZERNIO_API_KEY          optional — enables Post approved → Zernio publish to @theyehbro
+#   ZERNIO_API_KEY          required for live Approve→IG — single-item Zernio publish to @theyehbro
 #   ADMIN_SOCIAL_FIXTURE    optional — "1" forces fixture data even with bindings
 #
 # Bindings must be declared here. Dashboard-only bindings are undefined on
 # Workers+assets deploys and previously caused silent fixture mode (7 fake items).
 #   IG_QUEUE  → KV namespace yehbro-ig-queue
-#   IG_MEDIA  → R2 bucket yehbro-ig-media
+#               (day:{key}, index:days, pool:refill, refill:needed)
+#   IG_MEDIA  → R2 bucket yehbro-ig-media ({day}/… + pool/…)
 #
 # `name` must match the Workers project that serves yehbro.com.
 

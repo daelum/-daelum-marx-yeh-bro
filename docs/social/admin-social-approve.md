@@ -24,6 +24,7 @@ Private founder UI on **yehbro.com** for reviewing Holyfield-style singles + car
 4. Set secret **`ZERNIO_API_KEY`** (same key the agent uses) so **Approve & post** publishes from the desk to `@theyehbro`. If unset, Approve still marks `approved` and tells you to ask the agent to post.
 5. Redeploy after secrets/bindings change (`npm run deploy` / Workers Builds).
 6. Open `https://yehbro.com/admin/social`, enter the password, pick a day, then **Approve & post** on **one** item at a time.
+7. Keep the **refill pool** topped up (see below) so Reject always pulls a replacement onto the bottom of the queue.
 
 If `ADMIN_SOCIAL_PASSWORD` is **unset**, the page shows setup instructions only — it does **not** leave the desk open.
 
@@ -36,14 +37,60 @@ If `ADMIN_SOCIAL_PASSWORD` is **unset**, the page shows setup instructions only 
 | 1 | IG agent generates a day folder (`30` singles + `5` carousels) under the Project store queue |
 | 2 | Agent (or you) runs `scripts/sync-ig-queue-to-cf.py --day-dir …` to push PNGs → R2 and manifest JSON → KV |
 | 3 | Open `/admin/social`, log in, select the day |
-| 4 | Review singles (grid) + carousels (slide strip) |
+| 4 | Review singles (grid) + carousels (swipe / filmstrip / narrative `1/N`) |
 | 5 | **Approve & post** on **one** item → status `approved`, then Zernio publish → `posted` on success |
-| 6 | **Reject** on one item → `rejected` only (never posts) |
+| 6 | **Reject** on one item → `rejected`, then **append** next refill-pool item at bottom (`pending`) |
 | 7 | On publish failure → `failed` with UI error; use **Retry post** on that same item |
 
 There is **no** “Approve all pending”, “Post approved”, or other one-click multi-post control. Double-submit is disabled while a post is in flight.
 
 Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
+
+---
+
+## Reject → refill (constant supply)
+
+Reject never posts. After marking an item `rejected`, the Worker:
+
+1. Pops the next item from KV **`pool:refill`**
+2. Assigns a new id (`R01…` singles, `RC01…` carousels) and **appends** it at the **bottom** of the current day queue as `pending`
+3. Writes the day + remaining pool back to KV
+
+If the pool is empty: reject still works; desk banner shows **“Refill pool empty — generating more”** and KV flag **`refill:needed`** is set to `1`.
+
+### IG agent — top up the pool
+
+```bash
+# Preview
+python3 scripts/sync-ig-queue-to-cf.py \
+  --day-dir /path/to/docs/social/instagram-tweet-queue/pool-batch \
+  --pool --dry-run
+
+# Replace pool contents
+python3 scripts/sync-ig-queue-to-cf.py \
+  --day-dir /path/to/docs/social/instagram-tweet-queue/pool-batch \
+  --pool
+
+# Append more items without wiping remaining pool
+python3 scripts/sync-ig-queue-to-cf.py \
+  --day-dir /path/to/docs/social/instagram-tweet-queue/pool-batch \
+  --pool --append
+```
+
+Pool media lands in R2 under `pool/…`. A successful non-empty pool sync clears `refill:needed`.
+
+---
+
+## Carousels on the desk
+
+Carousels are **long-form narrative arcs** (slide-to-slide), not disconnected one-liners.
+
+Desk UI for each carousel:
+
+- Swipe / Prev–Next / dots
+- **`1/N` counter**
+- **Filmstrip** of every slide (click to jump) — slides 2+ load eagerly so they are not blank
+- Narrative list of slide copy under the viewer
 
 ---
 
@@ -54,12 +101,12 @@ Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
 | `ADMIN_SOCIAL_PASSWORD` | Worker **secret** | Yes | Login gate (HttpOnly session cookie) |
 | `ZERNIO_API_KEY` | Worker **secret** | Yes (for live IG) | Approve & post via Zernio to `@theyehbro` |
 | `ADMIN_SOCIAL_FIXTURE` | Env var `"1"` | No | Force fixture sample data (opt-in only) |
-| `IG_QUEUE` | KV binding | Yes (prod) | Per-day manifest/status JSON |
+| `IG_QUEUE` | KV binding | Yes (prod) | Per-day manifest/status JSON + `pool:refill` / `refill:needed` |
 | `IG_MEDIA` | R2 binding | Yes (prod) | PNG bytes (never in `public/`) |
 
 **Bindings must be declared in `wrangler.toml`** (`[[kv_namespaces]]` / `[[r2_buckets]]`). If they are missing from the Worker env, the desk shows a bindings-required error — it does **not** silently fall back to the 7-item fixture sample. Fixture is only via `?fixture=1` or `ADMIN_SOCIAL_FIXTURE=1`.
 
-Media is served only through the authenticated proxy: `/admin/social/media/{date}/{file}` (session cookie; UI fetches with credentials → blob preview).
+Media is served only through the authenticated proxy: `/admin/social/media/{date}/{file}` (session cookie; UI fetches with credentials → blob preview). Pool media uses `/admin/social/media/pool/…`.
 
 Never log secrets.
 
@@ -87,8 +134,8 @@ Typical bindings (names may vary by account; resolve via dashboard/API if placeh
 
 Day folders are usually `YYYY-MM-DD`. Intro/packs may use a slug folder (e.g. `intro-yeh-bro`) or `--day-key intro-yeh-bro`.
 
-KV keys: `day:{dayKey}`, `index:days`  
-R2 keys: `{dayKey}/01.png`, `{dayKey}/c01-1.png`, …
+KV keys: `day:{dayKey}`, `index:days`, `pool:refill`, `refill:needed`  
+R2 keys: `{dayKey}/01.png`, `{dayKey}/c01-1.png`, `pool/…`
 
 ---
 
