@@ -158,6 +158,8 @@ export function calcFoodOs(inputs: FoodOsInputs): FoodOsResult | null {
 	};
 }
 
+export type TrainingDaysPref = 3 | 4;
+
 export interface StoredFoodOs {
 	weightKg: number;
 	heightCm: number;
@@ -167,6 +169,8 @@ export interface StoredFoodOs {
 	goal: Goal;
 	cutPct: number;
 	bulkPct: number;
+	/** 3 → PPL, 4 → PPLU (Yeh Bro System defaults). */
+	trainingDays: TrainingDaysPref;
 }
 
 export const DEFAULT_INPUTS: StoredFoodOs = {
@@ -178,6 +182,7 @@ export const DEFAULT_INPUTS: StoredFoodOs = {
 	goal: 'maintain',
 	cutPct: 18,
 	bulkPct: 10,
+	trainingDays: 3,
 };
 
 export interface MealFramework {
@@ -610,4 +615,216 @@ export function formatDietBreakShoppingPlain(): string {
 		blurb:
 			'Use for 1–2 weeks when flat / glycogen depleted (~maintenance for example profile). Then return to the typical week list.',
 	});
+}
+
+/** Baseline day kcal the founder templates were logged at. */
+export const COACH_BASELINE_KCAL = {
+	'non-training': 2216,
+	training: 2364,
+	'diet-break': 2738,
+} as const;
+
+const INTRA_KCAL = INTRA_WORKOUT.kcal;
+
+export interface CoachScaleFactors {
+	/** Applied to non-training + training base meals (Intra stays fixed). */
+	work: number;
+	/** Applied to diet-break non-Intra meals (Intra stays fixed). */
+	dietBreak: number;
+	workTargetKcal: number;
+	dietBreakTargetKcal: number;
+}
+
+/**
+ * Map calculator output → day-type scales.
+ * Work days (non-training / training) track goal calories; diet-break tracks TDEE (maintenance).
+ * Intra coconut water stays a practical 1 L / ~148 kcal so training = scaled rest + Intra.
+ */
+export function coachScaleFactors(result: Pick<FoodOsResult, 'calories' | 'tdee'>): CoachScaleFactors {
+	const workTargetKcal = Math.max(1200, Math.round(result.calories));
+	const dietBreakTargetKcal = Math.max(1200, Math.round(result.tdee));
+	const work = workTargetKcal / COACH_BASELINE_KCAL['non-training'];
+	const dietBreakBase = COACH_BASELINE_KCAL['diet-break'] - INTRA_KCAL;
+	const dietBreak = Math.max(0.35, (dietBreakTargetKcal - INTRA_KCAL) / dietBreakBase);
+	return { work, dietBreak, workTargetKcal, dietBreakTargetKcal };
+}
+
+/** Round a scaled gram/ml quantity to a shoppable step. */
+export function roundScaledQuantity(value: number): number {
+	if (!Number.isFinite(value) || value <= 0) return 0;
+	if (value < 5) return Math.max(1, Math.round(value));
+	if (value < 20) return Math.round(value);
+	if (value < 100) return Math.round(value / 5) * 5;
+	if (value < 500) return Math.round(value / 5) * 5;
+	return Math.round(value / 10) * 10;
+}
+
+/**
+ * Scale a logged portion string ("60 g", "15 ml", "1 bar", "2 bars", "4 L").
+ * Intra coconut water lines are left unchanged by callers (fixed 1 L serve).
+ */
+export function scalePortionAmount(amount: string, scale: number): string {
+	const trimmed = amount.trim();
+	if (!Number.isFinite(scale) || Math.abs(scale - 1) < 0.02) return trimmed;
+
+	const bar = trimmed.match(/^(\d+(?:\.\d+)?)\s*bars?$/i);
+	if (bar) {
+		const n = Math.max(1, Math.round(Number(bar[1]) * scale));
+		return n === 1 ? '1 bar' : `${n} bars`;
+	}
+
+	const litre = trimmed.match(/^(\d+(?:\.\d+)?)\s*L$/i);
+	if (litre) {
+		const n = Number(litre[1]) * scale;
+		const rounded = n < 10 ? Math.round(n * 10) / 10 : Math.round(n);
+		return `${rounded} L`;
+	}
+
+	const unit = trimmed.match(/^(\d+(?:\.\d+)?)\s*(g|ml)$/i);
+	if (unit) {
+		const n = roundScaledQuantity(Number(unit[1]) * scale);
+		return `${n} ${unit[2].toLowerCase()}`;
+	}
+
+	return trimmed;
+}
+
+function scaleIngredient(ing: CoachIngredient, scale: number, fixedIntra: boolean): CoachIngredient {
+	if (fixedIntra) return { ...ing };
+	return {
+		...ing,
+		amount: scalePortionAmount(ing.amount, scale),
+	};
+}
+
+function scaleMeal(meal: CoachMealSlot, scale: number): CoachMealSlot {
+	if (meal.intra) {
+		// Keep 1 L coconut water as a practical fixed serve.
+		return {
+			...meal,
+			ingredients: meal.ingredients?.map((ing) => ({ ...ing })),
+		};
+	}
+	const kcal = Math.round(meal.kcal * scale);
+	const proteinG = Math.round(meal.proteinG * scale * 10) / 10;
+	const carbsG = Math.round(meal.carbsG * scale * 10) / 10;
+	const fatG = Math.round(meal.fatG * scale * 10) / 10;
+	return {
+		...meal,
+		kcal,
+		proteinG,
+		carbsG,
+		fatG,
+		ingredients: meal.ingredients?.map((ing) => scaleIngredient(ing, scale, false)),
+	};
+}
+
+function macroPcts(calories: number, proteinG: number, carbsG: number, fatG: number) {
+	const pK = proteinG * 4;
+	const cK = carbsG * 4;
+	const fK = fatG * 9;
+	const sum = pK + cK + fK;
+	if (sum <= 0) return { proteinPct: 0, carbsPct: 0, fatPct: 0 };
+	return {
+		proteinPct: Math.round((pK / sum) * 100),
+		carbsPct: Math.round((cK / sum) * 100),
+		fatPct: Math.round((fK / sum) * 100),
+	};
+}
+
+function scaleDayPlan(plan: CoachDayPlan, scale: number): CoachDayPlan {
+	const meals = plan.meals.map((m) => scaleMeal(m, scale));
+	const proteinG = Math.round(meals.reduce((s, m) => s + m.proteinG, 0) * 10) / 10;
+	const carbsG = Math.round(meals.reduce((s, m) => s + m.carbsG, 0) * 10) / 10;
+	const fatG = Math.round(meals.reduce((s, m) => s + m.fatG, 0) * 10) / 10;
+	const calories = Math.round(meals.reduce((s, m) => s + m.kcal, 0));
+	const fibreG = Math.round(plan.fibreG * scale * 10) / 10;
+	const pcts = macroPcts(calories, proteinG, carbsG, fatG);
+	return {
+		...plan,
+		calories,
+		proteinG,
+		carbsG,
+		fatG,
+		fibreG,
+		...pcts,
+		meals,
+	};
+}
+
+export interface ScaledCoachBundle {
+	plans: CoachDayPlan[];
+	factors: CoachScaleFactors;
+	profileLine: string;
+	lede: string;
+}
+
+/** Scale all three recommended day templates from a calculator result + body inputs. */
+export function scaleCoachDayPlans(
+	result: Pick<FoodOsResult, 'calories' | 'tdee'>,
+	profile: { weightKg: number; heightCm: number; age?: number },
+): ScaledCoachBundle {
+	const factors = coachScaleFactors(result);
+	const plans = COACH_DAY_PLANS.map((plan) => {
+		const scale = plan.id === 'diet-break' ? factors.dietBreak : factors.work;
+		const scaled = scaleDayPlan(plan, scale);
+		if (plan.id === 'non-training') {
+			scaled.when = `Rest days / no hard lifting. Skip Intra. Scaled to ~${scaled.calories} kcal for your ${profile.weightKg} kg / ${profile.heightCm} cm profile.`;
+		} else if (plan.id === 'training') {
+			scaled.when = `Lift / hard session days. Same base meals as non-training + fixed Intra (1 L coconut water). ~${scaled.calories} kcal for your profile.`;
+		} else {
+			scaled.when = `~Maintenance (~${scaled.calories} kcal) for your profile. Run 1–2 weeks when flat / glycogen depleted — not a forever surplus. Bigger carb portions + Intra daily.`;
+		}
+		return scaled;
+	});
+
+	const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
+	const profileLine = `~${factors.workTargetKcal} kcal work days · ~${factors.dietBreakTargetKcal} kcal diet-break (est. maintenance) for your ${profile.weightKg} kg / ${profile.heightCm} cm profile`;
+	const lede = `Three day types from the founder coach plan — meal names stay the same; calories, macros, and portions scale from your calculator targets. Baseline structure logged at ${age} / ${weightKg} kg / ${heightCm} cm. Diet break ≈ your estimated maintenance — run 1–2 weeks when you’re flat / glycogen depleted, then return to your cut or training week.`;
+
+	return { plans, factors, profileLine, lede };
+}
+
+function scaleShoppingLine(line: ShoppingListLine, scale: number, opts?: { skipCoconut?: boolean }): ShoppingListLine {
+	const isCoconut = /coconut water/i.test(line.name);
+	if (opts?.skipCoconut && isCoconut) return { ...line };
+	return {
+		...line,
+		amount: scalePortionAmount(line.amount, scale),
+		note: line.note
+			? `${line.note} · scaled ×${scale.toFixed(2)} from baseline`
+			: `Scaled ×${scale.toFixed(2)} from baseline template`,
+	};
+}
+
+export interface ScaledShoppingBundle {
+	typical: ShoppingListLine[];
+	dietBreak: ShoppingListLine[];
+	typicalPlain: string;
+	dietBreakPlain: string;
+	blurb: string;
+}
+
+/** Scale Woolworths weekly lists with the same factors as the day templates. */
+export function scaleShoppingLists(
+	result: Pick<FoodOsResult, 'calories' | 'tdee'>,
+	profile: { weightKg: number; heightCm: number },
+): ScaledShoppingBundle {
+	const factors = coachScaleFactors(result);
+	const typical = SHOPPING_LIST_TYPICAL_WEEK.map((line) =>
+		scaleShoppingLine(line, factors.work, { skipCoconut: true }),
+	);
+	const dietBreak = SHOPPING_LIST_DIET_BREAK_WEEK.map((line) =>
+		scaleShoppingLine(line, factors.dietBreak, { skipCoconut: true }),
+	);
+	const blurb = `Scaled for your ${profile.weightKg} kg / ${profile.heightCm} cm profile (work ×${factors.work.toFixed(2)}, diet-break ×${factors.dietBreak.toFixed(2)}). Baseline template: ${COACH_PLAN_EXAMPLE_PROFILE.age} / ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg / ${COACH_PLAN_EXAMPLE_PROFILE.heightCm} cm. Coconut water stays 1 L per Intra day. No invented SKUs.`;
+	const typicalPlain = formatShoppingListPlain(typical, {
+		title: 'Food Bro — Woolworths week (4 training / 3 rest)',
+		blurb,
+	});
+	const dietBreakPlain = formatShoppingListPlain(dietBreak, {
+		title: 'Food Bro — diet-break week (7× diet-break day)',
+		blurb: `${blurb} Use for 1–2 weeks when flat / glycogen depleted (~your maintenance), then return to the typical week list.`,
+	});
+	return { typical, dietBreak, typicalPlain, dietBreakPlain, blurb };
 }

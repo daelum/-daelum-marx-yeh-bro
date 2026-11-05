@@ -140,6 +140,24 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 						<input type="range" name="adjustment" id="adjustment" min="10" max="25" step="1" />
 						<span class="adj-readout" id="adj-readout"></span>
 					</label>
+
+					<fieldset class="fos-seg fos-training" id="training-field">
+						<legend class="fos-seg-legend">Training days (Yeh Bro System)</legend>
+						<label class="seg-opt">
+							<input type="radio" name="trainingDays" value="3" />
+							<span>
+								<strong>3-day PPL</strong>
+								<small>Push / Pull / Legs — default when life is busy.</small>
+							</span>
+						</label>
+						<label class="seg-opt">
+							<input type="radio" name="trainingDays" value="4" />
+							<span>
+								<strong>4-day PPLU</strong>
+								<small>Add Upper when recovery and schedule allow.</small>
+							</span>
+						</label>
+					</fieldset>
 				</fieldset>
 
 				<div class="fos-actions">
@@ -183,12 +201,14 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		<section class="fos-plans" id="recommended-plans">
 			<p class="eyebrow">Recommended</p>
 			<h2>Coach day templates</h2>
-			<p class="lede">
-				Three day types from the founder coach plan. Built for an example profile of {age} years /
-				{weightKg} kg / {heightCm} cm — scale with the calculator above and coach judgment, not as
-				one-size-fits-all. Diet break ≈ maintenance for that profile — run <strong>1–2 weeks</strong>{' '}
-				when you’re flat / glycogen depleted, then return to your cut or training week.
+			<p class="lede" id="plans-lede">
+				Three day types from the founder coach plan — meal names stay the same; calories, macros, and
+				portions scale from your calculator targets above. Baseline structure logged at {age} /{' '}
+				{weightKg} kg / {heightCm} cm. Diet break ≈ your estimated maintenance — run{' '}
+				<strong>1–2 weeks</strong> when you’re flat / glycogen depleted, then return to your cut or
+				training week.
 			</p>
+			<p class="plan-profile-line" id="plans-profile-line" aria-live="polite"></p>
 
 			<div class="plan-tabs" role="tablist" aria-label="Day type">
 				{
@@ -218,44 +238,7 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 						hidden={i !== 0}
 						data-plan-panel={plan.id}
 					>
-						<p class="plan-when muted">{plan.when}</p>
-						<p class="plan-totals">
-							<span class="plan-cal">{plan.calories} kcal</span>
-							<span class="muted">
-								P {plan.proteinG}g ({plan.proteinPct}%) · C {plan.carbsG}g ({plan.carbsPct}%) · F{' '}
-								{plan.fatG}g ({plan.fatPct}%) · Fibre {plan.fibreG}g
-							</span>
-						</p>
-						{!plan.recipesReady && (
-							<p class="plan-pending muted">
-								Macros locked. Ingredient portions for this day type land when the founder sends
-								them — meal names stay the same.
-							</p>
-						)}
-						<ul class="plan-meals">
-							{plan.meals.map((meal) => (
-								<li class:list={['plan-meal', meal.intra && 'is-intra']}>
-									<div class="plan-meal-head">
-										<strong>{meal.name}</strong>
-										<span class="muted">
-											{meal.kcal} kcal · P {meal.proteinG} / C {meal.carbsG} / F {meal.fatG}
-										</span>
-									</div>
-									{meal.ingredients && meal.ingredients.length > 0 ? (
-										<ul class="plan-ings">
-											{meal.ingredients.map((ing) => (
-												<li>
-													{ing.name} — {ing.amount}
-													{ing.note ? <span class="muted"> ({ing.note})</span> : null}
-												</li>
-											))}
-										</ul>
-									) : plan.recipesReady ? null : (
-										<p class="plan-ing-empty muted">Recipe pending.</p>
-									)}
-								</li>
-							))}
-						</ul>
+						{/* Filled / refreshed by Food Bro script from scaled templates */}
 					</div>
 				))
 			}
@@ -263,6 +246,21 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			<p class="plan-shop-cta">
 				<a class="btn btn-secondary" href="/food-bro/shopping">Weekly shopping list</a>
 			</p>
+		</section>
+
+		<section class="fos-pdf" id="personal-plan">
+			<p class="eyebrow">Download</p>
+			<h2>Personalized plan (PDF)</h2>
+			<p class="lede">
+				One print-ready pack: where you are now, goal + timeframe, Yeh Bro System training (PPL /
+				PPLU), scaled nutrition day templates, a 12-week block, and a recommended next phase after
+				week 12. Save as PDF from the print dialog — no account, no backend.
+			</p>
+			<div class="fos-actions">
+				<a class="btn btn-primary" id="fos-pdf-link" href="/food-bro/plan">Download personalized PDF</a>
+				<a class="btn btn-secondary" href="/start-here/training">Training templates</a>
+			</div>
+			<p class="fos-pdf-gate muted" id="fos-pdf-gate" aria-live="polite"></p>
 		</section>
 
 		<section class="fos-meals" id="meals">
@@ -310,15 +308,17 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 
 <script>
 	import {
-		ACTIVITY_MULTIPLIERS,
 		DEFAULT_INPUTS,
 		GOAL_DEFAULTS,
 		STORAGE_KEY,
 		calcFoodOs,
+		scaleCoachDayPlans,
 		type Activity,
+		type CoachDayPlan,
 		type Goal,
 		type Sex,
 		type StoredFoodOs,
+		type TrainingDaysPref,
 	} from '../lib/food-os';
 
 	const form = document.getElementById('fos-form') as HTMLFormElement | null;
@@ -329,6 +329,10 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const saveNote = document.getElementById('fos-save-note');
 	const empty = document.getElementById('fos-empty');
 	const output = document.getElementById('fos-output');
+	const plansLede = document.getElementById('plans-lede');
+	const plansProfileLine = document.getElementById('plans-profile-line');
+	const pdfLink = document.getElementById('fos-pdf-link') as HTMLAnchorElement | null;
+	const pdfGate = document.getElementById('fos-pdf-gate');
 
 	function readStored(): StoredFoodOs {
 		try {
@@ -363,6 +367,9 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		if (sex) sex.checked = true;
 		const goal = form.querySelector<HTMLInputElement>(`input[name="goal"][value="${data.goal}"]`);
 		if (goal) goal.checked = true;
+		const days = data.trainingDays === 4 ? '4' : '3';
+		const td = form.querySelector<HTMLInputElement>(`input[name="trainingDays"][value="${days}"]`);
+		if (td) td.checked = true;
 		syncAdjustmentUi(data);
 	}
 
@@ -396,13 +403,86 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		const sex = selectedRadio('sex') as Sex | null;
 		const activity = (form.elements.namedItem('activity') as HTMLSelectElement).value as Activity;
 		const goal = selectedRadio('goal') as Goal | null;
+		const trainingRaw = selectedRadio('trainingDays');
+		const trainingDays = (trainingRaw === '4' ? 4 : 3) as TrainingDaysPref;
 		if (!sex || !goal) return null;
 		const prev = readStored();
 		const cutPct =
 			goal === 'cut' && adjInput ? Number(adjInput.value) || prev.cutPct : prev.cutPct;
 		const bulkPct =
 			goal === 'lean-bulk' && adjInput ? Number(adjInput.value) || prev.bulkPct : prev.bulkPct;
-		return { weightKg, heightCm, age, sex, activity, goal, cutPct, bulkPct };
+		return { weightKg, heightCm, age, sex, activity, goal, cutPct, bulkPct, trainingDays };
+	}
+
+	function profileReady(data: StoredFoodOs): boolean {
+		return (
+			Number.isFinite(data.weightKg) &&
+			Number.isFinite(data.heightCm) &&
+			Number.isFinite(data.age) &&
+			data.weightKg >= 35 &&
+			data.heightCm >= 120 &&
+			data.age >= 16
+		);
+	}
+
+	function syncPdfGate(data: StoredFoodOs, ok: boolean) {
+		if (!pdfLink || !pdfGate) return;
+		if (ok && profileReady(data)) {
+			pdfLink.classList.remove('is-disabled');
+			pdfLink.removeAttribute('aria-disabled');
+			pdfLink.href = '/food-bro/plan';
+			pdfGate.textContent = 'Ready — opens a print view; choose Save as PDF.';
+		} else {
+			pdfLink.classList.add('is-disabled');
+			pdfLink.setAttribute('aria-disabled', 'true');
+			pdfLink.href = '#personal-plan';
+			pdfGate.textContent = 'Complete your profile first — height, weight, age, activity, and goal.';
+		}
+	}
+
+	function renderPlanPanel(panel: HTMLElement, plan: CoachDayPlan) {
+		const meals = plan.meals
+			.map((meal) => {
+				const ings =
+					meal.ingredients && meal.ingredients.length > 0
+						? `<ul class="plan-ings">${meal.ingredients
+								.map(
+									(ing) =>
+										`<li>${ing.name} — ${ing.amount}${ing.note ? ` <span class="muted">(${ing.note})</span>` : ''}</li>`,
+								)
+								.join('')}</ul>`
+						: '';
+				return `<li class="plan-meal${meal.intra ? ' is-intra' : ''}">
+					<div class="plan-meal-head">
+						<strong>${meal.name}</strong>
+						<span class="muted">${meal.kcal} kcal · P ${meal.proteinG} / C ${meal.carbsG} / F ${meal.fatG}</span>
+					</div>
+					${ings}
+				</li>`;
+			})
+			.join('');
+		panel.innerHTML = `
+			<p class="plan-when muted">${plan.when}</p>
+			<p class="plan-totals">
+				<span class="plan-cal">${plan.calories} kcal</span>
+				<span class="muted">P ${plan.proteinG}g (${plan.proteinPct}%) · C ${plan.carbsG}g (${plan.carbsPct}%) · F ${plan.fatG}g (${plan.fatPct}%) · Fibre ${plan.fibreG}g</span>
+			</p>
+			<ul class="plan-meals">${meals}</ul>
+		`;
+	}
+
+	function renderPlans(data: StoredFoodOs, result: NonNullable<ReturnType<typeof calcFoodOs>>) {
+		const scaled = scaleCoachDayPlans(result, {
+			weightKg: data.weightKg,
+			heightCm: data.heightCm,
+			age: data.age,
+		});
+		if (plansLede) plansLede.textContent = scaled.lede;
+		if (plansProfileLine) plansProfileLine.textContent = scaled.profileLine;
+		scaled.plans.forEach((plan) => {
+			const panel = document.querySelector<HTMLElement>(`[data-plan-panel="${plan.id}"]`);
+			if (panel) renderPlanPanel(panel, plan);
+		});
 	}
 
 	function render(data: StoredFoodOs) {
@@ -425,6 +505,7 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			empty && (empty.hidden = false);
 			output && (output.hidden = true);
 			if (empty) empty.textContent = 'Check the inputs — weight, height, and age need to be in range.';
+			syncPdfGate(data, false);
 			return;
 		}
 		if (empty) empty.hidden = true;
@@ -450,13 +531,16 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 				why.appendChild(li);
 			});
 		}
-		// silence unused import tree-shake guard
-		void ACTIVITY_MULTIPLIERS;
+		renderPlans(data, result);
+		syncPdfGate(data, true);
 	}
 
 	function refresh() {
 		const data = collect();
-		if (!data) return;
+		if (!data) {
+			syncPdfGate(DEFAULT_INPUTS, false);
+			return;
+		}
 		syncAdjustmentUi(data);
 		writeStored(data);
 		render(data);
@@ -488,6 +572,13 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		writeStored(defaults);
 		render(defaults);
 		if (saveNote) saveNote.textContent = 'Reset to defaults.';
+	});
+
+	pdfLink?.addEventListener('click', (e) => {
+		if (pdfLink.getAttribute('aria-disabled') === 'true') {
+			e.preventDefault();
+			if (pdfGate) pdfGate.textContent = 'Complete your profile first — height, weight, age, activity, and goal.';
+		}
 	});
 
 	const planTabs = document.querySelectorAll<HTMLButtonElement>('[data-plan-tab]');
@@ -828,6 +919,14 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		margin: 0.4rem 0 0;
 		font-size: 0.9rem;
 	}
+	.plan-profile-line {
+		margin: 0.75rem 0 0;
+		font-family: var(--font-display);
+		letter-spacing: 0.03em;
+		color: var(--yb-teal);
+		font-size: 1.05rem;
+		max-width: 44rem;
+	}
 	.plan-shop-cta {
 		margin: 1.75rem 0 0;
 	}
@@ -835,6 +934,23 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		border: 2px solid rgba(242, 242, 240, 0.35);
 		color: var(--yb-offwhite);
 		background: transparent;
+	}
+	.fos-pdf {
+		margin-top: 3.5rem;
+		padding-top: 2rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.12);
+	}
+	.fos-pdf a.is-disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+	.fos-pdf-gate {
+		margin: 0.75rem 0 0;
+		font-size: 0.9rem;
+		min-height: 1.25em;
+	}
+	.fos-training {
+		margin-top: 1rem;
 	}
 	.fos-meals {
 		margin-top: 3.5rem;

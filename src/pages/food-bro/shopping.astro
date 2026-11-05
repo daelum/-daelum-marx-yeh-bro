@@ -18,7 +18,7 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 
 <BaseLayout
 	title="Weekly shopping list — Food Bro"
-	description="Woolworths shopping list for Food Bro coach meal plans — phone-copyable weights for a typical training week and a diet-break week."
+	description="Woolworths shopping list for Food Bro coach meal plans — phone-copyable weights scaled from your Food Bro profile when saved."
 	canonicalPath="/food-bro/shopping"
 >
 	<ProductPath
@@ -34,13 +34,14 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 		<header class="shop-hero">
 			<p class="eyebrow anim-rise">Food Bro · Woolworths</p>
 			<h1 class="anim-rise">Weekly shopping list</h1>
-			<p class="lede anim-rise-delay">
+			<p class="lede anim-rise-delay" id="shop-lede">
 				Phone-copyable totals for the coach day templates. Typical week ={' '}
-				{SHOPPING_WEEK_TRAINING_DAYS} training + {SHOPPING_WEEK_REST_DAYS} rest. Built around the
-				example profile ({age} / {weightKg} kg / {heightCm} cm) — nudge amounts if your split or
-				body differs. Prefer Woolworths where the founder listed it; Coles mince → WW lean mince is
-				fine.
+				{SHOPPING_WEEK_TRAINING_DAYS} training + {SHOPPING_WEEK_REST_DAYS} rest. Baseline template:{' '}
+				{age} / {weightKg} kg / {heightCm} cm — amounts scale from your Food Bro calculator when
+				you’ve saved a profile. Prefer Woolworths where the founder listed it; Coles mince → WW lean
+				mince is fine. Coconut water stays 1 L per Intra day.
 			</p>
+			<p class="shop-scale-line" id="shop-scale-line" aria-live="polite"></p>
 		</header>
 
 		<section class="shop-block" id="typical-week">
@@ -49,13 +50,14 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 				{SHOPPING_WEEK_TRAINING_DAYS} training · {SHOPPING_WEEK_REST_DAYS} rest
 			</h2>
 			<p class="muted shop-note">
-				Coconut water only on training days (Intra). Everything else is the shared base day.
+				Coconut water only on training days (Intra). Everything else is the shared base day, scaled
+				to your work-day calorie target.
 			</p>
 			<button type="button" class="btn btn-primary" id="copy-typical" data-copy="typical">
 				Copy list
 			</button>
 			<p class="copy-status muted" id="status-typical" aria-live="polite"></p>
-			<ul class="shop-list">
+			<ul class="shop-list" id="list-typical">
 				{
 					SHOPPING_LIST_TYPICAL_WEEK.map((line) => (
 						<li>
@@ -72,15 +74,15 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 		<section class="shop-block" id="diet-break-week">
 			<p class="eyebrow">Diet-break week</p>
 			<h2>1–2 weeks when flat</h2>
-			<p class="muted shop-note">
-				≈ maintenance for the example profile. Bigger rice / cereal / pasta / bars + 1 L coconut
-				water every day. Run then return to the typical week list — not a forever surplus.
+			<p class="muted shop-note" id="diet-note">
+				≈ your estimated maintenance. Bigger rice / cereal / pasta / bars + 1 L coconut water every
+				day. Run then return to the typical week list — not a forever surplus.
 			</p>
 			<button type="button" class="btn btn-secondary" id="copy-diet" data-copy="diet">
 				Copy diet-break list
 			</button>
 			<p class="copy-status muted" id="status-diet" aria-live="polite"></p>
-			<ul class="shop-list">
+			<ul class="shop-list" id="list-diet">
 				{
 					SHOPPING_LIST_DIET_BREAK_WEEK.map((line) => (
 						<li>
@@ -99,6 +101,7 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 			<div class="cta-row">
 				<a class="btn btn-primary" href="/food-bro#recommended-plans">Day templates</a>
 				<a class="btn btn-secondary" href="/food-bro">Calculator</a>
+				<a class="btn btn-secondary" href="/food-bro/plan">Personalized PDF</a>
 				<a class="btn btn-secondary" href="/food">Food hub</a>
 			</div>
 			<p class="compliance muted">
@@ -110,10 +113,80 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 </BaseLayout>
 
 <script>
+	import {
+		DEFAULT_INPUTS,
+		STORAGE_KEY,
+		calcFoodOs,
+		scaleShoppingLists,
+		type StoredFoodOs,
+	} from '../../lib/food-os';
+
 	const payloads: Record<string, string> = {
 		typical: document.getElementById('plain-typical')?.textContent ?? '',
 		diet: document.getElementById('plain-diet')?.textContent ?? '',
 	};
+
+	function readStored(): StoredFoodOs | null {
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (!raw) return null;
+			return { ...DEFAULT_INPUTS, ...(JSON.parse(raw) as Partial<StoredFoodOs>) };
+		} catch {
+			return null;
+		}
+	}
+
+	function renderList(ul: HTMLElement | null, lines: { name: string; amount: string; note?: string }[]) {
+		if (!ul) return;
+		ul.innerHTML = lines
+			.map(
+				(line) => `<li>
+				<span class="shop-name">${line.name}</span>
+				<span class="shop-amt">${line.amount}</span>
+				${line.note ? `<span class="shop-line-note muted">${line.note}</span>` : ''}
+			</li>`,
+			)
+			.join('');
+	}
+
+	const stored = readStored();
+	if (stored) {
+		const adjustment =
+			stored.goal === 'cut'
+				? -(stored.cutPct / 100)
+				: stored.goal === 'lean-bulk'
+					? stored.bulkPct / 100
+					: 0;
+		const result = calcFoodOs({
+			weightKg: stored.weightKg,
+			heightCm: stored.heightCm,
+			age: stored.age,
+			sex: stored.sex,
+			activity: stored.activity,
+			goal: stored.goal,
+			adjustment,
+		});
+		if (result) {
+			const scaled = scaleShoppingLists(result, {
+				weightKg: stored.weightKg,
+				heightCm: stored.heightCm,
+			});
+			renderList(document.getElementById('list-typical'), scaled.typical);
+			renderList(document.getElementById('list-diet'), scaled.dietBreak);
+			const plainT = document.getElementById('plain-typical');
+			const plainD = document.getElementById('plain-diet');
+			if (plainT) plainT.textContent = scaled.typicalPlain;
+			if (plainD) plainD.textContent = scaled.dietBreakPlain;
+			payloads.typical = scaled.typicalPlain;
+			payloads.diet = scaled.dietBreakPlain;
+			const scaleLine = document.getElementById('shop-scale-line');
+			if (scaleLine) scaleLine.textContent = scaled.blurb;
+			const lede = document.getElementById('shop-lede');
+			if (lede) {
+				lede.textContent = `Phone-copyable totals scaled for your ${stored.weightKg} kg / ${stored.heightCm} cm Food Bro profile (${stored.goal}). Typical week = ${4} training + ${3} rest. Coconut water stays 1 L per Intra day.`;
+			}
+		}
+	}
 
 	async function copyKey(key: string) {
 		const text = payloads[key];
@@ -139,6 +212,13 @@ const dietBreakPlain = formatDietBreakShoppingPlain();
 	.shop-hero {
 		margin-bottom: 2rem;
 		max-width: 42rem;
+	}
+	.shop-scale-line {
+		margin: 0.85rem 0 0;
+		font-family: var(--font-display);
+		letter-spacing: 0.03em;
+		color: var(--yb-teal);
+		font-size: 1rem;
 	}
 	.shop-block {
 		margin-top: 2.5rem;

@@ -1,0 +1,421 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+	title="Your Yeh Bro plan — print / PDF"
+	description="Personalized Yeh Bro System + Food Bro plan — training, nutrition, 12-week block, and next-phase framing. Print or save as PDF."
+	canonicalPath="/food-bro/plan"
+>
+	<article class="wrap plan-page" id="plan-page">
+		<header class="plan-screen-only">
+			<p class="eyebrow">Yeh Bro System · Food Bro</p>
+			<h1>Your personalized plan</h1>
+			<p class="lede" id="gate-msg">
+				Loading your saved Food Bro profile…
+			</p>
+			<div class="cta-row" id="plan-actions" hidden>
+				<button type="button" class="btn btn-primary" id="btn-print">Save as PDF / Print</button>
+				<a class="btn btn-secondary" href="/food-bro">Edit profile</a>
+				<a class="btn btn-secondary" href="/food-bro/shopping">Shopping list</a>
+			</div>
+			<p class="muted print-hint" id="print-hint" hidden>
+				In the print dialog, choose <strong>Save as PDF</strong> and enable background graphics if
+				you want the dark Yeh Bro look.
+			</p>
+		</header>
+
+		<div id="plan-missing" class="plan-missing" hidden>
+			<p class="lede">
+				Complete your profile first — height, weight, age, activity, and goal on{' '}
+				<a href="/food-bro">Food Bro</a> — then come back to download.
+			</p>
+			<a class="btn btn-primary" href="/food-bro">Open Food Bro</a>
+		</div>
+
+		<div id="plan-doc" class="plan-doc" hidden>
+			<!-- Filled client-side from localStorage + Food Bro math -->
+		</div>
+	</article>
+</BaseLayout>
+
+<script>
+	import {
+		ACTIVITY_LABELS,
+		DEFAULT_INPUTS,
+		GOAL_DEFAULTS,
+		STORAGE_KEY,
+		calcFoodOs,
+		type Activity,
+		type Goal,
+		type Sex,
+		type StoredFoodOs,
+		type TrainingDaysPref,
+	} from '../../lib/food-os';
+	import { buildPersonalPlan, type PersonalPlanDoc } from '../../lib/personal-plan';
+
+	function readStored(): StoredFoodOs | null {
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (!raw) return null;
+			const parsed = JSON.parse(raw) as Partial<StoredFoodOs>;
+			return { ...DEFAULT_INPUTS, ...parsed };
+		} catch {
+			return null;
+		}
+	}
+
+	function profileComplete(data: StoredFoodOs): boolean {
+		return (
+			Number.isFinite(data.weightKg) &&
+			Number.isFinite(data.heightCm) &&
+			Number.isFinite(data.age) &&
+			!!data.sex &&
+			!!data.activity &&
+			!!data.goal
+		);
+	}
+
+	function esc(s: string): string {
+		return s
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+
+	function renderDoc(doc: PersonalPlanDoc): string {
+		const adj =
+			doc.profile.goal === 'cut'
+				? `−${doc.profile.cutPct}% deficit`
+				: doc.profile.goal === 'lean-bulk'
+					? `+${doc.profile.bulkPct}% surplus`
+					: 'at maintenance';
+
+		const trainingDays = doc.training.days
+			.map(
+				(day) => `
+			<section class="pd-day">
+				<h3>${esc(day.label)}</h3>
+				<table>
+					<thead><tr><th>Lift</th><th>Sets</th><th>Reps</th></tr></thead>
+					<tbody>
+						${day.lifts
+							.map(
+								(l) => `<tr>
+							<td>${esc(l.name)}${l.notes ? `<span class="note"> — ${esc(l.notes)}</span>` : ''}</td>
+							<td>${esc(l.sets)}</td>
+							<td>${esc(l.reps)}</td>
+						</tr>`,
+							)
+							.join('')}
+					</tbody>
+				</table>
+			</section>`,
+			)
+			.join('');
+
+		const nutrition = doc.nutritionDays
+			.map((plan) => {
+				const meals = plan.meals
+					.map(
+						(m) => `
+					<li>
+						<strong>${esc(m.name)}</strong>
+						<span class="muted"> — ${m.kcal} kcal · P ${m.proteinG} / C ${m.carbsG} / F ${m.fatG}</span>
+						${
+							m.ingredients?.length
+								? `<ul class="ings">${m.ingredients
+										.map(
+											(i) =>
+												`<li>${esc(i.name)} — ${esc(i.amount)}${i.note ? ` <span class="muted">(${esc(i.note)})</span>` : ''}</li>`,
+										)
+										.join('')}</ul>`
+								: ''
+						}
+					</li>`,
+					)
+					.join('');
+				return `
+				<section class="pd-nutri">
+					<h3>${esc(plan.title)} · ${plan.calories} kcal</h3>
+					<p class="muted">${esc(plan.when)}</p>
+					<p>P ${plan.proteinG}g (${plan.proteinPct}%) · C ${plan.carbsG}g (${plan.carbsPct}%) · F ${plan.fatG}g (${plan.fatPct}%) · Fibre ${plan.fibreG}g</p>
+					<ul class="meals">${meals}</ul>
+				</section>`;
+			})
+			.join('');
+
+		const blocks = doc.twelveWeek
+			.map(
+				(b) => `
+			<section class="pd-block">
+				<h3>${esc(b.weeks)} — ${esc(b.title)}</h3>
+				<ul>${b.focus.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
+			</section>`,
+			)
+			.join('');
+
+		return `
+			<header class="pd-hero">
+				<p class="eyebrow">Yeh Bro · Personalized plan</p>
+				<h1>Yeh Bro System</h1>
+				<p class="tag">${esc(doc.goalFraming.headline)}</p>
+				<p class="muted">Generated ${esc(doc.generatedAt)} · yehbro.com</p>
+			</header>
+
+			<section class="pd-section" id="where-now">
+				<p class="eyebrow">1 · Where you are now</p>
+				<h2>Current stats</h2>
+				<ul class="stat-grid">
+					<li><span class="lab">Weight</span><span class="val">${doc.profile.weightKg} kg</span></li>
+					<li><span class="lab">Height</span><span class="val">${doc.profile.heightCm} cm</span></li>
+					<li><span class="lab">Age</span><span class="val">${doc.profile.age}</span></li>
+					<li><span class="lab">Sex (BMR)</span><span class="val">${esc(doc.profile.sex)}</span></li>
+					<li><span class="lab">Activity</span><span class="val">${esc(doc.profile.activityLabel)}</span></li>
+					<li><span class="lab">Goal</span><span class="val">${esc(doc.profile.goalLabel)} (${esc(adj)})</span></li>
+				</ul>
+				<p class="targets">
+					<strong>~${doc.targets.calories} kcal / day</strong>
+					· P ${doc.targets.proteinG}g · C ${doc.targets.carbsG}g · F ${doc.targets.fatG}g
+					· Est. maintenance ≈ ${doc.targets.tdee} kcal · resting ≈ ${doc.targets.bmr} kcal
+				</p>
+			</section>
+
+			<section class="pd-section" id="goal-plan">
+				<p class="eyebrow">2 · Goal + timeframe + plan</p>
+				<h2>${esc(doc.goalFraming.headline)}</h2>
+				<p>${esc(doc.goalFraming.timeframe)}</p>
+				<ul>${doc.goalFraming.schedule.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
+			</section>
+
+			<section class="pd-section" id="training">
+				<p class="eyebrow">3 · Training</p>
+				<h2>${esc(doc.training.name)}</h2>
+				<p>${esc(doc.training.blurb)}</p>
+				<p class="muted">${doc.training.daysPerWeek} days · ${esc(doc.training.level)}</p>
+				${trainingDays}
+				<h3>Progression</h3>
+				<ul>${doc.training.progression.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+			</section>
+
+			<section class="pd-section" id="nutrition">
+				<p class="eyebrow">4 · Nutrition</p>
+				<h2>Scaled coach day templates</h2>
+				<p>${esc(doc.nutritionLede)}</p>
+				${nutrition}
+			</section>
+
+			<section class="pd-section" id="twelve">
+				<p class="eyebrow">5 · 12-week plan</p>
+				<h2>Structured block</h2>
+				${blocks}
+			</section>
+
+			<section class="pd-section" id="next">
+				<p class="eyebrow">6 · End of 12 weeks</p>
+				<h2>${esc(doc.nextPhase.title)}</h2>
+				<p>${esc(doc.nextPhase.summary)}</p>
+				<ul>${doc.nextPhase.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>
+			</section>
+
+			<footer class="pd-foot">
+				<p>${esc(doc.disclaimer)}</p>
+			</footer>
+		`;
+	}
+
+	const gateMsg = document.getElementById('gate-msg');
+	const missing = document.getElementById('plan-missing');
+	const actions = document.getElementById('plan-actions');
+	const hint = document.getElementById('print-hint');
+	const docEl = document.getElementById('plan-doc');
+
+	const stored = readStored();
+	if (!stored || !profileComplete(stored)) {
+		if (gateMsg) gateMsg.textContent = 'Complete your profile first.';
+		missing && (missing.hidden = false);
+	} else {
+		const adjustment =
+			stored.goal === 'cut'
+				? -(stored.cutPct / 100)
+				: stored.goal === 'lean-bulk'
+					? stored.bulkPct / 100
+					: 0;
+		const result = calcFoodOs({
+			weightKg: stored.weightKg,
+			heightCm: stored.heightCm,
+			age: stored.age,
+			sex: stored.sex,
+			activity: stored.activity,
+			goal: stored.goal,
+			adjustment,
+		});
+		if (!result || !docEl) {
+			if (gateMsg) gateMsg.textContent = 'Complete your profile first.';
+			missing && (missing.hidden = false);
+		} else {
+			const days = (stored.trainingDays === 4 ? 4 : 3) as TrainingDaysPref;
+			const doc = buildPersonalPlan({ ...stored, trainingDays: days }, result);
+			docEl.innerHTML = renderDoc(doc);
+			docEl.hidden = false;
+			actions && (actions.hidden = false);
+			hint && (hint.hidden = false);
+			if (gateMsg) {
+				gateMsg.textContent = `${doc.profile.weightKg} kg · ${doc.profile.heightCm} cm · ${GOAL_DEFAULTS[stored.goal].label} · ${ACTIVITY_LABELS[stored.activity]} · ${days}-day ${days === 4 ? 'PPLU' : 'PPL'}`;
+			}
+			const auto = new URLSearchParams(location.search).get('print');
+			if (auto === '1') {
+				requestAnimationFrame(() => window.print());
+			}
+		}
+	}
+
+	document.getElementById('btn-print')?.addEventListener('click', () => window.print());
+
+	void Sex;
+	void Goal;
+	void Activity;
+</script>
+
+<style>
+	.plan-page {
+		padding-top: 2rem;
+		padding-bottom: 3rem;
+	}
+	.plan-missing {
+		margin-top: 1.5rem;
+		max-width: 36rem;
+	}
+	.print-hint {
+		margin-top: 1rem;
+		font-size: 0.9rem;
+		max-width: 36rem;
+	}
+	.plan-doc {
+		margin-top: 2rem;
+	}
+	.pd-hero {
+		margin-bottom: 2rem;
+		padding-bottom: 1.25rem;
+		border-bottom: 1px solid rgba(242, 242, 240, 0.14);
+	}
+	.pd-hero h1 {
+		margin: 0 0 0.5rem;
+		font-size: clamp(2rem, 4vw, 2.8rem);
+		letter-spacing: 0.04em;
+	}
+	.pd-hero .tag {
+		font-family: var(--font-display);
+		color: var(--yb-lime);
+		font-size: 1.15rem;
+		letter-spacing: 0.03em;
+	}
+	.pd-section {
+		margin: 2.25rem 0;
+		padding-top: 1.25rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.1);
+		break-inside: avoid;
+	}
+	.pd-section h2 {
+		color: var(--yb-lime);
+		margin-top: 0.25rem;
+	}
+	.stat-grid {
+		list-style: none;
+		padding: 0;
+		margin: 1rem 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+		gap: 0.75rem;
+	}
+	.stat-grid li {
+		margin: 0;
+		padding: 0.65rem 0 0;
+		border-top: 2px solid rgba(242, 242, 240, 0.12);
+	}
+	.stat-grid .lab {
+		display: block;
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+	}
+	.stat-grid .val {
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+		letter-spacing: 0.02em;
+	}
+	.targets {
+		margin: 0.75rem 0 0;
+	}
+	.pd-day,
+	.pd-nutri,
+	.pd-block {
+		margin: 1.25rem 0;
+		break-inside: avoid;
+	}
+	.pd-day table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.92rem;
+	}
+	.pd-day th,
+	.pd-day td {
+		text-align: left;
+		padding: 0.4rem 0.5rem 0.4rem 0;
+		border-bottom: 1px solid rgba(242, 242, 240, 0.08);
+		vertical-align: top;
+	}
+	.pd-day th {
+		color: var(--yb-muted);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.note,
+	.muted {
+		color: var(--yb-muted);
+	}
+	.meals,
+	.ings {
+		padding-left: 1.1rem;
+	}
+	.meals > li {
+		margin: 0.65rem 0;
+	}
+	.pd-foot {
+		margin-top: 2.5rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.14);
+		font-size: 0.88rem;
+		color: var(--yb-muted);
+		max-width: 40rem;
+	}
+
+	@media print {
+		:global(header.site-header),
+		:global(footer.site-footer),
+		:global(.skip-link),
+		:global(nav),
+		.plan-screen-only {
+			display: none !important;
+		}
+		:global(body) {
+			background: #0c0c0c !important;
+			color: #f2f2f0 !important;
+			-webkit-print-color-adjust: exact;
+			print-color-adjust: exact;
+		}
+		.plan-page {
+			padding: 0;
+			max-width: none;
+		}
+		.plan-doc {
+			margin: 0;
+		}
+		.pd-section {
+			break-inside: avoid;
+		}
+	}
+</style>
