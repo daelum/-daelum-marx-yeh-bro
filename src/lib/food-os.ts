@@ -300,7 +300,7 @@ const MEAL_DESSERT: CoachMealSlot = {
 const COACH_BASE_MEALS: CoachMealSlot[] = [
 	MEAL_OATS,
 	{
-		name: 'Meal 2',
+		name: 'Peri Chicken & Mexican Rice',
 		kcal: 577,
 		proteinG: 47.9,
 		carbsG: 65.4,
@@ -423,7 +423,7 @@ export const COACH_DAY_PLANS: CoachDayPlan[] = [
 		meals: [
 			MEAL_OATS,
 			{
-				name: 'Meal 2',
+				name: 'Peri Chicken & Mexican Rice',
 				kcal: 655,
 				proteinG: 49.7,
 				carbsG: 80.9,
@@ -755,13 +755,39 @@ function scaleDayPlan(plan: CoachDayPlan, scale: number): CoachDayPlan {
 export interface ScaledCoachBundle {
 	plans: CoachDayPlan[];
 	factors: CoachScaleFactors;
+	/** Short quiet meta under the section lede (not a shouty teal banner). */
 	profileLine: string;
+	/** Optional second line when work ≈ diet-break (maintain). */
+	profileNote?: string;
 	lede: string;
+}
+
+function coachProfileCopy(
+	result: Pick<FoodOsResult, 'calories' | 'tdee' | 'goal'>,
+	factors: CoachScaleFactors,
+	profile: { weightKg: number; heightCm: number },
+): { profileLine: string; profileNote?: string } {
+	const body = `${profile.weightKg} kg · ${profile.heightCm} cm`;
+	if (result.goal === 'maintain') {
+		return {
+			profileLine: `Holding ~${factors.workTargetKcal} kcal · ${body}`,
+			profileNote:
+				'Diet-break matches because you’re already at estimated maintenance — use it as a settle week, not a surplus.',
+		};
+	}
+	if (result.goal === 'lean-bulk') {
+		return {
+			profileLine: `Surplus days ~${factors.workTargetKcal} · settle / diet-break ~${factors.dietBreakTargetKcal} · ${body}`,
+		};
+	}
+	return {
+		profileLine: `Cut days ~${factors.workTargetKcal} · diet-break (maintenance) ~${factors.dietBreakTargetKcal} · ${body}`,
+	};
 }
 
 /** Scale all three recommended day templates from a calculator result + body inputs. */
 export function scaleCoachDayPlans(
-	result: Pick<FoodOsResult, 'calories' | 'tdee'>,
+	result: Pick<FoodOsResult, 'calories' | 'tdee' | 'goal'>,
 	profile: { weightKg: number; heightCm: number; age?: number },
 ): ScaledCoachBundle {
 	const factors = coachScaleFactors(result);
@@ -769,20 +795,23 @@ export function scaleCoachDayPlans(
 		const scale = plan.id === 'diet-break' ? factors.dietBreak : factors.work;
 		const scaled = scaleDayPlan(plan, scale);
 		if (plan.id === 'non-training') {
-			scaled.when = `Rest days / no hard lifting. Skip Intra. Scaled to ~${scaled.calories} kcal for your ${profile.weightKg} kg / ${profile.heightCm} cm profile.`;
+			scaled.when = 'Rest / no hard lifting. Skip Intra.';
 		} else if (plan.id === 'training') {
-			scaled.when = `Lift / hard session days. Same base meals as non-training + fixed Intra (1 L coconut water). ~${scaled.calories} kcal for your profile.`;
+			scaled.when = 'Lift days — same base meals as rest, plus 1 L coconut water Intra.';
 		} else {
-			scaled.when = `~Maintenance (~${scaled.calories} kcal) for your profile. Run 1–2 weeks when flat / glycogen depleted — not a forever surplus. Bigger carb portions + Intra daily.`;
+			scaled.when =
+				result.goal === 'maintain'
+					? 'Settle week at estimated maintenance. Bigger carb portions + Intra daily — not a forever surplus.'
+					: '1–2 weeks at estimated maintenance when flat / glycogen depleted, then return to your cut or training week.';
 		}
 		return scaled;
 	});
 
 	const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
-	const profileLine = `~${factors.workTargetKcal} kcal work days · ~${factors.dietBreakTargetKcal} kcal diet-break (est. maintenance) for your ${profile.weightKg} kg / ${profile.heightCm} cm profile`;
-	const lede = `Three day types from the founder coach plan — meal names stay the same; calories, macros, and portions scale from your calculator targets. Baseline structure logged at ${age} / ${weightKg} kg / ${heightCm} cm. Diet break ≈ your estimated maintenance — run 1–2 weeks when you’re flat / glycogen depleted, then return to your cut or training week.`;
+	const { profileLine, profileNote } = coachProfileCopy(result, factors, profile);
+	const lede = `Day structures from the founder coach log (${age} / ${weightKg} kg / ${heightCm} cm). Your calculator sets the kcal and portions — pick a day type below.`;
 
-	return { plans, factors, profileLine, lede };
+	return { plans, factors, profileLine, profileNote, lede };
 }
 
 function scaleShoppingLine(line: ShoppingListLine, scale: number, opts?: { skipCoconut?: boolean }): ShoppingListLine {
@@ -817,7 +846,7 @@ export function scaleShoppingLists(
 	const dietBreak = SHOPPING_LIST_DIET_BREAK_WEEK.map((line) =>
 		scaleShoppingLine(line, factors.dietBreak, { skipCoconut: true }),
 	);
-	const blurb = `Scaled for your ${profile.weightKg} kg / ${profile.heightCm} cm profile (work ×${factors.work.toFixed(2)}, diet-break ×${factors.dietBreak.toFixed(2)}). Baseline template: ${COACH_PLAN_EXAMPLE_PROFILE.age} / ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg / ${COACH_PLAN_EXAMPLE_PROFILE.heightCm} cm. Coconut water stays 1 L per Intra day. No invented SKUs.`;
+	const blurb = `${profile.weightKg} kg · ${profile.heightCm} cm · portions ×${factors.work.toFixed(2)} (work week) / ×${factors.dietBreak.toFixed(2)} (diet-break). Baseline ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg template. Coconut water stays 1 L per Intra day.`;
 	const typicalPlain = formatShoppingListPlain(typical, {
 		title: 'Food Bro — Woolworths week (4 training / 3 rest)',
 		blurb,

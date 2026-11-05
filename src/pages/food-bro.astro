@@ -202,13 +202,13 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			<p class="eyebrow">Recommended</p>
 			<h2>Coach day templates</h2>
 			<p class="lede" id="plans-lede">
-				Three day types from the founder coach plan — meal names stay the same; calories, macros, and
-				portions scale from your calculator targets above. Baseline structure logged at {age} /{' '}
-				{weightKg} kg / {heightCm} cm. Diet break ≈ your estimated maintenance — run{' '}
-				<strong>1–2 weeks</strong> when you’re flat / glycogen depleted, then return to your cut or
-				training week.
+				Day structures from the founder coach log ({age} / {weightKg} kg / {heightCm} cm). Your
+				calculator sets the kcal and portions — pick a day type below.
 			</p>
-			<p class="plan-profile-line" id="plans-profile-line" aria-live="polite"></p>
+			<div class="plan-meta" id="plans-meta" aria-live="polite">
+				<p class="plan-profile-line" id="plans-profile-line"></p>
+				<p class="plan-profile-note muted" id="plans-profile-note" hidden></p>
+			</div>
 
 			<div class="plan-tabs" role="tablist" aria-label="Day type">
 				{
@@ -331,6 +331,7 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const output = document.getElementById('fos-output');
 	const plansLede = document.getElementById('plans-lede');
 	const plansProfileLine = document.getElementById('plans-profile-line');
+	const plansProfileNote = document.getElementById('plans-profile-note');
 	const pdfLink = document.getElementById('fos-pdf-link') as HTMLAnchorElement | null;
 	const pdfGate = document.getElementById('fos-pdf-gate');
 
@@ -445,29 +446,39 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 			.map((meal) => {
 				const ings =
 					meal.ingredients && meal.ingredients.length > 0
-						? `<ul class="plan-ings">${meal.ingredients
+						? `<div class="plan-ings" role="list">${meal.ingredients
 								.map(
 									(ing) =>
-										`<li>${ing.name} — ${ing.amount}${ing.note ? ` <span class="muted">(${ing.note})</span>` : ''}</li>`,
+										`<div class="plan-ing" role="listitem"><span class="plan-ing-name">${ing.name}${ing.note ? ` <em class="muted">${ing.note}</em>` : ''}</span><span class="plan-ing-amt">${ing.amount}</span></div>`,
 								)
-								.join('')}</ul>`
+								.join('')}</div>`
 						: '';
-				return `<li class="plan-meal${meal.intra ? ' is-intra' : ''}">
-					<div class="plan-meal-head">
-						<strong>${meal.name}</strong>
-						<span class="muted">${meal.kcal} kcal · P ${meal.proteinG} / C ${meal.carbsG} / F ${meal.fatG}</span>
-					</div>
+				return `<article class="plan-meal${meal.intra ? ' is-intra' : ''}">
+					<header class="plan-meal-head">
+						<h3 class="plan-meal-name">${meal.name}</h3>
+						<p class="plan-meal-kcal muted">${meal.kcal} kcal</p>
+					</header>
+					<ul class="plan-meal-macros" aria-label="Meal macros">
+						<li><span class="m-lab">P</span><span class="m-val">${meal.proteinG}g</span></li>
+						<li><span class="m-lab">C</span><span class="m-val">${meal.carbsG}g</span></li>
+						<li><span class="m-lab">F</span><span class="m-val">${meal.fatG}g</span></li>
+					</ul>
 					${ings}
-				</li>`;
+				</article>`;
 			})
 			.join('');
 		panel.innerHTML = `
 			<p class="plan-when muted">${plan.when}</p>
-			<p class="plan-totals">
-				<span class="plan-cal">${plan.calories} kcal</span>
-				<span class="muted">P ${plan.proteinG}g (${plan.proteinPct}%) · C ${plan.carbsG}g (${plan.carbsPct}%) · F ${plan.fatG}g (${plan.fatPct}%) · Fibre ${plan.fibreG}g</span>
-			</p>
-			<ul class="plan-meals">${meals}</ul>
+			<div class="plan-day-summary">
+				<p class="plan-cal"><span class="plan-cal-num">${plan.calories}</span><span class="plan-cal-unit">kcal</span></p>
+				<ul class="plan-macro-grid" aria-label="Day macros">
+					<li><span class="macro-val">${plan.proteinG}g</span><span class="macro-lab">Protein · ${plan.proteinPct}%</span></li>
+					<li><span class="macro-val">${plan.carbsG}g</span><span class="macro-lab">Carbs · ${plan.carbsPct}%</span></li>
+					<li><span class="macro-val">${plan.fatG}g</span><span class="macro-lab">Fat · ${plan.fatPct}%</span></li>
+					<li><span class="macro-val">${plan.fibreG}g</span><span class="macro-lab">Fibre</span></li>
+				</ul>
+			</div>
+			<div class="plan-meals">${meals}</div>
 		`;
 	}
 
@@ -479,6 +490,15 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 		});
 		if (plansLede) plansLede.textContent = scaled.lede;
 		if (plansProfileLine) plansProfileLine.textContent = scaled.profileLine;
+		if (plansProfileNote) {
+			if (scaled.profileNote) {
+				plansProfileNote.hidden = false;
+				plansProfileNote.textContent = scaled.profileNote;
+			} else {
+				plansProfileNote.hidden = true;
+				plansProfileNote.textContent = '';
+			}
+		}
 		scaled.plans.forEach((plan) => {
 			const panel = document.querySelector<HTMLElement>(`[data-plan-panel="${plan.id}"]`);
 			if (panel) renderPlanPanel(panel, plan);
@@ -835,100 +855,241 @@ const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	.fos-plans {
 		margin-top: 3.5rem;
 		padding-top: 2rem;
-		border-top: 1px solid rgba(242, 242, 240, 0.12);
+		border-top: 1px solid var(--yb-edge);
+	}
+	.fos-plans > .lede {
+		max-width: 38rem;
+	}
+	.plan-meta {
+		margin: 1.1rem 0 0;
+		max-width: 40rem;
+		padding: 0.85rem 0 0;
+		border-top: 1px solid var(--yb-edge);
+	}
+	.plan-profile-line {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.plan-profile-note {
+		margin: 0.45rem 0 0;
+		font-size: 0.88rem;
+		line-height: 1.45;
+		max-width: 36rem;
 	}
 	.plan-tabs {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin: 1.25rem 0 1.5rem;
+		flex-wrap: nowrap;
+		gap: 0;
+		margin: 1.75rem 0 0;
+		border: 1px solid var(--yb-edge);
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 	.plan-tab {
+		flex: 1 1 auto;
+		min-width: max-content;
 		font: inherit;
 		font-weight: 600;
-		font-size: 0.92rem;
-		padding: 0.65rem 0.95rem;
-		border: 1px solid rgba(242, 242, 240, 0.18);
-		background: rgba(0, 0, 0, 0.25);
-		color: var(--yb-offwhite);
+		font-size: 0.86rem;
+		letter-spacing: 0.02em;
+		padding: 0.9rem 1rem;
+		border: none;
+		border-right: 1px solid var(--yb-edge);
+		background: transparent;
+		color: var(--yb-muted);
 		cursor: pointer;
+		white-space: nowrap;
+	}
+	.plan-tab:last-child {
+		border-right: none;
 	}
 	.plan-tab.is-active {
-		border-color: rgba(200, 241, 53, 0.55);
-		background: rgba(200, 241, 53, 0.1);
+		background: rgba(200, 241, 53, 0.08);
 		color: var(--yb-lime);
+		box-shadow: inset 0 -2px 0 var(--yb-lime);
 	}
 	.plan-tab:focus-visible {
 		outline: 2px solid var(--yb-lime);
-		outline-offset: 2px;
+		outline-offset: -2px;
 	}
-	.plan-when {
-		margin: 0 0 0.75rem;
-		max-width: 42rem;
+	/* Dynamic panel HTML is injected client-side — must be :global or styles never attach. */
+	.plan-panel {
+		margin-top: 1.75rem;
 	}
-	.plan-totals {
+	.plan-panel :global(.plan-when) {
+		margin: 0 0 1.25rem;
+		max-width: 36rem;
+		font-size: 0.95rem;
+		line-height: 1.45;
+		color: var(--yb-muted);
+	}
+	.plan-panel :global(.plan-day-summary) {
+		display: grid;
+		gap: 1.25rem;
+		margin: 0 0 2rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 1px solid var(--yb-edge);
+		max-width: 40rem;
+	}
+	.plan-panel :global(.plan-cal) {
+		margin: 0;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.5rem 1rem;
-		margin: 0 0 1.25rem;
+		gap: 0.4rem 0.65rem;
 	}
-	.plan-cal {
+	.plan-panel :global(.plan-cal-num) {
 		font-family: var(--font-display);
-		font-size: clamp(1.6rem, 3.5vw, 2.1rem);
-		letter-spacing: 0.03em;
-		color: var(--yb-lime);
+		font-size: clamp(2.4rem, 7vw, 3.1rem);
+		letter-spacing: 0.02em;
+		color: var(--yb-offwhite);
+		line-height: 1;
 	}
-	.plan-pending {
-		margin: 0 0 1rem;
+	.plan-panel :global(.plan-cal-unit) {
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
 	}
-	.plan-meals {
+	.plan-panel :global(.plan-macro-grid) {
 		list-style: none;
 		padding: 0;
 		margin: 0;
 		display: grid;
-		gap: 1.15rem;
-		max-width: 44rem;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.85rem 1.25rem;
 	}
-	.plan-meal {
+	@media (min-width: 520px) {
+		.plan-panel :global(.plan-macro-grid) {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+	.plan-panel :global(.plan-macro-grid li) {
 		margin: 0;
-		padding: 0.9rem 0 0;
-		border-top: 1px solid rgba(242, 242, 240, 0.1);
+		padding: 0.55rem 0 0;
+		border-top: 2px solid rgba(242, 242, 240, 0.14);
 	}
-	.plan-meal.is-intra {
-		border-top-color: rgba(46, 230, 166, 0.35);
+	.plan-panel :global(.plan-macro-grid .macro-val) {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		letter-spacing: 0.02em;
+		color: var(--yb-offwhite);
 	}
-	.plan-meal-head {
+	.plan-panel :global(.plan-macro-grid .macro-lab) {
+		display: block;
+		margin-top: 0.15rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+	}
+	.plan-panel :global(.plan-meals) {
 		display: grid;
-		gap: 0.2rem;
+		gap: 0;
+		max-width: 40rem;
 	}
-	.plan-meal-head strong {
+	.plan-panel :global(.plan-meal) {
+		margin: 0;
+		padding: 1.5rem 0;
+		border-top: 1px solid var(--yb-edge);
+	}
+	.plan-panel :global(.plan-meal:first-child) {
+		border-top: none;
+		padding-top: 0;
+	}
+	.plan-panel :global(.plan-meal.is-intra) {
+		border-top-color: rgba(46, 230, 166, 0.28);
+	}
+	.plan-panel :global(.plan-meal-head) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.35rem 1rem;
+	}
+	.plan-panel :global(.plan-meal-name) {
+		margin: 0;
 		font-family: var(--font-display);
 		font-size: 1.05rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		color: var(--yb-lime);
+		color: var(--yb-offwhite);
+		font-weight: 400;
 	}
-	.plan-ings {
-		margin: 0.55rem 0 0;
-		padding-left: 1.1rem;
-		font-size: 0.95rem;
-		color: rgba(242, 242, 240, 0.9);
+	.plan-panel :global(.plan-meal-kcal) {
+		margin: 0;
+		font-size: 0.88rem;
+		color: var(--yb-muted);
 	}
-	.plan-ing-empty {
-		margin: 0.4rem 0 0;
+	.plan-panel :global(.plan-meal-macros) {
+		list-style: none;
+		padding: 0;
+		margin: 0.65rem 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.55rem 1.1rem;
+	}
+	.plan-panel :global(.plan-meal-macros li) {
+		margin: 0;
+		display: flex;
+		align-items: baseline;
+		gap: 0.35rem;
 		font-size: 0.9rem;
 	}
-	.plan-profile-line {
-		margin: 0.75rem 0 0;
+	.plan-panel :global(.plan-meal-macros .m-lab) {
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-steel);
+	}
+	.plan-panel :global(.plan-meal-macros .m-val) {
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.plan-panel :global(.plan-ings) {
+		margin: 1rem 0 0;
+		display: grid;
+		gap: 0.55rem;
+	}
+	.plan-panel :global(.plan-ing) {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.75rem 1rem;
+		align-items: baseline;
+		padding-top: 0.45rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.06);
+		font-size: 0.92rem;
+	}
+	.plan-panel :global(.plan-ing:first-child) {
+		border-top: none;
+		padding-top: 0;
+	}
+	.plan-panel :global(.plan-ing-name) {
+		color: rgba(242, 242, 240, 0.82);
+		line-height: 1.35;
+	}
+	.plan-panel :global(.plan-ing-name em) {
+		font-style: normal;
+		display: block;
+		margin-top: 0.15rem;
+		font-size: 0.82rem;
+		color: var(--yb-muted);
+	}
+	.plan-panel :global(.plan-ing-amt) {
 		font-family: var(--font-display);
 		letter-spacing: 0.03em;
-		color: var(--yb-teal);
-		font-size: 1.05rem;
-		max-width: 44rem;
+		color: var(--yb-lime);
+		white-space: nowrap;
+		font-size: 0.95rem;
 	}
 	.plan-shop-cta {
-		margin: 1.75rem 0 0;
+		margin: 2rem 0 0;
 	}
 	.plan-shop-cta .btn-secondary {
 		border: 2px solid rgba(242, 242, 240, 0.35);

@@ -120,28 +120,41 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 				const meals = plan.meals
 					.map(
 						(m) => `
-					<li>
-						<strong>${esc(m.name)}</strong>
-						<span class="muted"> — ${m.kcal} kcal · P ${m.proteinG} / C ${m.carbsG} / F ${m.fatG}</span>
+					<article class="pd-meal">
+						<header class="pd-meal-head">
+							<h4>${esc(m.name)}</h4>
+							<span class="muted">${m.kcal} kcal</span>
+						</header>
+						<ul class="pd-meal-macros">
+							<li><span class="m-lab">P</span> ${m.proteinG}g</li>
+							<li><span class="m-lab">C</span> ${m.carbsG}g</li>
+							<li><span class="m-lab">F</span> ${m.fatG}g</li>
+						</ul>
 						${
 							m.ingredients?.length
-								? `<ul class="ings">${m.ingredients
+								? `<div class="pd-ings">${m.ingredients
 										.map(
 											(i) =>
-												`<li>${esc(i.name)} — ${esc(i.amount)}${i.note ? ` <span class="muted">(${esc(i.note)})</span>` : ''}</li>`,
+												`<div class="pd-ing"><span>${esc(i.name)}${i.note ? ` <em class="muted">${esc(i.note)}</em>` : ''}</span><span class="pd-ing-amt">${esc(i.amount)}</span></div>`,
 										)
-										.join('')}</ul>`
+										.join('')}</div>`
 								: ''
 						}
-					</li>`,
+					</article>`,
 					)
 					.join('');
 				return `
 				<section class="pd-nutri">
-					<h3>${esc(plan.title)} · ${plan.calories} kcal</h3>
+					<h3>${esc(plan.title)}</h3>
 					<p class="muted">${esc(plan.when)}</p>
-					<p>P ${plan.proteinG}g (${plan.proteinPct}%) · C ${plan.carbsG}g (${plan.carbsPct}%) · F ${plan.fatG}g (${plan.fatPct}%) · Fibre ${plan.fibreG}g</p>
-					<ul class="meals">${meals}</ul>
+					<p class="pd-day-cal"><span class="pd-cal-num">${plan.calories}</span> <span class="muted">kcal</span></p>
+					<ul class="pd-macro-grid">
+						<li><span class="val">${plan.proteinG}g</span><span class="lab">Protein · ${plan.proteinPct}%</span></li>
+						<li><span class="val">${plan.carbsG}g</span><span class="lab">Carbs · ${plan.carbsPct}%</span></li>
+						<li><span class="val">${plan.fatG}g</span><span class="lab">Fat · ${plan.fatPct}%</span></li>
+						<li><span class="val">${plan.fibreG}g</span><span class="lab">Fibre</span></li>
+					</ul>
+					<div class="pd-meals">${meals}</div>
 				</section>`;
 			})
 			.join('');
@@ -306,10 +319,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 		letter-spacing: 0.04em;
 	}
 	.pd-hero .tag {
-		font-family: var(--font-display);
-		color: var(--yb-lime);
-		font-size: 1.15rem;
-		letter-spacing: 0.03em;
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		color: rgba(242, 242, 240, 0.9);
 	}
 	.pd-section {
 		margin: 2.25rem 0;
@@ -377,12 +391,125 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 	.muted {
 		color: var(--yb-muted);
 	}
-	.meals,
-	.ings {
-		padding-left: 1.1rem;
+	.pd-day-cal {
+		margin: 0.75rem 0 1rem;
+		display: flex;
+		align-items: baseline;
+		gap: 0.45rem;
 	}
-	.meals > li {
-		margin: 0.65rem 0;
+	.pd-cal-num {
+		font-family: var(--font-display);
+		font-size: clamp(1.8rem, 4vw, 2.4rem);
+		letter-spacing: 0.02em;
+		color: var(--yb-offwhite);
+		line-height: 1;
+	}
+	.pd-macro-grid {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 1.5rem;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.75rem 1.1rem;
+		max-width: 36rem;
+	}
+	@media (min-width: 520px) {
+		.pd-macro-grid {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+	.pd-macro-grid li {
+		margin: 0;
+		padding: 0.5rem 0 0;
+		border-top: 2px solid rgba(242, 242, 240, 0.14);
+	}
+	.pd-macro-grid .val {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+		letter-spacing: 0.02em;
+	}
+	.pd-macro-grid .lab {
+		display: block;
+		margin-top: 0.1rem;
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+	}
+	.pd-meals {
+		display: grid;
+		gap: 0;
+		max-width: 40rem;
+	}
+	.pd-meal {
+		margin: 0;
+		padding: 1.15rem 0;
+		border-top: 1px solid var(--yb-edge);
+		break-inside: avoid;
+	}
+	.pd-meal-head {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 0.35rem 1rem;
+	}
+	.pd-meal-head h4 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 1rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		font-weight: 400;
+		color: var(--yb-offwhite);
+	}
+	.pd-meal-macros {
+		list-style: none;
+		padding: 0;
+		margin: 0.5rem 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem 1rem;
+		font-size: 0.9rem;
+	}
+	.pd-meal-macros .m-lab {
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--yb-steel);
+	}
+	.pd-ings {
+		margin: 0.85rem 0 0;
+		display: grid;
+		gap: 0.45rem;
+	}
+	.pd-ing {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.75rem 1rem;
+		align-items: baseline;
+		padding-top: 0.4rem;
+		border-top: 1px solid rgba(242, 242, 240, 0.06);
+		font-size: 0.9rem;
+	}
+	.pd-ing:first-child {
+		border-top: none;
+		padding-top: 0;
+	}
+	.pd-ing em {
+		font-style: normal;
+		display: block;
+		margin-top: 0.1rem;
+		font-size: 0.8rem;
+	}
+	.pd-ing-amt {
+		font-family: var(--font-display);
+		letter-spacing: 0.03em;
+		color: var(--yb-lime);
+		white-space: nowrap;
 	}
 	.pd-foot {
 		margin-top: 2.5rem;
