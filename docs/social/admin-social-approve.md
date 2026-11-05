@@ -1,10 +1,12 @@
 # Instagram approve desk — `/admin/social`
 
-Private founder UI on **yehbro.com** for reviewing Holyfield-style singles + carousels, approving/rejecting, and triggering post-to-Instagram — without reviewing only in chat.
+Private founder UI on **yehbro.com** for reviewing Holyfield-style singles + carousels, approving/rejecting, and posting to Instagram — without reviewing only in chat.
 
 **URL:** `https://yehbro.com/admin/social`  
 **Account:** `@theyehbro`  
 **Not** linked in public nav · `noindex` · `robots.txt` disallows `/admin/`
+
+**Founder rule:** **Approve = live on IG for that one item only.** There is **no Approve all** / bulk post from the desk.
 
 ---
 
@@ -19,9 +21,9 @@ Private founder UI on **yehbro.com** for reviewing Holyfield-style singles + car
    - **KV** namespace (e.g. `yehbro-ig-queue`) → binding name **`IG_QUEUE`**
    - **R2** bucket (e.g. `yehbro-ig-media`) → binding name **`IG_MEDIA`**
    - Update `wrangler.toml` placeholder IDs after creation (or bind in the dashboard)
-4. Optional: set secret **`ZERNIO_API_KEY`** (same key the agent uses) so **Post approved** can publish from the desk. If unset, the desk still marks the batch synced and tells you to ask the agent to post.
+4. Set secret **`ZERNIO_API_KEY`** (same key the agent uses) so **Approve & post** publishes from the desk to `@theyehbro`. If unset, Approve still marks `approved` and tells you to ask the agent to post.
 5. Redeploy after secrets/bindings change (`npm run deploy` / Workers Builds).
-6. Open `https://yehbro.com/admin/social`, enter the password, pick a day, approve/reject, then **Post approved**.
+6. Open `https://yehbro.com/admin/social`, enter the password, pick a day, then **Approve & post** on **one** item at a time.
 
 If `ADMIN_SOCIAL_PASSWORD` is **unset**, the page shows setup instructions only — it does **not** leave the desk open.
 
@@ -34,9 +36,12 @@ If `ADMIN_SOCIAL_PASSWORD` is **unset**, the page shows setup instructions only 
 | 1 | IG agent generates a day folder (`30` singles + `5` carousels) under the Project store queue |
 | 2 | Agent (or you) runs `scripts/sync-ig-queue-to-cf.py --day-dir …` to push PNGs → R2 and manifest JSON → KV |
 | 3 | Open `/admin/social`, log in, select the day |
-| 4 | Review singles (grid) + carousels (slide strip); **Approve** / **Reject** |
-| 5 | Optional: **Approve all pending** / **Reject selected** |
-| 6 | **Post approved** → Zernio publish when `ZERNIO_API_KEY` is on Pages; otherwise “synced — ask agent to post” |
+| 4 | Review singles (grid) + carousels (slide strip) |
+| 5 | **Approve & post** on **one** item → status `approved`, then Zernio publish → `posted` on success |
+| 6 | **Reject** on one item → `rejected` only (never posts) |
+| 7 | On publish failure → `failed` with UI error; use **Retry post** on that same item |
+
+There is **no** “Approve all pending”, “Post approved”, or other one-click multi-post control. Double-submit is disabled while a post is in flight.
 
 Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
 
@@ -47,7 +52,7 @@ Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
 | Name | Kind | Required | Purpose |
 |------|------|----------|---------|
 | `ADMIN_SOCIAL_PASSWORD` | Worker **secret** | Yes | Login gate (HttpOnly session cookie) |
-| `ZERNIO_API_KEY` | Worker **secret** | No | Post-from-admin via Zernio to `@theyehbro` |
+| `ZERNIO_API_KEY` | Worker **secret** | Yes (for live IG) | Approve & post via Zernio to `@theyehbro` |
 | `ADMIN_SOCIAL_FIXTURE` | Env var `"1"` | No | Force fixture sample data (opt-in only) |
 | `IG_QUEUE` | KV binding | Yes (prod) | Per-day manifest/status JSON |
 | `IG_MEDIA` | R2 binding | Yes (prod) | PNG bytes (never in `public/`) |
@@ -55,6 +60,8 @@ Statuses: `pending` · `approved` · `rejected` · `posted` · `failed`
 **Bindings must be declared in `wrangler.toml`** (`[[kv_namespaces]]` / `[[r2_buckets]]`). If they are missing from the Worker env, the desk shows a bindings-required error — it does **not** silently fall back to the 7-item fixture sample. Fixture is only via `?fixture=1` or `ADMIN_SOCIAL_FIXTURE=1`.
 
 Media is served only through the authenticated proxy: `/admin/social/media/{date}/{file}` (session cookie; UI fetches with credentials → blob preview).
+
+Never log secrets.
 
 ---
 

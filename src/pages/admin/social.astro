@@ -84,11 +84,6 @@ const fixtureBoot = {
 						<select id="day-select"></select>
 					</label>
 					<div class="desk-actions">
-						<button type="button" class="btn" id="btn-approve-all">Approve all pending</button>
-						<button type="button" class="btn btn-danger" id="btn-reject-selected">
-							Reject selected
-						</button>
-						<button type="button" class="btn btn-primary" id="btn-post">Post approved</button>
 						<button type="button" class="btn btn-ghost" id="btn-logout">Log out</button>
 					</div>
 				</div>
@@ -123,6 +118,8 @@ const fixtureBoot = {
 				files: string[];
 				slides?: string[];
 				mediaUrls: string[];
+				failReason?: string;
+				igUrl?: string;
 			};
 			type Day = {
 				date: string;
@@ -156,9 +153,10 @@ const fixtureBoot = {
 			let currentDate = boot.date;
 			let day: Day | null = forceFixture ? structuredClone(boot.day) : null;
 			let days: DaySummary[] = forceFixture ? structuredClone(boot.days) : [];
-			const selected = new Set<string>();
 			/** blob: object URLs created for authenticated media — revoke on re-render */
 			const blobUrls = new Set<string>();
+			/** Blocks double-submit while any approve/post is in flight. */
+			let busy = false;
 
 			const els = {
 				app: document.getElementById('app')!,
@@ -176,7 +174,32 @@ const fixtureBoot = {
 				carouselsEmpty: document.getElementById('carousels-empty')!,
 				banner: document.getElementById('desk-banner')!,
 				status: document.getElementById('desk-status')!,
+				btnLogout: document.getElementById('btn-logout') as HTMLButtonElement,
 			};
+
+			function setBusy(next: boolean) {
+				busy = next;
+				els.app.dataset.busy = next ? '1' : '0';
+				els.daySelect.disabled = next;
+				els.desk.querySelectorAll('button[data-action]').forEach((node) => {
+					const btn = node as HTMLButtonElement;
+					if (next) {
+						btn.disabled = true;
+						return;
+					}
+					const id = btn.dataset.id;
+					const item = day?.items.find((i) => i.id === id);
+					if (!item) {
+						btn.disabled = true;
+						return;
+					}
+					if (btn.dataset.action === 'approve') {
+						btn.disabled = item.status === 'posted' || item.status === 'rejected';
+					} else if (btn.dataset.action === 'reject') {
+						btn.disabled = item.status === 'posted' || item.status === 'rejected';
+					}
+				});
+			}
 
 			function show(view: 'setup' | 'login' | 'desk') {
 				els.setup.hidden = view !== 'setup';
@@ -315,7 +338,7 @@ const fixtureBoot = {
 				if (mode === 'fixture') {
 					els.topMeta.textContent = `FIXTURE · sample · ${counts.total} items · not live KV`;
 				} else {
-					els.topMeta.textContent = `LIVE · ${counts.pending} pending · ${counts.approved} approved · ${counts.posted} posted · ${counts.total} items`;
+					els.topMeta.textContent = `LIVE · ${counts.pending} pending · ${counts.approved} approved · ${counts.failed} failed · ${counts.posted} posted · ${counts.total} items`;
 				}
 
 				els.singles.innerHTML = '';
@@ -330,9 +353,11 @@ const fixtureBoot = {
 				}
 				els.carouselsEmpty.hidden = carousels.length > 0;
 
-				setStatus(
-					`${mode === 'fixture' ? 'FIXTURE · ' : 'LIVE · '}${day.date} · ${day.items.length} items · updated ${day.updatedAt}`,
-				);
+				if (!busy) {
+					setStatus(
+						`${mode === 'fixture' ? 'FIXTURE · ' : 'LIVE · '}${day.date} · ${day.items.length} items · updated ${day.updatedAt}`,
+					);
+				}
 			}
 
 			function renderSingle(item: QueueItem) {
@@ -340,9 +365,9 @@ const fixtureBoot = {
 				card.className = `item ${statusClass(item.status)}`;
 				card.dataset.id = item.id;
 
-				const check = document.createElement('label');
-				check.className = 'check';
-				check.innerHTML = `<input type="checkbox" data-select="${item.id}" ${selected.has(item.id) ? 'checked' : ''}/><span>${item.id}</span>`;
+				const title = document.createElement('div');
+				title.className = 'item-id';
+				title.textContent = item.id;
 
 				const img = document.createElement('img');
 				mountAuthImg(img, item.mediaUrls[0] || '', `Single ${item.id}`);
@@ -355,14 +380,15 @@ const fixtureBoot = {
 				cap.className = 'caption';
 				cap.textContent = item.caption;
 
-				const actions = document.createElement('div');
-				actions.className = 'item-actions';
-				actions.append(
-					actionBtn('Approve', 'approve', item.id, item.status === 'approved' || item.status === 'posted'),
-					actionBtn('Reject', 'reject', item.id, item.status === 'rejected' || item.status === 'posted'),
-				);
+				if (item.failReason) {
+					const err = document.createElement('p');
+					err.className = 'fail-reason';
+					err.textContent = item.failReason;
+					card.append(title, img, meta, cap, err, itemActions(item));
+					return card;
+				}
 
-				card.append(check, img, meta, cap, actions);
+				card.append(title, img, meta, cap, itemActions(item));
 				return card;
 			}
 
@@ -373,7 +399,7 @@ const fixtureBoot = {
 
 				const head = document.createElement('div');
 				head.className = 'carousel-head';
-				head.innerHTML = `<label class="check"><input type="checkbox" data-select="${item.id}" ${selected.has(item.id) ? 'checked' : ''}/><span>${item.id}</span></label><span class="pill ${statusClass(item.status)}">${item.status}</span>`;
+				head.innerHTML = `<span class="item-id">${item.id}</span><span class="pill ${statusClass(item.status)}">${item.status}</span>`;
 
 				const viewer = document.createElement('div');
 				viewer.className = 'carousel-viewer';
@@ -534,15 +560,37 @@ const fixtureBoot = {
 				cap.className = 'caption';
 				cap.textContent = item.caption;
 
+				if (item.failReason) {
+					const err = document.createElement('p');
+					err.className = 'fail-reason';
+					err.textContent = item.failReason;
+					card.append(head, frame, cap, err, itemActions(item));
+					return card;
+				}
+
+				card.append(head, frame, cap, itemActions(item));
+				return card;
+			}
+
+			function itemActions(item: QueueItem) {
 				const actions = document.createElement('div');
 				actions.className = 'item-actions';
+				const canApprove =
+					item.status === 'pending' || item.status === 'failed' || item.status === 'approved';
+				const approveLabel =
+					item.status === 'failed' || item.status === 'approved'
+						? 'Retry post'
+						: 'Approve & post';
 				actions.append(
-					actionBtn('Approve', 'approve', item.id, item.status === 'approved' || item.status === 'posted'),
-					actionBtn('Reject', 'reject', item.id, item.status === 'rejected' || item.status === 'posted'),
+					actionBtn(approveLabel, 'approve', item.id, busy || !canApprove || item.status === 'posted'),
+					actionBtn(
+						'Reject',
+						'reject',
+						item.id,
+						busy || item.status === 'rejected' || item.status === 'posted',
+					),
 				);
-
-				card.append(head, frame, cap, actions);
-				return card;
+				return actions;
 			}
 
 			function actionBtn(label: string, action: string, id: string, disabled: boolean) {
@@ -560,12 +608,69 @@ const fixtureBoot = {
 				return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 			}
 
-			async function setStatusItem(id: string, status: ItemStatus) {
+			async function approveAndPostItem(id: string): Promise<boolean> {
+				if (!day) return false;
+				if (mode === 'fixture') {
+					const item = day.items.find((i) => i.id === id);
+					if (!item || item.status === 'posted' || item.status === 'rejected') return false;
+					item.status = 'approved';
+					delete item.failReason;
+					day.updatedAt = new Date().toISOString();
+					days = [summarize(day)];
+					render();
+					setBanner(
+						`Approved ${id} — fixture mode (no Zernio). Live desk posts to @theyehbro on Approve.`,
+						'fixture',
+					);
+					return true;
+				}
+				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}`, {
+					method: 'PATCH',
+					body: JSON.stringify({ id, status: 'approved' }),
+				});
+				if (data?.bindingsRequired) {
+					showBindingsRequired(data.message);
+					return false;
+				}
+				if (!res.ok) {
+					setBanner(data?.error || data?.message || `Approve & post failed for ${id}`, 'warn');
+					if (data?.day) {
+						day = data.day;
+						render();
+					}
+					return false;
+				}
+				if (data.day) day = data.day;
+				else await loadDay(currentDate);
+				await loadDays();
+				render();
+				if (data.publishFailed || (data.reason && !data.published)) {
+					setBanner(data.message || data.reason || `Publish failed for ${id}`, 'warn');
+					return false;
+				}
+				if (data.mode === 'status') {
+					setBanner(data.message || 'No change', 'info');
+					return false;
+				}
+				if (data.mode === 'agent') {
+					setBanner(data.message || `Approved ${id} — ask agent to post`, 'ok');
+					return true;
+				}
+				if (data.published) {
+					setBanner(`Posted ${id} to @theyehbro.`, 'ok');
+					return true;
+				}
+				setBanner(data.message || `Approve & post did not publish ${id}`, 'warn');
+				return false;
+			}
+
+			async function rejectItem(id: string) {
 				if (!day) return;
 				if (mode === 'fixture') {
 					const item = day.items.find((i) => i.id === id);
 					if (!item || item.status === 'posted') return;
-					item.status = status;
+					item.status = 'rejected';
+					delete item.failReason;
 					day.updatedAt = new Date().toISOString();
 					days = [summarize(day)];
 					render();
@@ -573,83 +678,22 @@ const fixtureBoot = {
 				}
 				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}`, {
 					method: 'PATCH',
-					body: JSON.stringify({ id, status }),
+					body: JSON.stringify({ id, status: 'rejected' }),
 				});
 				if (data?.bindingsRequired) {
 					showBindingsRequired(data.message);
 					return;
 				}
 				if (!res.ok) {
-					setBanner(data?.error || 'Status update failed', 'warn');
+					setBanner(data?.error || 'Reject failed', 'warn');
 					return;
-				}
-				await loadDay(currentDate);
-			}
-
-			async function bulk(action: 'approve_pending' | 'reject_selected') {
-				if (!day) return;
-				if (mode === 'fixture') {
-					if (action === 'approve_pending') {
-						for (const item of day.items) if (item.status === 'pending') item.status = 'approved';
-					} else {
-						for (const item of day.items) {
-							if (selected.has(item.id) && item.status !== 'posted') item.status = 'rejected';
-						}
-					}
-					day.updatedAt = new Date().toISOString();
-					days = [summarize(day)];
-					render();
-					return;
-				}
-				const body: any = { action };
-				if (action === 'reject_selected') body.ids = [...selected];
-				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}/bulk`, {
-					method: 'POST',
-					body: JSON.stringify(body),
-				});
-				if (data?.bindingsRequired) {
-					showBindingsRequired(data.message);
-					return;
-				}
-				if (!res.ok) {
-					setBanner(data?.error || 'Bulk update failed', 'warn');
-					return;
-				}
-				day = data.day;
-				await loadDays();
-				render();
-			}
-
-			async function postApproved() {
-				if (!day) return;
-				if (mode === 'fixture') {
-					setBanner(
-						'FIXTURE only — no Zernio publish. Open /admin/social (no query) for the live queue.',
-						'fixture',
-					);
-					return;
-				}
-				setStatus('Posting approved…');
-				const { res, data } = await api(`/days/${encodeURIComponent(currentDate)}/post`, {
-					method: 'POST',
-				});
-				if (data?.bindingsRequired) {
-					showBindingsRequired(data.message);
-					return;
-				}
-				if (!res.ok) {
-					setBanner(data?.error || 'Post failed', 'warn');
-					return;
-				}
-				if (data.mode === 'agent') {
-					setBanner(data.message || 'Synced — ask agent to post', 'ok');
-				} else {
-					setBanner(`Posted ${data.posted} item(s) via Zernio.`, 'ok');
 				}
 				if (data.day) day = data.day;
+				else await loadDay(currentDate);
 				await loadDays();
 				render();
 			}
+
 
 			async function loadDays() {
 				if (mode === 'fixture') {
@@ -671,7 +715,6 @@ const fixtureBoot = {
 
 			async function loadDay(date: string) {
 				currentDate = date;
-				selected.clear();
 				if (mode === 'fixture') {
 					if (!day || day.date !== date) day = structuredClone(boot.day);
 					day.date = date;
@@ -701,8 +744,8 @@ const fixtureBoot = {
 				}
 				setBanner(
 					zernio
-						? 'LIVE queue · Zernio key present — Post approved publishes to @theyehbro.'
-						: 'LIVE queue · No ZERNIO_API_KEY — Post approved marks sync and asks the agent to post.',
+						? 'LIVE queue · Approve & post publishes that one item to @theyehbro (no bulk approve).'
+						: 'LIVE queue · No ZERNIO_API_KEY — Approve marks that one item approved and asks the agent to post.',
 					'info',
 				);
 			}
@@ -814,20 +857,8 @@ const fixtureBoot = {
 				void loadDay(els.daySelect.value);
 			});
 
-			document.getElementById('btn-approve-all')!.addEventListener('click', () => {
-				void bulk('approve_pending');
-			});
-			document.getElementById('btn-reject-selected')!.addEventListener('click', () => {
-				if (!selected.size) {
-					setBanner('Select items to reject.', 'warn');
-					return;
-				}
-				void bulk('reject_selected');
-			});
-			document.getElementById('btn-post')!.addEventListener('click', () => {
-				void postApproved();
-			});
-			document.getElementById('btn-logout')!.addEventListener('click', async () => {
+			els.btnLogout.addEventListener('click', async () => {
+				if (busy) return;
 				if (mode === 'fixture' && forceFixture) {
 					show('login');
 					setBanner(null);
@@ -839,20 +870,32 @@ const fixtureBoot = {
 			});
 
 			els.desk.addEventListener('click', (e) => {
+				if (busy) return;
 				const t = e.target as HTMLElement;
 				const btn = t.closest('button[data-action]') as HTMLButtonElement | null;
-				if (btn?.dataset.action && btn.dataset.id) {
-					const status = btn.dataset.action === 'approve' ? 'approved' : 'rejected';
-					void setStatusItem(btn.dataset.id, status as ItemStatus);
+				if (!btn?.dataset.action || !btn.dataset.id) return;
+				if (btn.disabled) return;
+				const id = btn.dataset.id;
+				if (btn.dataset.action === 'approve') {
+					void (async () => {
+						setBusy(true);
+						try {
+							await approveAndPostItem(id);
+						} finally {
+							setBusy(false);
+						}
+					})();
+					return;
 				}
-			});
-
-			els.desk.addEventListener('change', (e) => {
-				const t = e.target as HTMLInputElement;
-				if (t.matches('input[data-select]')) {
-					const id = t.getAttribute('data-select')!;
-					if (t.checked) selected.add(id);
-					else selected.delete(id);
+				if (btn.dataset.action === 'reject') {
+					void (async () => {
+						setBusy(true);
+						try {
+							await rejectItem(id);
+						} finally {
+							setBusy(false);
+						}
+					})();
 				}
 			});
 
@@ -1103,19 +1146,11 @@ const fixtureBoot = {
 				background: var(--yb-surface);
 				font-size: 0.85rem;
 			}
-			.check {
-				display: inline-flex;
-				align-items: center;
-				gap: 0.45rem;
+			.item-id {
 				font-family: var(--font-display);
 				letter-spacing: 0.04em;
 				text-transform: uppercase;
 				font-size: 0.95rem;
-			}
-			.check input {
-				accent-color: var(--yb-lime);
-				width: 1.05rem;
-				height: 1.05rem;
 			}
 			.meta {
 				display: flex;
@@ -1146,6 +1181,10 @@ const fixtureBoot = {
 				color: var(--yb-lime);
 				border-color: rgba(200, 241, 53, 0.45);
 			}
+			.pill.st-failed {
+				color: #ffb0a6;
+				border-color: rgba(232, 93, 76, 0.55);
+			}
 			.angle {
 				font-size: 0.8rem;
 				color: var(--yb-muted);
@@ -1156,10 +1195,24 @@ const fixtureBoot = {
 				color: var(--yb-offwhite);
 				margin: 0;
 			}
+			.fail-reason {
+				margin: 0;
+				font-size: 0.82rem;
+				line-height: 1.4;
+				color: #ffb0a6;
+			}
 			.item-actions {
 				display: flex;
+				flex-wrap: wrap;
 				gap: 0.4rem;
 				margin-top: auto;
+			}
+			.item-actions .btn {
+				min-height: 2.6rem;
+				flex: 1 1 auto;
+			}
+			.admin-shell[data-busy='1'] .item-actions .btn {
+				pointer-events: none;
 			}
 			.carousels {
 				display: flex;
@@ -1251,6 +1304,10 @@ const fixtureBoot = {
 				box-shadow: inset 3px 0 0 var(--yb-teal);
 				padding-left: 0.55rem;
 			}
+			.item.st-failed {
+				box-shadow: inset 3px 0 0 var(--yb-danger);
+				padding-left: 0.55rem;
+			}
 			.item.st-rejected {
 				opacity: 0.72;
 				box-shadow: inset 3px 0 0 var(--yb-danger);
@@ -1271,11 +1328,19 @@ const fixtureBoot = {
 				border: 0;
 			}
 			@media (max-width: 720px) {
+				.desk-bar {
+					flex-direction: column;
+					align-items: stretch;
+				}
 				.desk-actions {
 					width: 100%;
 				}
 				.desk-actions .btn {
-					flex: 1 1 calc(50% - 0.45rem);
+					flex: 1 1 100%;
+					min-height: 2.85rem;
+				}
+				.desk-actions .btn-primary {
+					order: -1;
 				}
 				.day-picker select {
 					min-width: 0;

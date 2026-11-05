@@ -9,6 +9,7 @@ import {
 	type QueueItem,
 } from './types';
 import { fixtureMode, hasQueueBindings } from './auth';
+import { hasZernio, publishApprovedItem } from './zernio';
 
 /** In-memory fixture mutations for the life of an isolate (local demo). */
 const fixtureState = new Map<string, DayManifest>();
@@ -88,32 +89,98 @@ export async function setItemStatus(
 	if (!day) return null;
 	const item = day.items.find((i) => i.id === id);
 	if (!item) return null;
+	if (item.status === 'posted') return item;
 	item.status = status;
 	if (status !== 'failed') delete item.failReason;
 	await writeDay(env, day);
 	return item;
 }
 
-export async function bulkUpdate(
+export type ApprovePublishResult = {
+	item: QueueItem;
+	day: DayManifest;
+	published: boolean;
+	mode: 'zernio' | 'agent' | 'reject' | 'status';
+	message?: string;
+	reason?: string;
+};
+
+/**
+ * Approve one item then publish immediately via Zernio when the key is present.
+ * Reject never publishes. On publish failure the item becomes `failed` (retryable).
+ */
+export async function approveAndPublishItem(
 	env: Env,
 	date: string,
-	action: 'approve_pending' | 'reject_selected',
-	ids?: string[],
-): Promise<DayManifest | null> {
+	id: string,
+): Promise<ApprovePublishResult | null> {
 	const day = await readDay(env, date);
 	if (!day) return null;
-	if (action === 'approve_pending') {
-		for (const item of day.items) {
-			if (item.status === 'pending') item.status = 'approved';
-		}
-	} else if (action === 'reject_selected') {
-		const set = new Set(ids ?? []);
-		for (const item of day.items) {
-			if (set.has(item.id) && item.status !== 'posted') item.status = 'rejected';
-		}
+	const item = day.items.find((i) => i.id === id);
+	if (!item) return null;
+	if (item.status === 'posted') {
+		return { item, day, published: false, mode: 'status', message: 'Already posted.' };
 	}
+	if (item.status === 'rejected') {
+		return {
+			item,
+			day,
+			published: false,
+			mode: 'status',
+			message: 'Rejected items are not posted. Clear reject first if needed.',
+		};
+	}
+
+	item.status = 'approved';
+	delete item.failReason;
+
+	if (fixtureMode(env) || !hasZernio(env)) {
+		const stamp = new Date().toISOString();
+		day.publishLog = day.publishLog || [];
+		day.publishLog.push(
+			`${stamp} — ${item.id} approved (agent post; ZERNIO_API_KEY unset or fixture).`,
+		);
+		await writeDay(env, day);
+		return {
+			item,
+			day,
+			published: false,
+			mode: 'agent',
+			message:
+				'Approved — ask agent to post (ZERNIO_API_KEY not available on Worker, or fixture mode).',
+		};
+	}
+
+	const result = await publishApprovedItem(env, date, item);
+	if (result.ok) {
+		item.status = 'posted';
+		item.postedAt = new Date().toISOString();
+		item.zernioPostId = result.zernioPostId;
+		item.igUrl = result.igUrl;
+		delete item.failReason;
+		day.publishLog = day.publishLog || [];
+		day.publishLog.push(
+			`${item.postedAt} — ${item.id} approved & posted via admin (zernio ${result.zernioPostId || 'n/a'})`,
+		);
+		await writeDay(env, day);
+		return { item, day, published: true, mode: 'zernio' };
+	}
+
+	item.status = 'failed';
+	item.failReason = result.reason;
+	day.publishLog = day.publishLog || [];
+	day.publishLog.push(
+		`${new Date().toISOString()} — ${item.id} approve&post failed: ${result.reason}`,
+	);
 	await writeDay(env, day);
-	return day;
+	return {
+		item,
+		day,
+		published: false,
+		mode: 'zernio',
+		reason: result.reason,
+		message: `Approved but Instagram publish failed: ${result.reason}`,
+	};
 }
 
 export function itemMediaUrls(date: string, item: QueueItem): string[] {

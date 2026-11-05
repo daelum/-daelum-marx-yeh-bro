@@ -7,7 +7,12 @@ import {
 	setupRequired,
 	unauthorized,
 } from '../../../_lib/responses';
-import { enrichDay, readDay, setItemStatus } from '../../../_lib/store';
+import {
+	approveAndPublishItem,
+	enrichDay,
+	readDay,
+	setItemStatus,
+} from '../../../_lib/store';
 import { DAY_KEY_RE, type Env, type ItemStatus } from '../../../_lib/types';
 
 const STATUSES = new Set<ItemStatus>(['pending', 'approved', 'rejected', 'posted', 'failed']);
@@ -51,7 +56,32 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
 	const status = body.status as ItemStatus;
 	if (!id || !STATUSES.has(status)) return badRequest('id and valid status required');
 
+	// Approve → mark approved then publish immediately via Zernio (when key present).
+	if (status === 'approved') {
+		const result = await approveAndPublishItem(env, date, id);
+		if (!result) return notFound('Item not found');
+		return json({
+			ok: result.published || result.mode === 'agent',
+			published: result.published,
+			mode: result.mode,
+			message: result.message,
+			reason: result.reason,
+			item: result.item,
+			day: enrichDay(result.day),
+			// Soft-fail publish: HTTP 200 with published:false so UI can show retry.
+			publishFailed: Boolean(result.reason && !result.published && result.mode === 'zernio'),
+		});
+	}
+
+	// Reject (and other status writes) never publish.
 	const item = await setItemStatus(env, date, id, status);
 	if (!item) return notFound('Item not found');
-	return json({ ok: true, item });
+	const day = await readDay(env, date);
+	return json({
+		ok: true,
+		published: false,
+		mode: 'reject',
+		item,
+		day: day ? enrichDay(day) : undefined,
+	});
 };
