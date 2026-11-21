@@ -2,6 +2,11 @@
 import BrandLogo from './BrandLogo.astro';
 import { NAV_PILLARS } from '../data/pillars';
 
+interface Props {
+	funnel?: boolean;
+}
+
+const { funnel = false } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
@@ -17,18 +22,30 @@ const year = new Date().getFullYear();
 			{' · '}
 			<a href="/privacy">Privacy</a>
 		</p>
-		<nav class="footer-nav" aria-label="Footer">
-			{NAV_PILLARS.map((item) => (
-				<a href={item.href}>{item.label}</a>
-			))}
-			<a href="/start-here">Yeh Bro System</a>
-			<a href="/food-bro">Food Bro</a>
-			<a href="/blog">Guides</a>
-			<a href="/about">About</a>
-			<a href="/contact">Contact</a>
-			<a href="/disclosure">Disclosure</a>
-			<a href="/privacy">Privacy</a>
-		</nav>
+		{
+			funnel ? (
+				<nav class="footer-nav" aria-label="Footer">
+					<a href="#whats-inside">What’s in the PDF</a>
+					<a href="#intake">Your stats</a>
+					<a href="/disclosure">Disclosure</a>
+					<a href="/privacy">Privacy</a>
+					<a href="/contact">Contact</a>
+				</nav>
+			) : (
+				<nav class="footer-nav" aria-label="Footer">
+					{NAV_PILLARS.map((item) => (
+						<a href={item.href}>{item.label}</a>
+					))}
+					<a href="/start-here">Yeh Bro System</a>
+					<a href="/food-bro">Food Bro</a>
+					<a href="/blog">Guides</a>
+					<a href="/about">About</a>
+					<a href="/contact">Contact</a>
+					<a href="/disclosure">Disclosure</a>
+					<a href="/privacy">Privacy</a>
+				</nav>
+			)
+		}
 		<p class="footer-meta muted">
 			© {year} Yeh Bro. Some links may earn a commission. As an Amazon Associate we earn from
 			qualifying purchases.

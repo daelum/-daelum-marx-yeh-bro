@@ -1,8 +1,8 @@
 export const SITE_TITLE = 'Yeh Bro';
 /** Unique homepage <title> (includes brand). */
-export const SITE_TITLE_HOME = 'Yeh Bro — Train hard. Eat big. Live unapologetically.';
+export const SITE_TITLE_HOME = 'Yeh Bro — Personalised training + nutrition PDF · $4.99';
 export const SITE_DESCRIPTION =
-	'Yeh Bro is a fitness lifestyle brand for people who take training seriously but don’t take themselves too seriously. Training, nutrition, recovery, culture, and gear — free Yeh Bro System + Food Bro.';
+	'Get a personalised Yeh Bro training + nutrition PDF built from your stats — AUD $4.99. Coach-grade plan, not a generic download.';
 export const SITE_TAGLINE = 'TRAIN HARD. EAT BIG. LIVE UNAPOLOGETICALLY.';
-export const SITE_EYEBROW = 'THE FITNESS LIFESTYLE.';
+export const SITE_EYEBROW = 'PERSONALISED PLAN · AUD $4.99';
 export const SITE_URL = 'https://yehbro.com';

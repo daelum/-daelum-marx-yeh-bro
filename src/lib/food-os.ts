@@ -231,6 +231,11 @@ export interface CoachIngredient {
 	amount: string;
 	/** Shopping / brand note (Coles → WW, etc.). Never invent SKUs. */
 	note?: string;
+	/** Optional line macros — when set (or after reconcile), must sum to the meal. */
+	kcal?: number;
+	proteinG?: number;
+	carbsG?: number;
+	fatG?: number;
 }
 
 export interface CoachMealSlot {
@@ -365,7 +370,7 @@ const INTRA_WORKOUT: CoachMealSlot = {
 };
 
 /**
- * Recommended Food Bro day templates from founder coach screenshots.
+ * Recommended coach day templates from founder screenshots.
  * Scale via calculator + judgment — totals are for the example profile above.
  */
 export const COACH_DAY_PLANS: CoachDayPlan[] = [
@@ -773,9 +778,272 @@ export function scaleCoachDayPlans(
 
 	const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const { profileLine, profileNote } = coachProfileCopy(result, factors, profile);
-	const lede = `Day structures from the coach templates (baseline ${age} / ${weightKg} kg / ${heightCm} cm). Your calculator sets the kcal and portions — pick a day type below.`;
+	const lede = `Day structures from the coach templates (baseline ${age} / ${weightKg} kg / ${heightCm} cm). Portions scale to your calorie target — training, rest, and diet-break days below.`;
 
-	return { plans, factors, profileLine, profileNote, lede };
+	const reconciled = plans.map((p) => reconcileDayPlan(p));
+	return { plans: reconciled, factors, profileLine, profileNote, lede };
+}
+
+/** Weight heuristic for distributing meal macros across ingredient lines (not a lab assay). */
+export function estimateIngredientWeight(amount: string): number {
+	const trimmed = amount.trim();
+	const bar = trimmed.match(/^(\d+(?:\.\d+)?)\s*bars?$/i);
+	if (bar) return Math.max(1, Number(bar[1])) * 40;
+	const litre = trimmed.match(/^(\d+(?:\.\d+)?)\s*L$/i);
+	if (litre) return Math.max(1, Number(litre[1])) * 1000;
+	const unit = trimmed.match(/^(\d+(?:\.\d+)?)\s*(g|ml)$/i);
+	if (unit) return Math.max(1, Number(unit[1]));
+	return 1;
+}
+
+function round1(n: number): number {
+	return Math.round(n * 10) / 10;
+}
+
+/**
+ * Ensure every ingredient line has macros that sum exactly to the meal
+ * (within 0.1 g / 1 kcal). Distributes by portion weight when lines lack macros.
+ * Meal totals stay authoritative.
+ */
+export function reconcileMealMacros(meal: CoachMealSlot): CoachMealSlot {
+	const ingredients = meal.ingredients;
+	if (!ingredients?.length) return { ...meal };
+
+	const weights = ingredients.map((ing) => estimateIngredientWeight(ing.amount));
+	const totalW = weights.reduce((s, w) => s + w, 0) || ingredients.length;
+
+	const out: CoachIngredient[] = [];
+	let accK = 0;
+	let accP = 0;
+	let accC = 0;
+	let accF = 0;
+
+	for (let i = 0; i < ingredients.length; i++) {
+		const ing = ingredients[i];
+		const isLast = i === ingredients.length - 1;
+		const share = weights[i] / totalW;
+		let kcal: number;
+		let proteinG: number;
+		let carbsG: number;
+		let fatG: number;
+		if (isLast) {
+			kcal = Math.round(meal.kcal - accK);
+			proteinG = round1(meal.proteinG - accP);
+			carbsG = round1(meal.carbsG - accC);
+			fatG = round1(meal.fatG - accF);
+		} else {
+			kcal = Math.round(meal.kcal * share);
+			proteinG = round1(meal.proteinG * share);
+			carbsG = round1(meal.carbsG * share);
+			fatG = round1(meal.fatG * share);
+			accK += kcal;
+			accP += proteinG;
+			accC += carbsG;
+			accF += fatG;
+		}
+		out.push({ ...ing, kcal, proteinG, carbsG, fatG });
+	}
+
+	return { ...meal, ingredients: out };
+}
+
+export interface NutritionAuditIssue {
+	path: string;
+	message: string;
+}
+
+/** Recompute day totals from meals and reconcile ingredient lines. */
+export function reconcileDayPlan(plan: CoachDayPlan): CoachDayPlan {
+	const meals = plan.meals.map((m) => reconcileMealMacros(m));
+	const proteinG = round1(meals.reduce((s, m) => s + m.proteinG, 0));
+	const carbsG = round1(meals.reduce((s, m) => s + m.carbsG, 0));
+	const fatG = round1(meals.reduce((s, m) => s + m.fatG, 0));
+	const calories = Math.round(meals.reduce((s, m) => s + m.kcal, 0));
+	const pcts = macroPcts(calories, proteinG, carbsG, fatG);
+	return {
+		...plan,
+		meals,
+		calories,
+		proteinG,
+		carbsG,
+		fatG,
+		...pcts,
+	};
+}
+
+/** Audit day kcal/macros: day = meals; meal = ingredient lines (when present). */
+export function auditDayPlan(plan: CoachDayPlan, label = plan.id): NutritionAuditIssue[] {
+	const issues: NutritionAuditIssue[] = [];
+	const mealK = plan.meals.reduce((s, m) => s + m.kcal, 0);
+	const mealP = round1(plan.meals.reduce((s, m) => s + m.proteinG, 0));
+	const mealC = round1(plan.meals.reduce((s, m) => s + m.carbsG, 0));
+	const mealF = round1(plan.meals.reduce((s, m) => s + m.fatG, 0));
+	if (Math.abs(mealK - plan.calories) > 1) {
+		issues.push({
+			path: `${label}.calories`,
+			message: `Day kcal ${plan.calories} ≠ sum of meals ${mealK}`,
+		});
+	}
+	if (Math.abs(mealP - plan.proteinG) > 0.15) {
+		issues.push({
+			path: `${label}.proteinG`,
+			message: `Day protein ${plan.proteinG} ≠ sum of meals ${mealP}`,
+		});
+	}
+	if (Math.abs(mealC - plan.carbsG) > 0.15) {
+		issues.push({
+			path: `${label}.carbsG`,
+			message: `Day carbs ${plan.carbsG} ≠ sum of meals ${mealC}`,
+		});
+	}
+	if (Math.abs(mealF - plan.fatG) > 0.15) {
+		issues.push({
+			path: `${label}.fatG`,
+			message: `Day fat ${plan.fatG} ≠ sum of meals ${mealF}`,
+		});
+	}
+
+	plan.meals.forEach((meal, mi) => {
+		const ings = meal.ingredients;
+		if (!ings?.length) return;
+		if (ings.some((i) => i.kcal == null || i.proteinG == null || i.carbsG == null || i.fatG == null)) {
+			issues.push({
+				path: `${label}.meals[${mi}].ingredients`,
+				message: `Meal “${meal.name}” has ingredient lines missing macros`,
+			});
+			return;
+		}
+		const k = ings.reduce((s, i) => s + (i.kcal ?? 0), 0);
+		const p = round1(ings.reduce((s, i) => s + (i.proteinG ?? 0), 0));
+		const c = round1(ings.reduce((s, i) => s + (i.carbsG ?? 0), 0));
+		const f = round1(ings.reduce((s, i) => s + (i.fatG ?? 0), 0));
+		if (Math.abs(k - meal.kcal) > 1) {
+			issues.push({
+				path: `${label}.meals[${mi}].kcal`,
+				message: `Meal “${meal.name}” kcal ${meal.kcal} ≠ ingredients ${k}`,
+			});
+		}
+		if (Math.abs(p - meal.proteinG) > 0.15) {
+			issues.push({
+				path: `${label}.meals[${mi}].proteinG`,
+				message: `Meal “${meal.name}” protein ${meal.proteinG} ≠ ingredients ${p}`,
+			});
+		}
+		if (Math.abs(c - meal.carbsG) > 0.15) {
+			issues.push({
+				path: `${label}.meals[${mi}].carbsG`,
+				message: `Meal “${meal.name}” carbs ${meal.carbsG} ≠ ingredients ${c}`,
+			});
+		}
+		if (Math.abs(f - meal.fatG) > 0.15) {
+			issues.push({
+				path: `${label}.meals[${mi}].fatG`,
+				message: `Meal “${meal.name}” fat ${meal.fatG} ≠ ingredients ${f}`,
+			});
+		}
+	});
+
+	return issues;
+}
+
+interface ParsedAmount {
+	value: number;
+	unit: 'g' | 'ml' | 'bar' | 'L';
+}
+
+function parseShopAmount(amount: string): ParsedAmount | null {
+	const trimmed = amount.trim();
+	const bar = trimmed.match(/^(\d+(?:\.\d+)?)\s*bars?$/i);
+	if (bar) return { value: Number(bar[1]), unit: 'bar' };
+	const litre = trimmed.match(/^(\d+(?:\.\d+)?)\s*L$/i);
+	if (litre) return { value: Number(litre[1]), unit: 'L' };
+	const unit = trimmed.match(/^(\d+(?:\.\d+)?)\s*(g|ml)$/i);
+	if (unit) return { value: Number(unit[1]), unit: unit[2].toLowerCase() as 'g' | 'ml' };
+	return null;
+}
+
+function formatShopAmount(parsed: ParsedAmount): string {
+	if (parsed.unit === 'bar') {
+		const n = Math.max(1, Math.round(parsed.value));
+		return n === 1 ? '1 bar' : `${n} bars`;
+	}
+	if (parsed.unit === 'L') {
+		const n = parsed.value < 10 ? Math.round(parsed.value * 10) / 10 : Math.round(parsed.value);
+		return `${n} L`;
+	}
+	return `${roundScaledQuantity(parsed.value)} ${parsed.unit}`;
+}
+
+export interface PlanShoppingList {
+	title: string;
+	blurb: string;
+	lines: ShoppingListLine[];
+	plain: string;
+	/** Ingredient names present in meals but not aggregatable (should be empty). */
+	orphans: string[];
+}
+
+/**
+ * Build a weekly shopping list from the actual scaled meal plans
+ * (training days × training template + rest days × non-training).
+ */
+export function buildWeekShoppingFromPlans(
+	plans: CoachDayPlan[],
+	trainingDays: TrainingDaysPref,
+): PlanShoppingList {
+	const days = trainingDays === 4 ? 4 : 3;
+	const restDays = 7 - days;
+	const training = plans.find((p) => p.id === 'training');
+	const rest = plans.find((p) => p.id === 'non-training');
+	const orphans: string[] = [];
+
+	type Acc = { name: string; value: number; unit: ParsedAmount['unit']; note?: string };
+	const map = new Map<string, Acc>();
+
+	function addPlan(plan: CoachDayPlan | undefined, times: number) {
+		if (!plan || times <= 0) return;
+		for (const meal of plan.meals) {
+			for (const ing of meal.ingredients ?? []) {
+				const parsed = parseShopAmount(ing.amount);
+				if (!parsed) {
+					orphans.push(ing.name);
+					continue;
+				}
+				const key = ing.name.toLowerCase();
+				const existing = map.get(key);
+				if (existing) {
+					if (existing.unit !== parsed.unit) {
+						orphans.push(`${ing.name} (unit clash)`);
+						continue;
+					}
+					existing.value += parsed.value * times;
+				} else {
+					map.set(key, {
+						name: ing.name,
+						value: parsed.value * times,
+						unit: parsed.unit,
+						note: ing.note,
+					});
+				}
+			}
+		}
+	}
+
+	addPlan(rest, restDays);
+	addPlan(training, days);
+
+	const lines: ShoppingListLine[] = [...map.values()]
+		.sort((a, b) => a.name.localeCompare(b.name))
+		.map((acc) => ({
+			name: acc.name,
+			amount: formatShopAmount({ value: acc.value, unit: acc.unit }),
+			note: acc.note,
+		}));
+
+	const title = `Weekly shopping list (${days} training / ${restDays} rest)`;
+	const blurb = `Aggregated from your personalised training + rest day meals · Woolworths-friendly weights · phone-copyable.`;
+	const plain = formatShoppingListPlain(lines, { title, blurb });
+	return { title, blurb, lines, plain, orphans: [...new Set(orphans)] };
 }
 
 function scaleShoppingLine(line: ShoppingListLine, scale: number, opts?: { skipCoconut?: boolean }): ShoppingListLine {
@@ -832,11 +1100,11 @@ export function scaleShoppingLists(
 	);
 	const blurb = `${profile.weightKg} kg · ${profile.heightCm} cm · ${trainingDays} train / ${restDays} rest · portions ×${factors.work.toFixed(2)} (work week) / ×${factors.dietBreak.toFixed(2)} (diet-break). Baseline ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg template. Coconut water stays 1 L per Intra day.`;
 	const typicalPlain = formatShoppingListPlain(typical, {
-		title: `Food Bro — Woolworths week (${trainingDays} training / ${restDays} rest)`,
+		title: `Woolworths week (${trainingDays} training / ${restDays} rest)`,
 		blurb,
 	});
 	const dietBreakPlain = formatShoppingListPlain(dietBreak, {
-		title: 'Food Bro — diet-break week (7× diet-break day)',
+		title: 'Diet-break week (7× diet-break day)',
 		blurb: `${blurb} Use for 1–2 weeks when flat / glycogen depleted (~your maintenance), then return to the typical week list.`,
 	});
 	return { typical, dietBreak, typicalPlain, dietBreakPlain, blurb, trainingDays, restDays };

@@ -4,3 +4,8 @@ ADMIN_SOCIAL_PASSWORD=replace-me
 # Optional:
 # ZERNIO_API_KEY=
 # ADMIN_SOCIAL_FIXTURE=1
+# PDF funnel checkout (live charges — leave unset for stub unlock):
+# STRIPE_SECRET_KEY=
+# STRIPE_PRICE_ID_PDF_AUD=
+# STRIPE_PRICE_ID_COACHING_WEEKLY_AUD=
+# STRIPE_PRICE_ID_COACHING_12WK_AUD=

@@ -26,6 +26,8 @@ export default defineConfig({
 	],
 	// SEO drafts / link map use /guides/*; content lives under /blog/*
 	redirects: {
+		// Funnel PDF delivery lives at /plan — keep old path working without old branding
+		'/food-bro/plan': '/plan',
 		// Food Bro rename — keep old Food OS URL working
 		'/food-os': '/food-bro',
 		'/guides/best-creatine-australia': '/blog/best-creatine-australia',

@@ -81,6 +81,7 @@ const SAFE_RETURN_PREFIXES = [
 	'/fuel',
 	'/food',
 	'/profile',
+	'/plan',
 	'/recover',
 	'/culture',
 	'/shop',

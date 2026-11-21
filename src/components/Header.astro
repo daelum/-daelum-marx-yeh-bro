@@ -1,33 +1,50 @@
 ---
 import BrandLogo from './BrandLogo.astro';
 import HeaderLink from './HeaderLink.astro';
+import { PDF_CTA_LABEL } from '../data/pdf-offer';
 import { NAV_PILLARS } from '../data/pillars';
+
+interface Props {
+	funnel?: boolean;
+}
+
+const { funnel = false } = Astro.props;
 ---
 
-<header class="site-header">
+<header class:list={['site-header', { 'site-header--funnel': funnel }]}>
 	<nav class="wrap nav" aria-label="Primary">
 		<a class="brand" href="/" aria-label="Yeh Bro home">
 			<BrandLogo size="nav" decorative />
 		</a>
-		<button
-			type="button"
-			class="nav-toggle"
-			aria-expanded="false"
-			aria-controls="nav-menu"
-			id="nav-toggle"
-		>
-			<span class="sr-only">Menu</span>
-			<span class="nav-toggle-bars" aria-hidden="true"></span>
-		</button>
-		<div class="nav-menu" id="nav-menu">
-			{NAV_PILLARS.map((item) => (
-				<HeaderLink href={item.href} class={item.label === 'Shop' ? 'nav-shop' : undefined}>
-					{item.label}
-				</HeaderLink>
-			))}
-			<HeaderLink href="/profile">Profile</HeaderLink>
-			<HeaderLink href="/about">About</HeaderLink>
-		</div>
+		{
+			funnel ? (
+				<a class="btn btn-primary nav-funnel-cta" href="#intake">
+					{PDF_CTA_LABEL}
+				</a>
+			) : (
+				<>
+					<button
+						type="button"
+						class="nav-toggle"
+						aria-expanded="false"
+						aria-controls="nav-menu"
+						id="nav-toggle"
+					>
+						<span class="sr-only">Menu</span>
+						<span class="nav-toggle-bars" aria-hidden="true"></span>
+					</button>
+					<div class="nav-menu" id="nav-menu">
+						{NAV_PILLARS.map((item) => (
+							<HeaderLink href={item.href} class={item.label === 'Shop' ? 'nav-shop' : undefined}>
+								{item.label}
+							</HeaderLink>
+						))}
+						<HeaderLink href="/profile">Profile</HeaderLink>
+						<HeaderLink href="/about">About</HeaderLink>
+					</div>
+				</>
+			)
+		}
 	</nav>
 </header>
 
@@ -49,6 +66,17 @@ import { NAV_PILLARS } from '../data/pillars';
 		backdrop-filter: blur(12px);
 		background: rgba(10, 10, 10, 0.88);
 		border-bottom: 1px solid var(--yb-edge);
+	}
+	.site-header--funnel .nav-funnel-cta {
+		padding: 0.55rem 0.95rem;
+		font-size: 0.82rem;
+		white-space: nowrap;
+	}
+	@media (max-width: 420px) {
+		.site-header--funnel .nav-funnel-cta {
+			padding: 0.5rem 0.7rem;
+			font-size: 0.75rem;
+		}
 	}
 	.nav {
 		display: flex;

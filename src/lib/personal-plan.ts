@@ -1,6 +1,7 @@
 /**
- * Yeh Bro System + Food Bro — personalized 12-week plan content.
+ * Personalised 12-week plan content (training + nutrition).
  * Client-printable (Save as PDF). Education only — not medical advice.
+ * Engines may reuse legacy modules; public PDF copy must not name old free products.
  */
 
 import {
@@ -10,13 +11,18 @@ import {
 import {
 	ACTIVITY_LABELS,
 	GOAL_DEFAULTS,
+	auditDayPlan,
+	buildWeekShoppingFromPlans,
 	scaleCoachDayPlans,
 	type Activity,
 	type CoachDayPlan,
 	type FoodOsResult,
 	type Goal,
+	type NutritionAuditIssue,
+	type PlanShoppingList,
 	type Sex,
 	type StoredFoodOs,
+	type TrainingDaysPref,
 } from './food-os';
 import type { DietaryPrefs, TargetSource } from './user-store';
 
@@ -68,6 +74,12 @@ export interface PersonalPlanDoc {
 	training: TrainingTemplate;
 	nutritionDays: CoachDayPlan[];
 	nutritionLede: string;
+	/** Profile line under nutrition (targets vs body). */
+	nutritionProfileLine: string;
+	nutritionProfileNote?: string;
+	shopping: PlanShoppingList;
+	/** Empty when kcal/macro line→meal→day checks pass. */
+	nutritionAudit: NutritionAuditIssue[];
 	goalFraming: {
 		headline: string;
 		timeframe: string;
@@ -138,7 +150,7 @@ export function buildTwelveWeekBlocks(goal: Goal, training: TrainingTemplate): T
 			focus: [
 				`Lock ${split} on the calendar — protect sleep window.`,
 				'Log sessions completed; weigh in 2–3× / week.',
-				'Hit protein most days; calories in the Food Bro ballpark.',
+				'Hit protein most days; keep calories in your target ballpark.',
 			],
 		},
 		{
@@ -204,7 +216,7 @@ export function buildNextPhase(goal: Goal, tdee: number): NextPhaseRec {
 		title: 'After 12 weeks at maintain',
 		summary: `Habits first. Maintenance ≈ ${tdee} kcal. Next phase is a choice, not a panic.`,
 		bullets: [
-			'Want fat loss → start a cut block with Food Bro deficit + coach day templates.',
+			'Want fat loss → start a cut block with a deficit + training/rest day templates.',
 			'Want size → lean bulk (~10% over maintenance) and keep PPL / PPLU progression.',
 			'Still rebuilding habit → another maintain block is a win, not a stall.',
 			'Education only — not medical advice.',
@@ -214,11 +226,20 @@ export function buildNextPhase(goal: Goal, tdee: number): NextPhaseRec {
 
 export function buildPersonalPlan(inputs: PersonalPlanInputs, result: FoodOsResult): PersonalPlanDoc {
 	const training = pickTrainingTemplate(inputs.trainingDays);
+	const days = (inputs.trainingDays === 4 ? 4 : 3) as TrainingDaysPref;
 	const scaled = scaleCoachDayPlans(result, {
 		weightKg: inputs.weightKg,
 		heightCm: inputs.heightCm,
 		age: inputs.age,
 	});
+	const shopping = buildWeekShoppingFromPlans(scaled.plans, days);
+	const nutritionAudit = scaled.plans.flatMap((p) => auditDayPlan(p));
+	if (shopping.orphans.length) {
+		nutritionAudit.push({
+			path: 'shopping.orphans',
+			message: `Unparsed shopping lines: ${shopping.orphans.join(', ')}`,
+		});
+	}
 	const dietaryBits: string[] = [];
 	if (inputs.dietary && inputs.dietary.pattern !== 'none') {
 		dietaryBits.push(`Dietary pattern: ${inputs.dietary.pattern}`);
@@ -253,12 +274,16 @@ export function buildPersonalPlan(inputs: PersonalPlanInputs, result: FoodOsResu
 		training,
 		nutritionDays: scaled.plans,
 		nutritionLede: scaled.lede,
+		nutritionProfileLine: scaled.profileLine,
+		nutritionProfileNote: scaled.profileNote,
+		shopping,
+		nutritionAudit,
 		goalFraming: buildGoalFraming(inputs.goal, training, result.calories),
 		twelveWeek: buildTwelveWeekBlocks(inputs.goal, training),
 		nextPhase: buildNextPhase(inputs.goal, result.tdee),
 		dietaryNote: dietaryBits.length ? dietaryBits.join(' · ') : undefined,
 		disclaimer:
-			'Yeh Bro System + Food Bro — education only, not medical advice or a personal prescription. Estimates vary; adjust from your scale trend and how training feels. Under 18 or clinical conditions → talk to a clinician. We don’t source AAS / SARMs / grey-market gear.',
+			'Yeh Bro — education only, not medical advice or a personal prescription. Estimates vary; adjust from your scale trend and how training feels. Under 18 or clinical conditions → talk to a clinician. We don’t source AAS / SARMs / grey-market gear. Line macros are portion-weighted to match each meal total (rounding ≤0.1 g / 1 kcal).',
 	};
 }
 

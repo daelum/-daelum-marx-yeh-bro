@@ -1,9 +1,27 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrandLogo from '../components/BrandLogo.astro';
-import { SITE_DESCRIPTION, SITE_EYEBROW, SITE_TAGLINE, SITE_TITLE, SITE_TITLE_HOME, SITE_URL } from '../consts';
-import { PILLARS } from '../data/pillars';
-import { FOOD_HREF, FOOD_NAME, SYSTEM_HREF, SYSTEM_NAME } from '../data/products';
+import {
+	SITE_DESCRIPTION,
+	SITE_EYEBROW,
+	SITE_TAGLINE,
+	SITE_TITLE,
+	SITE_TITLE_HOME,
+	SITE_URL,
+} from '../consts';
+import {
+	COACHING_PAID_IN_FULL_TOTAL_LABEL,
+	COACHING_PAID_IN_FULL_WEEKLY_LABEL,
+	COACHING_UPSELL,
+	COACHING_WEEKLY_LABEL,
+	PDF_CTA_LABEL,
+	PDF_OFFER_PRICE_LABEL,
+	PDF_PLAN_HREF,
+} from '../data/pdf-offer';
+import { ACTIVITY_LABELS, GOAL_DEFAULTS, type Activity, type Goal } from '../lib/food-os';
+
+const activities = Object.entries(ACTIVITY_LABELS) as [Activity, string][];
+const goals = Object.entries(GOAL_DEFAULTS) as [Goal, (typeof GOAL_DEFAULTS)[Goal]][];
 
 const homeLd = [
 	{
@@ -17,44 +35,59 @@ const homeLd = [
 	},
 	{
 		'@context': 'https://schema.org',
-		'@type': 'Organization',
-		name: SITE_TITLE,
-		url: SITE_URL,
+		'@type': 'Product',
+		name: 'Yeh Bro personalised training + nutrition PDF',
 		description: SITE_DESCRIPTION,
-		logo: new URL('/brand/yehbro-logo.png', SITE_URL).href,
+		brand: { '@type': 'Brand', name: SITE_TITLE },
+		offers: {
+			'@type': 'Offer',
+			price: '4.99',
+			priceCurrency: 'AUD',
+			availability: 'https://schema.org/InStock',
+			url: SITE_URL,
+		},
 	},
 ];
 
-const tools = [
+const failReasons = [
 	{
-		href: SYSTEM_HREF,
-		label: SYSTEM_NAME,
-		blurb: 'Five phases — foundation through recovery. Free. No signup, no card.',
+		title: 'Random programs',
+		body: 'You bounce between PPL, bro-splits, and whatever the algorithm pushed this week. No progression. No finish line.',
 	},
 	{
-		href: FOOD_HREF,
-		label: FOOD_NAME,
-		blurb: 'Calories, macros, scaled day templates, and a printable plan.',
+		title: 'Calories that aren’t yours',
+		body: 'Someone else’s cut macros. A calculator you never finish. Or “eat clean” with zero numbers that match your body.',
 	},
 	{
-		href: '/start-here/training',
-		label: 'Training templates',
-		blurb: '3-day PPL and 4-day PPLU with clear progression.',
+		title: 'Info overload',
+		body: 'Guides, reels, conflicting advice. You know more than you execute — so you stall when the plan isn’t personal.',
 	},
 	{
-		href: '/start-here/weekly',
-		label: 'Weekly checklist',
-		blurb: 'Sessions, steps, sleep, weigh-ins — tick them off in-browser.',
+		title: 'Quit when it’s generic',
+		body: 'A PDF that could belong to anyone dies in your downloads. When it doesn’t fit your days, you stop.',
+	},
+];
+
+const pdfIncludes = [
+	{
+		title: 'Training block',
+		body: '3-day PPL or 4-day PPLU — sets, reps, and a schedule you can actually run.',
 	},
 	{
-		href: '/food-bro/shopping',
-		label: 'Shopping list',
-		blurb: 'Weekly Woolworths list scaled to your Food Bro profile.',
+		title: 'Calories & macros',
+		body: 'Numbers from your height, weight, age, sex, activity, and goal — cut, maintain, or lean bulk. Line → meal → day maths checked.',
 	},
 	{
-		href: '/blog',
-		label: 'Guides',
-		blurb: 'Training, food, recovery, sports nutrition, culture — when you want depth.',
+		title: 'Day templates',
+		body: 'Training-day, rest-day, and diet-break meals with food lines, kcal, and macros — scaled to your targets.',
+	},
+	{
+		title: 'Shopping list',
+		body: 'Weekly Woolworths-friendly list aggregated from your actual meals — phone-copyable weights.',
+	},
+	{
+		title: '12-week framing',
+		body: 'Goal + timeframe, a simple block map, and a next-phase note so you’re not guessing after week four.',
 	},
 ];
 ---
@@ -63,11 +96,12 @@ const tools = [
 	title={SITE_TITLE_HOME}
 	description={SITE_DESCRIPTION}
 	fullBleed
+	funnel
 	canonicalPath="/"
 	jsonLd={homeLd}
 	ogImage="/brand/og-yehbro.jpg"
 >
-	<section class="hero" aria-labelledby="hero-tagline">
+	<section class="hero" aria-labelledby="hero-headline">
 		<div class="hero-media" aria-hidden="true">
 			<picture>
 				<source srcset="/shop/yehbro-tee-back-gym.webp" type="image/webp" />
@@ -90,119 +124,595 @@ const tools = [
 				<BrandLogo size="hero" decorative />
 			</p>
 			<p class="hero-eyebrow anim-rise">{SITE_EYEBROW}</p>
-			<h1 id="hero-tagline" class="hero-tagline anim-rise-delay">
-				{SITE_TAGLINE}
+			<h1 id="hero-headline" class="hero-tagline anim-rise-delay">
+				Your plan. Your stats. Not someone else’s PDF.
 			</h1>
 			<p class="hero-sub anim-rise-delay">
-				Fitness lifestyle for people who take training seriously — and don’t take themselves too
-				seriously. Straightforward information. Useful tools. Good gear. No unnecessary bullshit.
+				Personalised training + nutrition built from your numbers — for {PDF_OFFER_PRICE_LABEL}.{' '}
+				{SITE_TAGLINE}
 			</p>
 			<div class="cta-row anim-rise-delay-2">
-				<a class="btn btn-primary" href="#pillars">Explore YehBro</a>
-				<a class="btn btn-secondary" href="/shop">Shop the collection</a>
+				<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
 			</div>
 		</div>
 	</section>
 
-	<section class="section wrap intro-block">
-		<p class="eyebrow">More than just training</p>
-		<h2>The whole lifestyle. One place.</h2>
+	<section class="section wrap" id="fail" aria-labelledby="fail-heading">
+		<p class="eyebrow">Why people fail on their own</p>
+		<h2 id="fail-heading">Hard truth.</h2>
 		<p class="lede">
-			Training is the spine. Nutrition, recovery, gym culture, and the gear you wear around it —
-			that’s the rest of the world. Yeh Bro covers all of it with clear guidance and tools you’d
-			actually use.
+			Most lifters don’t fail because they’re lazy. They fail because the plan was never built for
+			them — so consistency dies the second life gets messy.
 		</p>
-	</section>
-
-	<section class="section wrap" id="pillars">
-		<p class="eyebrow">Your world</p>
-		<h2>Under one roof.</h2>
-		<p class="lede lane-lede">
-			Five lanes. Pick where you are — or walk the lot. Shop is coming soon; everything else is live.
-		</p>
-		<ul class="pillar-grid">
+		<ul class="fail-grid">
 			{
-				PILLARS.map((pillar, i) => (
+				failReasons.map((item, i) => (
 					<li style={`--i: ${i}`}>
-						<a href={pillar.href} class:list={[{ 'pillar-shop': pillar.id === 'shop' }]}>
-							<span class="pillar-label">{pillar.label}</span>
-							<span class="pillar-line">{pillar.tagline}</span>
-						</a>
+						<strong>{item.title}</strong>
+						<span>{item.body}</span>
 					</li>
 				))
 			}
 		</ul>
 	</section>
 
-	<section class="section philosophy">
-		<div class="wrap philosophy-inner">
-			<p class="eyebrow">Philosophy</p>
-			<h2>The work. The process. The results.</h2>
+	<section class="section shift" id="shift" aria-labelledby="shift-heading">
+		<div class="wrap shift-inner">
+			<p class="eyebrow">The shift</p>
+			<h2 id="shift-heading">When the plan matches you.</h2>
 			<p class="lede">
-				Show up. Progress the logbook. Eat for the goal. Sleep like it matters. Skip the slogans —
-				beast mode, built different, no days off. Serious about the work. Light about the ego.
+				Height, weight, age, sex, goal, training days, activity — turned into a plan that fits
+				your week and your body. Training + calories that match you. One PDF you can print and
+				follow.
 			</p>
-			<ul class="philosophy-points">
-				<li>
-					<strong>Train</strong>
-					<span>Simple programs you can repeat for months.</span>
-				</li>
-				<li>
-					<strong>Fuel</strong>
-					<span>Protein first, calories for the phase, powder for gaps.</span>
-				</li>
-				<li>
-					<strong>Recover</strong>
-					<span>Sleep and deloads keep the lifts moving.</span>
-				</li>
-			</ul>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
+			</div>
 		</div>
 	</section>
 
-	<section class="section wrap">
-		<p class="eyebrow">Less guesswork</p>
-		<h2>More progress.</h2>
-		<p class="lede lane-lede">
-			Real tools that are live today — not a wishlist. Free. No signup, no card.
-		</p>
-		<ul class="guide-links">
-			{
-				tools.map((tool) => (
-					<li>
-						<a href={tool.href}>
-							{tool.label}
-							<span>{tool.blurb}</span>
-						</a>
-					</li>
-				))
-			}
-		</ul>
-	</section>
-
-	<section class="section brand-statement">
-		<div class="wrap brand-statement-inner">
-			<p class="eyebrow">The lifestyle</p>
-			<h2>You don’t have to explain it.</h2>
-			<p class="lede">
-				If you train hard, eat big, and live like the gym is part of who you are — you’re already
-				in. Yeh Bro is built for that world: clear info, useful systems, and gear on the way.
-			</p>
-		</div>
-	</section>
-
-	<section class="section-tight wrap final-cta">
-		<p class="eyebrow">Ready?</p>
-		<h2>Get into it.</h2>
+	<section class="section wrap" id="whats-inside" aria-labelledby="inside-heading">
+		<p class="eyebrow">What’s in the PDF</p>
+		<h2 id="inside-heading">Real deliverables. Nothing invented.</h2>
 		<p class="lede">
-			Start with the free system and Food Bro — or browse the shop while it’s coming online.
+			Real training and nutrition deliverables built from your stats. No fake catalogue. No filler
+			workbook.
+		</p>
+		<ul class="include-list">
+			{
+				pdfIncludes.map((item) => (
+					<li>
+						<strong>{item.title}</strong>
+						<span>{item.body}</span>
+					</li>
+				))
+			}
+		</ul>
+	</section>
+
+	<section class="section how" id="how" aria-labelledby="how-heading">
+		<div class="wrap">
+			<p class="eyebrow">How it works</p>
+			<h2 id="how-heading">Three steps. Done.</h2>
+			<ol class="how-steps">
+				<li>
+					<strong>Enter your stats</strong>
+					<span>Compact intake — height, weight, age, goal, training days, activity.</span>
+				</li>
+				<li>
+					<strong>We build the plan</strong>
+					<span>Training split + calories/macros + day templates scaled to you.</span>
+				</li>
+				<li>
+					<strong>{PDF_OFFER_PRICE_LABEL} → PDF</strong>
+					<span>Pay once. Open your personalised plan. Save as PDF / print.</span>
+				</li>
+			</ol>
+		</div>
+	</section>
+
+	<section class="section wrap" id="intake" aria-labelledby="intake-heading">
+		<p class="eyebrow">Your stats</p>
+		<h2 id="intake-heading">Build it around you.</h2>
+		<p class="lede">
+			Saved in this browser — no account. Fill this in, then grab the plan. Example shape: 36 /
+			80&nbsp;kg / 178&nbsp;cm — use your own numbers.
+		</p>
+
+		<form id="funnel-form" class="funnel-form" novalidate>
+			<div class="funnel-fields">
+				<label class="ff">
+					<span>Current weight (kg)</span>
+					<input
+						type="number"
+						name="weightKg"
+						id="weightKg"
+						inputmode="decimal"
+						min="35"
+						max="250"
+						step="0.1"
+						required
+						placeholder="80"
+					/>
+				</label>
+				<label class="ff">
+					<span>Height (cm)</span>
+					<input
+						type="number"
+						name="heightCm"
+						id="heightCm"
+						inputmode="numeric"
+						min="120"
+						max="230"
+						step="1"
+						required
+						placeholder="178"
+					/>
+				</label>
+				<label class="ff">
+					<span>Age</span>
+					<input
+						type="number"
+						name="age"
+						id="age"
+						inputmode="numeric"
+						min="16"
+						max="90"
+						step="1"
+						required
+						placeholder="36"
+					/>
+				</label>
+				<label class="ff">
+					<span>Goal weight (kg) — optional</span>
+					<input
+						type="number"
+						name="goalWeightKg"
+						id="goalWeightKg"
+						inputmode="decimal"
+						min="35"
+						max="250"
+						step="0.1"
+						placeholder="75"
+					/>
+				</label>
+			</div>
+
+			<fieldset class="funnel-seg" id="sex-field">
+				<legend>Sex (for resting estimate)</legend>
+				<label class="seg-opt">
+					<input type="radio" name="sex" value="male" required checked />
+					<span>Male</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="sex" value="female" />
+					<span>Female</span>
+				</label>
+			</fieldset>
+
+			<label class="ff ff-full">
+				<span>Activity</span>
+				<select name="activity" id="activity" required>
+					{activities.map(([value, label]) => <option value={value}>{label}</option>)}
+				</select>
+			</label>
+
+			<fieldset class="funnel-seg" id="goal-field">
+				<legend>Goal</legend>
+				{
+					goals.map(([value, meta], i) => (
+						<label class="seg-opt">
+							<input type="radio" name="goal" value={value} required checked={i === 0} />
+							<span>
+								<strong>{meta.label}</strong>
+								<small>{meta.blurb}</small>
+							</span>
+						</label>
+					))
+				}
+			</fieldset>
+
+			<fieldset class="funnel-seg" id="training-field">
+				<legend>Training days / week</legend>
+				<label class="seg-opt">
+					<input type="radio" name="trainingDays" value="3" checked />
+					<span>
+						<strong>3-day PPL</strong>
+						<small>Push / Pull / Legs</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="trainingDays" value="4" />
+					<span>
+						<strong>4-day PPLU</strong>
+						<small>Add Upper</small>
+					</span>
+				</label>
+			</fieldset>
+
+			<p class="funnel-preview muted" id="calc-preview" aria-live="polite">
+				Enter body stats to preview calculated calories.
+			</p>
+
+			<div class="cta-row">
+				<button type="submit" class="btn btn-primary" id="funnel-submit">{PDF_CTA_LABEL}</button>
+			</div>
+			<p class="funnel-note muted" id="funnel-note" aria-live="polite"></p>
+		</form>
+	</section>
+
+	<section class="section offer" id="offer" aria-labelledby="offer-heading">
+		<div class="wrap offer-inner">
+			<p class="eyebrow">The offer</p>
+			<h2 id="offer-heading">{PDF_OFFER_PRICE_LABEL}. Coach-grade output for a coffee.</h2>
+			<p class="lede">
+				People often pay hundreds for a custom training + nutrition write-up. You’re getting
+				coach-grade personalisation for {PDF_OFFER_PRICE_LABEL} AUD — honest price, no fake “was
+				$X” strikethrough.
+			</p>
+			<p class="price-line">
+				<span class="price">{PDF_OFFER_PRICE_LABEL}</span>
+				<span class="price-meta">AUD · one-time · personalised PDF</span>
+			</p>
+			<div class="cta-row">
+				<a class="btn btn-primary" href="#checkout" id="offer-cta">{PDF_CTA_LABEL}</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="section wrap checkout-panel" id="checkout" aria-labelledby="checkout-heading" hidden>
+		<p class="eyebrow">Checkout</p>
+		<h2 id="checkout-heading">Confirm &amp; pay</h2>
+		<p class="lede" id="checkout-summary">
+			Personalised PDF — {PDF_OFFER_PRICE_LABEL} AUD. Optional coaching add-on below if you want
+			deeper accountability.
+		</p>
+
+		<div class="checkout-card" id="checkout-pdf-line">
+			<strong>Personalised training + nutrition PDF</strong>
+			<span class="checkout-price">{PDF_OFFER_PRICE_LABEL} AUD</span>
+		</div>
+
+		<details class="upsell" id="coaching-upsell">
+			<summary>
+				<span class="upsell-title">Optional add-on: {COACHING_UPSELL.name}</span>
+				<span class="upsell-hint">Deeper than the PDF · not required</span>
+			</summary>
+			<p class="upsell-blurb">{COACHING_UPSELL.blurb}</p>
+			<fieldset class="funnel-seg upsell-tiers" id="coaching-field">
+				<legend class="sr-only">Coaching add-on</legend>
+				<label class="seg-opt">
+					<input type="radio" name="coaching" value="none" checked />
+					<span>
+						<strong>PDF only</strong>
+						<small>No coaching add-on</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="coaching" value="weekly" />
+					<span>
+						<strong>Weekly coaching — {COACHING_WEEKLY_LABEL}</strong>
+						<small>Personalised accountability, billed weekly</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="coaching" value="paid_in_full" />
+					<span>
+						<strong>
+							12 weeks paid in full — {COACHING_PAID_IN_FULL_WEEKLY_LABEL} ({COACHING_PAID_IN_FULL_TOTAL_LABEL}{' '}
+							total)
+						</strong>
+						<small>
+							{COACHING_UPSELL.weeks}-week block · {COACHING_PAID_IN_FULL_WEEKLY_LABEL} when paid
+							upfront
+						</small>
+					</span>
+				</label>
+			</fieldset>
+		</details>
+
+		<div class="cta-row">
+			<button type="button" class="btn btn-primary" id="pay-btn">{PDF_CTA_LABEL}</button>
+		</div>
+		<p class="funnel-note muted" id="checkout-note" aria-live="polite"></p>
+	</section>
+
+	<section class="section-tight wrap" id="reassure" aria-labelledby="reassure-heading">
+		<p class="eyebrow">Straight talk</p>
+		<h2 id="reassure-heading">Who this is for</h2>
+		<p class="lede">
+			For lifters who want a clear training + food plan matched to their stats — not another tip
+			pile. Education, not medical advice. If you want deeper week-to-week accountability, that’s an
+			optional add-on at checkout — the PDF stands alone.
+		</p>
+	</section>
+
+	<section class="section-tight wrap final-cta" id="final" aria-labelledby="final-heading">
+		<p class="eyebrow">Ready?</p>
+		<h2 id="final-heading">Lock in your numbers.</h2>
+		<p class="lede">
+			Enter your stats, pay {PDF_OFFER_PRICE_LABEL}, open the PDF. Same Yeh Bro metal. Built for you.
 		</p>
 		<div class="cta-row">
-			<a class="btn btn-primary" href={SYSTEM_HREF}>Open {SYSTEM_NAME}</a>
-			<a class="btn btn-secondary" href={FOOD_HREF}>Open {FOOD_NAME}</a>
-			<a class="btn btn-secondary" href="/shop">Shop</a>
+			<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
 		</div>
 	</section>
 </BaseLayout>
+
+<script>
+	import {
+		PDF_CTA_LABEL,
+		PDF_OFFER_PRICE_LABEL,
+		PDF_PLAN_HREF,
+		PDF_UNLOCK_STORAGE_KEY,
+	} from '../data/pdf-offer';
+	import {
+		GOAL_DEFAULTS,
+		type Activity,
+		type Goal,
+		type Sex,
+		type TrainingDaysPref,
+	} from '../lib/food-os';
+	import {
+		EXAMPLE_PROFILE_HINT,
+		calcFromProfile,
+		isProfileReady,
+		readProfile,
+		writeProfile,
+		type YehBroProfile,
+	} from '../lib/user-store';
+
+	const form = document.getElementById('funnel-form') as HTMLFormElement | null;
+	const calcPreview = document.getElementById('calc-preview');
+	const funnelNote = document.getElementById('funnel-note');
+	const checkoutPanel = document.getElementById('checkout');
+	const checkoutNote = document.getElementById('checkout-note');
+	const payBtn = document.getElementById('pay-btn') as HTMLButtonElement | null;
+	const activitySelect = document.getElementById('activity') as HTMLSelectElement | null;
+
+	type CoachingTier = 'none' | 'weekly' | 'paid_in_full';
+
+	function selectedRadio(name: string): string | null {
+		const el = form?.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+		return el?.value ?? null;
+	}
+
+	function coachingChoice(): CoachingTier {
+		const el = document.querySelector<HTMLInputElement>('input[name="coaching"]:checked');
+		const v = el?.value;
+		if (v === 'weekly' || v === 'paid_in_full') return v;
+		return 'none';
+	}
+
+	function num(name: string): number | undefined {
+		const el = form?.elements.namedItem(name) as HTMLInputElement | null;
+		if (!el?.value) return undefined;
+		const n = Number(el.value);
+		return Number.isFinite(n) ? n : undefined;
+	}
+
+	function collectPartial(): Partial<YehBroProfile> {
+		const sex = selectedRadio('sex') as Sex | null;
+		const goal = selectedRadio('goal') as Goal | null;
+		const trainingRaw = selectedRadio('trainingDays');
+		const trainingDays = (trainingRaw === '4' ? 4 : 3) as TrainingDaysPref;
+		const activity = (activitySelect?.value || undefined) as Activity | undefined;
+		const cutPct = goal === 'cut' ? Math.round(Math.abs(GOAL_DEFAULTS.cut.defaultAdj) * 100) : 18;
+		const bulkPct =
+			goal === 'lean-bulk' ? Math.round(Math.abs(GOAL_DEFAULTS['lean-bulk'].defaultAdj) * 100) : 10;
+
+		return {
+			weightKg: num('weightKg'),
+			heightCm: num('heightCm'),
+			age: num('age'),
+			goalWeightKg: num('goalWeightKg'),
+			sex: sex ?? undefined,
+			goal: goal ?? undefined,
+			activity,
+			trainingDays,
+			cutPct,
+			bulkPct,
+			targets: { source: 'calculated' },
+		};
+	}
+
+	function syncPreview() {
+		if (!calcPreview) return;
+		const partial = collectPartial();
+		const base = readProfile();
+		const draft: YehBroProfile = {
+			version: 1,
+			updatedAt: new Date().toISOString(),
+			cutPct: partial.cutPct ?? base?.cutPct ?? 18,
+			bulkPct: partial.bulkPct ?? base?.bulkPct ?? 10,
+			trainingDays: (partial.trainingDays ?? base?.trainingDays ?? 3) as TrainingDaysPref,
+			targets: partial.targets ?? base?.targets ?? { source: 'calculated' },
+			dietary: base?.dietary ?? { pattern: 'none', excludes: '', notes: '' },
+			weightKg: partial.weightKg ?? base?.weightKg,
+			heightCm: partial.heightCm ?? base?.heightCm,
+			age: partial.age ?? base?.age,
+			goalWeightKg: partial.goalWeightKg ?? base?.goalWeightKg,
+			sex: partial.sex ?? base?.sex,
+			activity: partial.activity ?? base?.activity,
+			goal: partial.goal ?? base?.goal,
+		};
+		if (!isProfileReady(draft)) {
+			calcPreview.textContent = 'Enter body stats to preview calculated calories.';
+			return;
+		}
+		const result = calcFromProfile(draft);
+		if (!result || !draft.goal) {
+			calcPreview.textContent = 'Enter body stats to preview calculated calories.';
+			return;
+		}
+		const label = GOAL_DEFAULTS[draft.goal].label;
+		calcPreview.textContent = `Preview: ~${result.calories} kcal · P ${result.proteinG}g / C ${result.carbsG}g / F ${result.fatG}g · ${label}`;
+	}
+
+	function hydrate() {
+		const p = readProfile();
+		if (!form) return;
+		const weight = document.getElementById('weightKg') as HTMLInputElement | null;
+		const height = document.getElementById('heightCm') as HTMLInputElement | null;
+		const age = document.getElementById('age') as HTMLInputElement | null;
+		const goalW = document.getElementById('goalWeightKg') as HTMLInputElement | null;
+		if (weight) weight.placeholder = String(EXAMPLE_PROFILE_HINT.weightKg);
+		if (height) height.placeholder = String(EXAMPLE_PROFILE_HINT.heightCm);
+		if (age) age.placeholder = String(EXAMPLE_PROFILE_HINT.age);
+		if (goalW) goalW.placeholder = String(EXAMPLE_PROFILE_HINT.goalWeightKg);
+		if (!p) {
+			if (activitySelect) activitySelect.value = 'moderate';
+			syncPreview();
+			return;
+		}
+		if (weight && p.weightKg != null) weight.value = String(p.weightKg);
+		if (height && p.heightCm != null) height.value = String(p.heightCm);
+		if (age && p.age != null) age.value = String(p.age);
+		if (goalW && p.goalWeightKg != null) goalW.value = String(p.goalWeightKg);
+		if (p.sex) {
+			const sexEl = form.querySelector<HTMLInputElement>(`input[name="sex"][value="${p.sex}"]`);
+			if (sexEl) sexEl.checked = true;
+		}
+		if (p.goal) {
+			const goalEl = form.querySelector<HTMLInputElement>(`input[name="goal"][value="${p.goal}"]`);
+			if (goalEl) goalEl.checked = true;
+		}
+		if (p.trainingDays) {
+			const td = form.querySelector<HTMLInputElement>(
+				`input[name="trainingDays"][value="${p.trainingDays}"]`,
+			);
+			if (td) td.checked = true;
+		}
+		if (activitySelect && p.activity) activitySelect.value = p.activity;
+		syncPreview();
+	}
+
+	function showCheckout() {
+		if (!checkoutPanel) return;
+		checkoutPanel.hidden = false;
+		checkoutPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function unlockLocal(coaching: CoachingTier) {
+		localStorage.setItem(
+			PDF_UNLOCK_STORAGE_KEY,
+			JSON.stringify({
+				at: new Date().toISOString(),
+				priceAud: 4.99,
+				coaching,
+				mode: 'stub',
+			}),
+		);
+	}
+
+	async function runCheckout() {
+		if (!checkoutNote || !payBtn) return;
+		const profile = readProfile();
+		if (!isProfileReady(profile)) {
+			checkoutNote.textContent = 'Finish your stats above first.';
+			form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			return;
+		}
+
+		const coaching = coachingChoice();
+		payBtn.disabled = true;
+		payBtn.textContent = 'Working…';
+		checkoutNote.textContent = '';
+
+		try {
+			const res = await fetch('/api/checkout', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					coaching,
+					successUrl: `${location.origin}${PDF_PLAN_HREF}?checkout=success`,
+					cancelUrl: `${location.origin}/#checkout`,
+				}),
+			});
+			const data = (await res.json()) as {
+				mode?: string;
+				ok?: boolean;
+				url?: string;
+				message?: string;
+				requiredSecrets?: string[];
+			};
+
+			if (data.mode === 'stripe' && data.url) {
+				unlockLocal(coaching);
+				location.href = data.url;
+				return;
+			}
+
+			if (data.mode === 'stub') {
+				unlockLocal(coaching);
+				checkoutNote.textContent =
+					data.message ||
+					`Live Stripe secrets not bound yet — unlocking your personalised plan for preview. Required later: ${(data.requiredSecrets || []).join(', ')}.`;
+				payBtn.textContent = PDF_CTA_LABEL;
+				payBtn.disabled = false;
+				window.setTimeout(() => {
+					location.href = `${PDF_PLAN_HREF}?checkout=stub`;
+				}, 900);
+				return;
+			}
+
+			checkoutNote.textContent = data.message || 'Checkout failed. Try again.';
+			payBtn.disabled = false;
+			payBtn.textContent = PDF_CTA_LABEL;
+		} catch {
+			// Dev / static preview without Functions — still unlock PDF path for sample data.
+			unlockLocal(coaching);
+			checkoutNote.textContent = `Checkout API unavailable in this preview — unlocking the ${PDF_OFFER_PRICE_LABEL} plan path locally. Bind Stripe secrets for live charges.`;
+			payBtn.disabled = false;
+			payBtn.textContent = PDF_CTA_LABEL;
+			window.setTimeout(() => {
+				location.href = `${PDF_PLAN_HREF}?checkout=local`;
+			}, 900);
+		}
+	}
+
+	form?.addEventListener('input', syncPreview);
+	form?.addEventListener('change', syncPreview);
+
+	form?.addEventListener('submit', (e) => {
+		e.preventDefault();
+		if (!form.checkValidity()) {
+			form.reportValidity();
+			if (funnelNote) funnelNote.textContent = 'Fill the required stats first.';
+			return;
+		}
+		const next = writeProfile(collectPartial());
+		if (!isProfileReady(next)) {
+			if (funnelNote) funnelNote.textContent = 'Something’s missing — check weight, height, age, sex, activity, and goal.';
+			return;
+		}
+		if (funnelNote) {
+			funnelNote.textContent = `Stats saved. ${PDF_OFFER_PRICE_LABEL} unlocks your personalised PDF.`;
+		}
+		showCheckout();
+	});
+
+	document.getElementById('offer-cta')?.addEventListener('click', (e) => {
+		const profile = readProfile();
+		if (!isProfileReady(profile)) {
+			e.preventDefault();
+			form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			if (funnelNote) funnelNote.textContent = 'Enter your stats first — then checkout.';
+			return;
+		}
+		showCheckout();
+	});
+
+	payBtn?.addEventListener('click', () => {
+		void runCheckout();
+	});
+
+	hydrate();
+
+	if (location.hash === '#checkout' && isProfileReady(readProfile())) {
+		showCheckout();
+	}
+</script>
 
 <style>
 	.hero {
@@ -281,7 +791,7 @@ const tools = [
 		font-size: clamp(1.65rem, 4.6vw, 2.85rem);
 		line-height: 1.08;
 		letter-spacing: 0.02em;
-		max-width: 16ch;
+		max-width: 18ch;
 		text-wrap: balance;
 	}
 	.hero-sub {
@@ -291,6 +801,297 @@ const tools = [
 		color: rgba(242, 242, 240, 0.88);
 		max-width: 34rem;
 	}
+
+	.fail-grid {
+		list-style: none;
+		margin: 2rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 0;
+		border-top: 1px solid var(--yb-edge);
+	}
+	.fail-grid li {
+		margin: 0;
+		padding: 1.25rem 0;
+		border-bottom: 1px solid var(--yb-edge);
+		display: grid;
+		gap: 0.35rem;
+		animation: rise-in 0.65s ease both;
+		animation-delay: calc(var(--i) * 0.07s);
+	}
+	.fail-grid strong {
+		font-family: var(--font-display);
+		font-size: 1.15rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--yb-lime);
+		font-weight: 400;
+	}
+	.fail-grid span {
+		color: rgba(242, 242, 240, 0.8);
+		max-width: 40rem;
+	}
+
+	.shift {
+		border-top: 1px solid var(--yb-edge);
+		border-bottom: 1px solid var(--yb-edge);
+		background:
+			linear-gradient(180deg, rgba(19, 19, 18, 0.65), rgba(8, 8, 8, 0.4)),
+			var(--noise);
+	}
+	.shift-inner {
+		max-width: 40rem;
+	}
+
+	.include-list {
+		list-style: none;
+		margin: 2rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 1.25rem;
+	}
+	@media (min-width: 720px) {
+		.include-list {
+			grid-template-columns: 1fr 1fr;
+			gap: 1.5rem 2rem;
+		}
+	}
+	.include-list li {
+		margin: 0;
+		display: grid;
+		gap: 0.35rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--yb-edge);
+	}
+	.include-list strong {
+		font-family: var(--font-display);
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		font-size: 1.05rem;
+		font-weight: 400;
+	}
+	.include-list span {
+		color: rgba(242, 242, 240, 0.78);
+		font-size: 0.98rem;
+	}
+
+	.how {
+		border-top: 1px solid var(--yb-edge);
+		border-bottom: 1px solid var(--yb-edge);
+		background:
+			radial-gradient(ellipse 50% 60% at 100% 0%, rgba(200, 241, 53, 0.05), transparent 55%),
+			var(--noise);
+	}
+	.how-steps {
+		list-style: none;
+		margin: 2rem 0 0;
+		padding: 0;
+		counter-reset: step;
+		display: grid;
+		gap: 1.25rem;
+	}
+	@media (min-width: 800px) {
+		.how-steps {
+			grid-template-columns: repeat(3, 1fr);
+			gap: 1.5rem;
+		}
+	}
+	.how-steps li {
+		margin: 0;
+		display: grid;
+		gap: 0.4rem;
+		counter-increment: step;
+		position: relative;
+		padding-top: 0.25rem;
+	}
+	.how-steps li::before {
+		content: counter(step);
+		font-family: var(--font-display);
+		font-size: 2rem;
+		color: var(--yb-lime);
+		line-height: 1;
+		letter-spacing: 0.04em;
+	}
+	.how-steps strong {
+		font-family: var(--font-display);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		font-weight: 400;
+	}
+	.how-steps span {
+		color: rgba(242, 242, 240, 0.78);
+		font-size: 0.98rem;
+	}
+
+	.funnel-form {
+		margin-top: 1.75rem;
+		max-width: 40rem;
+		display: grid;
+		gap: 1.25rem;
+	}
+	.funnel-fields {
+		display: grid;
+		gap: 0.9rem;
+		grid-template-columns: 1fr 1fr;
+	}
+	.ff {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.92rem;
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.ff-full {
+		grid-column: 1 / -1;
+	}
+	.ff input,
+	.ff select,
+	.funnel-form select {
+		font: inherit;
+		color: var(--yb-offwhite);
+		background: var(--yb-surface);
+		border: 1px solid var(--yb-edge);
+		border-radius: 2px;
+		padding: 0.7rem 0.75rem;
+		width: 100%;
+	}
+	.ff input:focus,
+	.ff select:focus {
+		outline: 2px solid rgba(200, 241, 53, 0.45);
+		outline-offset: 1px;
+	}
+	.funnel-seg {
+		margin: 0;
+		padding: 0;
+		border: none;
+		display: grid;
+		gap: 0.55rem;
+	}
+	.funnel-seg legend {
+		font-size: 0.92rem;
+		margin-bottom: 0.35rem;
+		color: rgba(242, 242, 240, 0.88);
+	}
+	.seg-opt {
+		display: flex;
+		gap: 0.65rem;
+		align-items: flex-start;
+		padding: 0.75rem 0.85rem;
+		border: 1px solid var(--yb-edge);
+		background: rgba(19, 19, 18, 0.7);
+		cursor: pointer;
+	}
+	.seg-opt:has(input:checked) {
+		border-color: rgba(200, 241, 53, 0.55);
+		background: rgba(200, 241, 53, 0.06);
+	}
+	.seg-opt input {
+		margin-top: 0.2rem;
+	}
+	.seg-opt span {
+		display: grid;
+		gap: 0.15rem;
+	}
+	.seg-opt strong {
+		font-size: 0.98rem;
+	}
+	.seg-opt small {
+		color: var(--yb-muted);
+		font-size: 0.88rem;
+	}
+	.funnel-preview,
+	.funnel-note {
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	.offer {
+		border-top: 1px solid var(--yb-edge);
+		border-bottom: 1px solid var(--yb-edge);
+		background:
+			linear-gradient(180deg, rgba(19, 19, 18, 0.7), rgba(8, 8, 8, 0.45)),
+			var(--noise);
+	}
+	.offer-inner {
+		max-width: 40rem;
+	}
+	.price-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.75rem 1rem;
+		margin: 1.5rem 0 0;
+	}
+	.price {
+		font-family: var(--font-display);
+		font-size: clamp(2.4rem, 6vw, 3.4rem);
+		letter-spacing: 0.02em;
+		color: var(--yb-lime);
+		line-height: 1;
+	}
+	.price-meta {
+		color: var(--yb-muted);
+		font-size: 0.95rem;
+	}
+
+	.checkout-panel {
+		scroll-margin-top: 5rem;
+	}
+	.checkout-card {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 0.5rem 1rem;
+		padding: 1rem 0;
+		border-top: 1px solid var(--yb-edge);
+		border-bottom: 1px solid var(--yb-edge);
+		margin: 1.25rem 0 1.5rem;
+		max-width: 40rem;
+	}
+	.checkout-price {
+		font-family: var(--font-display);
+		color: var(--yb-lime);
+		letter-spacing: 0.04em;
+	}
+	.upsell {
+		max-width: 40rem;
+		margin: 0 0 1.5rem;
+		border: 1px solid var(--yb-edge);
+		background: rgba(19, 19, 18, 0.55);
+		padding: 0.85rem 1rem 1rem;
+	}
+	.upsell summary {
+		cursor: pointer;
+		list-style: none;
+		display: grid;
+		gap: 0.2rem;
+	}
+	.upsell summary::-webkit-details-marker {
+		display: none;
+	}
+	.upsell-title {
+		font-family: var(--font-display);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		font-size: 1rem;
+	}
+	.upsell-hint {
+		color: var(--yb-muted);
+		font-size: 0.88rem;
+	}
+	.upsell-blurb {
+		margin: 0.85rem 0 1rem;
+		color: rgba(242, 242, 240, 0.8);
+		font-size: 0.98rem;
+	}
+	.upsell-tiers {
+		gap: 0.5rem;
+	}
+
+	.final-cta {
+		border-top: 1px solid var(--yb-edge);
+		border-bottom: 1px solid var(--yb-edge);
+	}
+
 	@keyframes logo-settle {
 		from {
 			transform: translateY(14px) scale(0.97);
@@ -300,114 +1101,6 @@ const tools = [
 			transform: translateY(0) scale(1);
 			opacity: 1;
 		}
-	}
-	.intro-block {
-		padding-bottom: 2rem;
-	}
-	.lane-lede {
-		margin-bottom: 2rem;
-	}
-	.pillar-grid {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0;
-		border-top: 1px solid var(--yb-edge);
-	}
-	.pillar-grid li {
-		margin: 0;
-		animation: rise-in 0.65s ease both;
-		animation-delay: calc(var(--i) * 0.07s);
-	}
-	.pillar-grid a {
-		display: grid;
-		gap: 0.35rem;
-		padding: 1.25rem 0;
-		border-bottom: 1px solid var(--yb-edge);
-		text-decoration: none;
-		color: var(--yb-offwhite);
-		transition: color 0.2s ease, padding-left 0.2s ease;
-	}
-	.pillar-grid a:hover {
-		color: var(--yb-lime);
-		padding-left: 0.4rem;
-	}
-	.pillar-label {
-		font-family: var(--font-display);
-		font-size: clamp(1.35rem, 3vw, 1.75rem);
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-	.pillar-line {
-		font-size: 1rem;
-		color: var(--yb-muted);
-		max-width: 36rem;
-	}
-	.pillar-grid a.pillar-shop .pillar-label {
-		color: var(--yb-lime);
-	}
-	.philosophy {
-		border-top: 1px solid var(--yb-edge);
-		border-bottom: 1px solid var(--yb-edge);
-		background:
-			linear-gradient(180deg, rgba(19, 19, 18, 0.65), rgba(8, 8, 8, 0.4)),
-			var(--noise);
-	}
-	.philosophy-inner {
-		max-width: 42rem;
-	}
-	.philosophy-points {
-		list-style: none;
-		margin: 2rem 0 0;
-		padding: 0;
-		display: grid;
-		gap: 1.25rem;
-	}
-	@media (min-width: 720px) {
-		.philosophy-points {
-			grid-template-columns: repeat(3, 1fr);
-			gap: 1.75rem;
-		}
-	}
-	.philosophy-points li {
-		margin: 0;
-		display: grid;
-		gap: 0.35rem;
-	}
-	.philosophy-points strong {
-		font-family: var(--font-display);
-		font-size: 1.05rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--yb-lime);
-		font-weight: 400;
-	}
-	.philosophy-points span {
-		color: rgba(242, 242, 240, 0.78);
-		font-size: 0.98rem;
-	}
-	.brand-statement {
-		position: relative;
-		overflow: hidden;
-	}
-	.brand-statement::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background:
-			radial-gradient(ellipse 55% 70% at 90% 50%, rgba(200, 241, 53, 0.05), transparent 60%),
-			var(--noise);
-		pointer-events: none;
-		opacity: 0.7;
-	}
-	.brand-statement-inner {
-		position: relative;
-		max-width: 40rem;
-	}
-	.final-cta {
-		border-top: 1px solid var(--yb-edge);
-		border-bottom: 1px solid var(--yb-edge);
 	}
 	@keyframes hero-scale {
 		from {
@@ -450,12 +1143,15 @@ const tools = [
 			height: clamp(5.5rem, 22vh, 9.5rem);
 			max-width: min(100%, 11.5rem);
 		}
+		.funnel-fields {
+			grid-template-columns: 1fr;
+		}
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.hero-img,
 		.hero-grit,
 		.hero-brand :global(.brand-logo--hero),
-		.pillar-grid li {
+		.fail-grid li {
 			animation: none;
 		}
 		.hero-img {
