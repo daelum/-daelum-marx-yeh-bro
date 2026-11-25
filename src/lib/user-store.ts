@@ -22,6 +22,14 @@ export type TargetSource = 'calculated' | 'user';
 
 export type DietaryPattern = 'none' | 'vegetarian' | 'pescatarian' | 'vegan' | 'other';
 
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'experienced';
+
+export type EquipmentPref = 'full-gym' | 'limited';
+
+export type SleepHoursBand = 'under-6' | '6-7' | '7-9' | 'over-9';
+
+export type StepsBand = 'under-5k' | '5-8k' | '8-10k' | '10k-plus';
+
 export interface DietaryPrefs {
 	pattern: DietaryPattern;
 	/** Free-text excludes (allergies / hard nos). */
@@ -41,6 +49,9 @@ export interface MacroTargets {
 export interface YehBroProfile {
 	version: 1;
 	updatedAt: string;
+	/** Required for personalised plan delivery. */
+	firstName?: string;
+	email?: string;
 	weightKg?: number;
 	heightCm?: number;
 	age?: number;
@@ -50,8 +61,14 @@ export interface YehBroProfile {
 	goal?: Goal;
 	cutPct: number;
 	bulkPct: number;
-	/** 3 → PPL, 4 → PPLU. */
+	/** 3 → PPL, 4 → PPLU, 5 → PPLUL, 6 → PPL×2. */
 	trainingDays: TrainingDaysPref;
+	experience?: ExperienceLevel;
+	equipment?: EquipmentPref;
+	sleepHours?: SleepHoursBand;
+	stepsBand?: StepsBand;
+	/** Injuries / limitations free text. */
+	limitations?: string;
 	targets: MacroTargets;
 	dietary: DietaryPrefs;
 }
@@ -90,15 +107,25 @@ const SAFE_RETURN_PREFIXES = [
 ] as const;
 
 export function restDays(trainingDays: TrainingDaysPref): number {
-	return (7 - trainingDays) as 3 | 4;
+	return Math.max(0, 7 - trainingDays);
 }
 
-export function trainingDaysToSplit(days: TrainingDaysPref): 'ppl' | 'pplu' {
-	return days === 4 ? 'pplu' : 'ppl';
+export function trainingDaysToSplit(
+	days: TrainingDaysPref,
+): 'ppl' | 'pplu' | 'pplul' | 'pplx2' {
+	if (days === 6) return 'pplx2';
+	if (days === 5) return 'pplul';
+	if (days === 4) return 'pplu';
+	return 'ppl';
 }
 
-export function splitToTrainingDays(split: 'ppl' | 'pplu'): TrainingDaysPref {
-	return split === 'pplu' ? 4 : 3;
+export function splitToTrainingDays(
+	split: 'ppl' | 'pplu' | 'pplul' | 'pplx2',
+): TrainingDaysPref {
+	if (split === 'pplx2') return 6;
+	if (split === 'pplul') return 5;
+	if (split === 'pplu') return 4;
+	return 3;
 }
 
 function blankProfile(): YehBroProfile {
@@ -125,10 +152,16 @@ export function fromStoredFoodOs(stored: StoredFoodOs): YehBroProfile {
 		goal: stored.goal,
 		cutPct: stored.cutPct,
 		bulkPct: stored.bulkPct,
-		trainingDays: stored.trainingDays === 4 ? 4 : 3,
+		trainingDays: coerceTrainingDays(stored.trainingDays),
 		targets: { ...DEFAULT_TARGETS },
 		dietary: { ...DEFAULT_DIETARY },
 	};
+}
+
+function coerceTrainingDays(raw: unknown, fallback: TrainingDaysPref = 3): TrainingDaysPref {
+	const n = typeof raw === 'number' ? raw : Number(raw);
+	if (n === 3 || n === 4 || n === 5 || n === 6) return n;
+	return fallback;
 }
 
 /** Food Bro–compatible slice for calc / personal-plan. */
@@ -152,7 +185,7 @@ export function toStoredFoodOs(profile: YehBroProfile): StoredFoodOs | null {
 		goal: profile.goal,
 		cutPct: profile.cutPct,
 		bulkPct: profile.bulkPct,
-		trainingDays: profile.trainingDays === 4 ? 4 : 3,
+		trainingDays: coerceTrainingDays(profile.trainingDays),
 	};
 }
 
@@ -174,11 +207,25 @@ export function isProfileReady(profile: YehBroProfile | null | undefined): boole
 	);
 }
 
+function looksLikeEmail(raw: string | undefined): boolean {
+	if (!raw) return false;
+	const e = raw.trim();
+	return e.length >= 5 && e.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+/** Funnel / paid plan intake — body stats + first name + email. */
+export function isPlanIntakeReady(profile: YehBroProfile | null | undefined): boolean {
+	if (!isProfileReady(profile) || !profile) return false;
+	return Boolean(profile.firstName?.trim()) && looksLikeEmail(profile.email);
+}
+
 export function missingProfileFields(profile: YehBroProfile | null | undefined): string[] {
 	const missing: string[] = [];
 	if (!profile) {
-		return ['height', 'weight', 'age', 'sex', 'activity', 'goal'];
+		return ['first name', 'email', 'height', 'weight', 'age', 'sex', 'activity', 'goal'];
 	}
+	if (!profile.firstName?.trim()) missing.push('first name');
+	if (!looksLikeEmail(profile.email)) missing.push('email');
 	if (profile.heightCm == null || !Number.isFinite(profile.heightCm)) missing.push('height');
 	if (profile.weightKg == null || !Number.isFinite(profile.weightKg)) missing.push('weight');
 	if (profile.age == null || !Number.isFinite(profile.age)) missing.push('age');
@@ -217,6 +264,26 @@ function parseTargets(raw: unknown): MacroTargets {
 	return out;
 }
 
+function parseExperience(raw: unknown): ExperienceLevel | undefined {
+	if (raw === 'beginner' || raw === 'intermediate' || raw === 'experienced') return raw;
+	return undefined;
+}
+
+function parseEquipment(raw: unknown): EquipmentPref | undefined {
+	if (raw === 'full-gym' || raw === 'limited') return raw;
+	return undefined;
+}
+
+function parseSleep(raw: unknown): SleepHoursBand | undefined {
+	if (raw === 'under-6' || raw === '6-7' || raw === '7-9' || raw === 'over-9') return raw;
+	return undefined;
+}
+
+function parseSteps(raw: unknown): StepsBand | undefined {
+	if (raw === 'under-5k' || raw === '5-8k' || raw === '8-10k' || raw === '10k-plus') return raw;
+	return undefined;
+}
+
 function mergePartial(base: YehBroProfile, partial: Partial<YehBroProfile>): YehBroProfile {
 	return {
 		...base,
@@ -225,7 +292,18 @@ function mergePartial(base: YehBroProfile, partial: Partial<YehBroProfile>): Yeh
 		updatedAt: new Date().toISOString(),
 		cutPct: partial.cutPct ?? base.cutPct,
 		bulkPct: partial.bulkPct ?? base.bulkPct,
-		trainingDays: (partial.trainingDays === 4 ? 4 : partial.trainingDays === 3 ? 3 : base.trainingDays) as TrainingDaysPref,
+		trainingDays: coerceTrainingDays(partial.trainingDays, base.trainingDays),
+		firstName:
+			typeof partial.firstName === 'string'
+				? partial.firstName.trim()
+				: base.firstName,
+		email: typeof partial.email === 'string' ? partial.email.trim() : base.email,
+		experience: partial.experience !== undefined ? parseExperience(partial.experience) : base.experience,
+		equipment: partial.equipment !== undefined ? parseEquipment(partial.equipment) : base.equipment,
+		sleepHours: partial.sleepHours !== undefined ? parseSleep(partial.sleepHours) : base.sleepHours,
+		stepsBand: partial.stepsBand !== undefined ? parseSteps(partial.stepsBand) : base.stepsBand,
+		limitations:
+			typeof partial.limitations === 'string' ? partial.limitations.trim() : base.limitations,
 		targets: partial.targets ? parseTargets(partial.targets) : base.targets,
 		dietary: partial.dietary ? parseDietary(partial.dietary) : base.dietary,
 	};
@@ -233,10 +311,11 @@ function mergePartial(base: YehBroProfile, partial: Partial<YehBroProfile>): Yeh
 
 function normalizeParsed(raw: Partial<YehBroProfile> & Partial<StoredFoodOs>): YehBroProfile {
 	const base = blankProfile();
-	const trainingDays: TrainingDaysPref = raw.trainingDays === 4 ? 4 : raw.trainingDays === 3 ? 3 : 3;
 	return {
 		version: 1,
 		updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
+		firstName: typeof raw.firstName === 'string' ? raw.firstName.trim() : undefined,
+		email: typeof raw.email === 'string' ? raw.email.trim() : undefined,
 		weightKg: typeof raw.weightKg === 'number' ? raw.weightKg : undefined,
 		heightCm: typeof raw.heightCm === 'number' ? raw.heightCm : undefined,
 		age: typeof raw.age === 'number' ? raw.age : undefined,
@@ -246,7 +325,12 @@ function normalizeParsed(raw: Partial<YehBroProfile> & Partial<StoredFoodOs>): Y
 		goal: raw.goal,
 		cutPct: typeof raw.cutPct === 'number' ? raw.cutPct : base.cutPct,
 		bulkPct: typeof raw.bulkPct === 'number' ? raw.bulkPct : base.bulkPct,
-		trainingDays,
+		trainingDays: coerceTrainingDays(raw.trainingDays, base.trainingDays),
+		experience: parseExperience(raw.experience),
+		equipment: parseEquipment(raw.equipment),
+		sleepHours: parseSleep(raw.sleepHours),
+		stepsBand: parseSteps(raw.stepsBand),
+		limitations: typeof raw.limitations === 'string' ? raw.limitations.trim() : undefined,
 		targets: parseTargets(raw.targets),
 		dietary: parseDietary(raw.dietary),
 	};
@@ -259,7 +343,7 @@ function readLegacyFoodOs(): YehBroProfile | null {
 		const parsed = JSON.parse(raw) as Partial<StoredFoodOs>;
 		// Legacy always wrote full DEFAULT_INPUTS merges — treat as a saved profile.
 		const stored: StoredFoodOs = { ...DEFAULT_INPUTS, ...parsed };
-		stored.trainingDays = stored.trainingDays === 4 ? 4 : 3;
+		stored.trainingDays = coerceTrainingDays(stored.trainingDays);
 		return fromStoredFoodOs(stored);
 	} catch {
 		return null;

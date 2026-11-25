@@ -1,8 +1,8 @@
 export const SITE_TITLE = 'Yeh Bro';
 /** Unique homepage <title> (includes brand). */
-export const SITE_TITLE_HOME = 'Yeh Bro — Personalised training + nutrition PDF · $4.99';
+export const SITE_TITLE_HOME = 'Yeh Bro — Build my plan · $4.99';
 export const SITE_DESCRIPTION =
-	'Get a personalised Yeh Bro training + nutrition PDF built from your stats — AUD $4.99. Coach-grade plan, not a generic download.';
+	'Stop guessing. Start building. A personalised Yeh Bro training + nutrition plan PDF from your stats — AUD $4.99 one-time.';
 export const SITE_TAGLINE = 'TRAIN HARD. EAT BIG. LIVE UNAPOLOGETICALLY.';
-export const SITE_EYEBROW = 'PERSONALISED PLAN · AUD $4.99';
+export const SITE_EYEBROW = 'YOUR TRAINING. YOUR NUTRITION. YOUR STARTING POINT.';
 export const SITE_URL = 'https://yehbro.com';

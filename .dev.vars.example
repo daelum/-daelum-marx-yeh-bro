@@ -9,3 +9,4 @@ ADMIN_SOCIAL_PASSWORD=replace-me
 # STRIPE_PRICE_ID_PDF_AUD=
 # STRIPE_PRICE_ID_COACHING_WEEKLY_AUD=
 # STRIPE_PRICE_ID_COACHING_12WK_AUD=
+# Verify path: POST /api/checkout/verify { sessionId } — unlock PDF only after paid/stub.

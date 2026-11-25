@@ -12,6 +12,8 @@
 #   STRIPE_PRICE_ID_PDF_AUD        optional — Stripe Price id for AUD 4.99 PDF
 #   STRIPE_PRICE_ID_COACHING_WEEKLY_AUD  optional — weekly coaching upsell ($150/wk)
 #   STRIPE_PRICE_ID_COACHING_12WK_AUD    optional — 12-week paid-in-full coaching ($110/wk)
+#   OPENAI_API_KEY                       optional — limitation-aware training personalisation
+#   RESEND_API_KEY / PLAN_EMAIL_FROM     optional — plan PDF email delivery
 #
 # Bindings must be declared here. Dashboard-only bindings are undefined on
 # Workers+assets deploys and previously caused silent fixture mode (7 fake items).
@@ -44,4 +46,6 @@ run_worker_first = [
 	"/admin/social/api/*",
 	"/admin/social/media/*",
 	"/api/checkout",
+	"/api/checkout/*",
+	"/api/plan/*",
 ]

@@ -7,6 +7,12 @@ import { defineConfig } from 'astro/config';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://yehbro.com',
+	vite: {
+		server: {
+			// Phone HTTPS previews via cloudflared quick tunnels.
+			allowedHosts: ['.trycloudflare.com'],
+		},
+	},
 	integrations: [
 		mdx(),
 		sitemap({
@@ -161,8 +167,3 @@ export default defineConfig({
 		'/guides/recalculating-calories-after-weight-change': '/blog/recalculating-calories-after-weight-change',
 	},
 });
-
-
-
-
-

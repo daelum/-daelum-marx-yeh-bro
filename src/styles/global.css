@@ -4,6 +4,8 @@
 	--yb-offwhite: #f2f2f0;
 	--yb-muted: #8e8e88;
 	--yb-lime: #c8f135;
+	--yb-gold: #d5a644;
+	--yb-gold-hot: #f0c768;
 	--yb-teal: #2ee6a6;
 	--yb-danger: #e85d4c;
 	--yb-steel: #9a9588;
@@ -175,6 +177,32 @@ hr {
 .btn-primary:hover {
 	background: #d4f75a;
 	color: var(--yb-black);
+}
+
+/* Funnel primary CTA — gold only (PDF offer). */
+body.is-funnel .btn-primary {
+	background: var(--yb-gold);
+	color: #0a0a0a;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	font-weight: 800;
+}
+
+body.is-funnel .btn-primary:hover {
+	background: var(--yb-gold-hot);
+	color: #0a0a0a;
+}
+
+body.is-funnel a:not(.btn) {
+	color: var(--yb-gold);
+}
+
+body.is-funnel a:not(.btn):hover {
+	color: var(--yb-gold-hot);
+}
+
+body.is-funnel .eyebrow {
+	color: var(--yb-gold);
 }
 
 .btn-secondary {

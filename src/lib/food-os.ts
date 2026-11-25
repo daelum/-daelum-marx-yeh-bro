@@ -1,8 +1,11 @@
 /**
- * Food Bro — calorie + macro estimates for lifters.
+ * Calorie + macro estimates for lifters + personalised meal templates.
  * Mifflin–St Jeor BMR × activity, then goal adjustment.
+ * Meal line macros come from the food DB (quantity × per-100g) — never portion-weighted fakes.
  * Educational starting point — not medical advice.
  */
+
+import { getFood, macrosForFoodAmount, parseFoodAmount } from '../data/food-db';
 
 export type Sex = 'male' | 'female';
 export type Goal = 'cut' | 'maintain' | 'lean-bulk';
@@ -61,17 +64,17 @@ export const GOAL_DEFAULTS: Record<
 	{ label: string; defaultAdj: number; blurb: string }
 > = {
 	cut: {
-		label: 'Cut',
+		label: 'Lose body fat',
 		defaultAdj: -0.18,
 		blurb: '~15–20% below maintenance — fat loss without torching lifts.',
 	},
 	maintain: {
-		label: 'Maintain',
+		label: 'Maintain / recomp',
 		defaultAdj: 0,
 		blurb: 'Hold weight while training quality and habits rise.',
 	},
 	'lean-bulk': {
-		label: 'Lean bulk',
+		label: 'Build muscle',
 		defaultAdj: 0.1,
 		blurb: '~10% above maintenance — grow without a dirty bulk.',
 	},
@@ -158,7 +161,7 @@ export function calcFoodOs(inputs: FoodOsInputs): FoodOsResult | null {
 	};
 }
 
-export type TrainingDaysPref = 3 | 4;
+export type TrainingDaysPref = 3 | 4 | 5 | 6;
 
 export interface StoredFoodOs {
 	weightKg: number;
@@ -226,16 +229,19 @@ export const COACH_PLAN_EXAMPLE_PROFILE = {
 } as const;
 
 export interface CoachIngredient {
+	/** Food DB id — required for materialised lines. */
+	foodId?: string;
 	name: string;
 	/** Portion as logged — e.g. "60 g", "15 ml", "1 bar". */
 	amount: string;
-	/** Shopping / brand note (Coles → WW, etc.). Never invent SKUs. */
+	/** Shopping / brand note. Never invent SKUs. */
 	note?: string;
-	/** Optional line macros — when set (or after reconcile), must sum to the meal. */
+	/** Line macros from food DB × quantity. Must sum to the meal. */
 	kcal?: number;
 	proteinG?: number;
 	carbsG?: number;
 	fatG?: number;
+	fibreG?: number;
 }
 
 export interface CoachMealSlot {
@@ -244,14 +250,28 @@ export interface CoachMealSlot {
 	proteinG: number;
 	carbsG: number;
 	fatG: number;
-	/** True for Intra Workout — carbs-only training fuel. */
+	fibreG?: number;
+	/** True for Intra — fixed practical serve (not scaled with goal calories). */
 	intra?: boolean;
-	/** Present when founder has sent the recipe dump for this meal. */
 	ingredients?: CoachIngredient[];
 }
 
+/** Template ingredient before macros are materialised from the food DB. */
+export interface MealIngredientDef {
+	foodId: string;
+	amount: string;
+	note?: string;
+}
+
+export interface MealTemplateDef {
+	name: string;
+	intra?: boolean;
+	ingredients: MealIngredientDef[];
+}
+
 export interface CoachDayPlan {
-	id: 'non-training' | 'training' | 'diet-break';
+	/** `training` = the one prescribed daily plan; `diet-break` = optional alternate week. */
+	id: 'training' | 'diet-break' | 'non-training';
 	title: string;
 	when: string;
 	calories: number;
@@ -273,289 +293,269 @@ export interface ShoppingListLine {
 	note?: string;
 }
 
-const MEAL_OATS: CoachMealSlot = {
-	name: 'Walnut & Maple Protein Oats',
-	kcal: 449,
-	proteinG: 35.7,
-	carbsG: 51.5,
-	fatG: 11.1,
+/** Baseline meal ingredient defs — macros come from FOOD_DB, not hardcoded meal totals. */
+const MEAL_OATS_DEF: MealTemplateDef = {
+	name: 'Protein oats',
 	ingredients: [
-		{ name: 'Oats', amount: '60 g' },
-		{ name: 'Whey Protein Isolate Vanilla Creamy', amount: '30 g' },
-		{ name: 'Walnuts', amount: '10 g' },
-		{ name: 'Sugar Free Maple Syrup By Queen', amount: '15 ml' },
-		{ name: 'Strawberries', amount: '100 g' },
+		{ foodId: 'oats', amount: '60 g' },
+		{ foodId: 'wpi_vanilla', amount: '30 g' },
+		{ foodId: 'walnuts', amount: '10 g' },
+		{ foodId: 'sf_maple', amount: '15 ml' },
+		{ foodId: 'strawberries', amount: '100 g' },
 	],
 };
 
-const MEAL_DESSERT: CoachMealSlot = {
-	name: 'Dessert',
-	kcal: 176,
-	proteinG: 16.2,
-	carbsG: 25.2,
-	fatG: 1.2,
+const MEAL_CHICKEN_DEF: MealTemplateDef = {
+	name: 'Chicken and rice',
 	ingredients: [
-		{ name: 'Yopro Salted Caramel Yoghurt By Danone', amount: '150 g' },
-		{ name: 'Frozen Mixed Berries', amount: '150 g' },
-		{ name: 'Maple Syrup Sugar Free', amount: '15 g' },
+		{ foodId: 'chicken_breast_cooked', amount: '120 g' },
+		{ foodId: 'mexican_rice', amount: '175 g' },
+		{ foodId: 'carrots_peas_corn', amount: '100 g' },
+		{ foodId: 'peri_mayo', amount: '15 ml' },
 	],
 };
 
-/** Shared base meals (non-training + training). */
-const COACH_BASE_MEALS: CoachMealSlot[] = [
-	MEAL_OATS,
-	{
-		name: 'Peri Chicken & Mexican Rice',
-		kcal: 577,
-		proteinG: 47.9,
-		carbsG: 65.4,
-		fatG: 13.8,
-		ingredients: [
-			{ name: 'Chicken Breast Cooked', amount: '120 g' },
-			{ name: "Express Mexican Style Rice By Uncle Ben's", amount: '175 g' },
-			{ name: 'Australian Carrots Peas & Corn', amount: '100 g' },
-			{ name: "Perinaise By Nando's", amount: '15 ml' },
-		],
-	},
-	{
-		name: 'Snack',
-		kcal: 169,
-		proteinG: 3.0,
-		carbsG: 29.3,
-		fatG: 4.4,
-		ingredients: [
-			{ name: 'Uncle Tobys Kit Kat Muesli Bar', amount: '1 bar' },
-			{ name: 'Kiwi', amount: '100 g' },
-		],
-	},
-	{
-		name: 'Pre Workout',
-		kcal: 406,
-		proteinG: 23.1,
-		carbsG: 65.0,
-		fatG: 6.0,
-		ingredients: [
-			{ name: "Rice Bubbles by Kellogg's", amount: '60 g' },
-			{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '20 g' },
-			{ name: 'Banana', amount: '50 g' },
-			{ name: "Smooth Peanut Butter by Mayver's", amount: '10 g' },
-		],
-	},
-	{
-		name: 'Spag Bowl',
-		kcal: 438,
-		proteinG: 38.3,
-		carbsG: 53.7,
-		fatG: 7.8,
-		ingredients: [
-			{ name: '5% Fat Extra Lean Mince Beef', amount: '120 g' },
-			{ name: 'Spirals Pasta By Woolworths', amount: '60 g' },
-			{ name: 'Italian Tomato Passata By Woolworths', amount: '100 ml' },
-			{ name: 'Zucchini', amount: '75 g' },
-			{ name: 'Mushrooms', amount: '75 g' },
-		],
-	},
-	MEAL_DESSERT,
+const MEAL_SNACK_DEF: MealTemplateDef = {
+	name: 'Snack',
+	ingredients: [
+		{ foodId: 'muesli_bar', amount: '1 bar' },
+		{ foodId: 'kiwi', amount: '100 g' },
+	],
+};
+
+/** Pre-workout includes prescribed 1 L coconut water (not optional / not a separate meal). */
+const MEAL_PRE_DEF: MealTemplateDef = {
+	name: 'Pre-workout',
+	ingredients: [
+		{ foodId: 'puffed_rice', amount: '60 g' },
+		{ foodId: 'wpi_choc', amount: '20 g' },
+		{ foodId: 'banana', amount: '50 g' },
+		{ foodId: 'peanut_butter', amount: '10 g' },
+		{ foodId: 'coconut_water', amount: '1000 ml' },
+	],
+};
+
+const MEAL_SPAG_DEF: MealTemplateDef = {
+	name: 'Spag bowl',
+	ingredients: [
+		{ foodId: 'lean_mince_5', amount: '120 g' },
+		{ foodId: 'pasta_dry', amount: '60 g' },
+		{ foodId: 'passata', amount: '100 ml' },
+		{ foodId: 'zucchini', amount: '75 g' },
+		{ foodId: 'mushrooms', amount: '75 g' },
+	],
+};
+
+const MEAL_DESSERT_DEF: MealTemplateDef = {
+	name: 'Yoghurt and berries',
+	ingredients: [
+		{ foodId: 'hp_yoghurt', amount: '150 g' },
+		{ foodId: 'mixed_berries', amount: '150 g' },
+		{ foodId: 'sf_maple', amount: '15 ml' },
+	],
+};
+
+/** One complete daily meal structure — coconut water lives inside Pre-workout only. */
+const COACH_DAILY_MEAL_DEFS: MealTemplateDef[] = [
+	MEAL_OATS_DEF,
+	MEAL_CHICKEN_DEF,
+	MEAL_SNACK_DEF,
+	MEAL_PRE_DEF,
+	MEAL_SPAG_DEF,
+	MEAL_DESSERT_DEF,
 ];
-const INTRA_WORKOUT: CoachMealSlot = {
-	name: 'Intra Workout',
-	kcal: 148,
-	proteinG: 0,
-	carbsG: 37.0,
-	fatG: 0,
-	intra: true,
-	ingredients: [
-		{ name: '100% Pure Coconut Water By Woolworths', amount: '1000 ml' },
-	],
-};
+
+/** @deprecated Kept for legacy shopping helpers; prefer COACH_DAILY_MEAL_DEFS. */
+const COACH_BASE_MEAL_DEFS: MealTemplateDef[] = COACH_DAILY_MEAL_DEFS;
+
+const DIET_BREAK_MEAL_DEFS: MealTemplateDef[] = [
+	MEAL_OATS_DEF,
+	{
+		...MEAL_CHICKEN_DEF,
+		ingredients: [
+			{ foodId: 'chicken_breast_cooked', amount: '120 g' },
+			{ foodId: 'mexican_rice', amount: '225 g' },
+			{ foodId: 'carrots_peas_corn', amount: '100 g' },
+			{ foodId: 'peri_mayo', amount: '15 ml' },
+		],
+	},
+	{
+		...MEAL_SNACK_DEF,
+		ingredients: [
+			{ foodId: 'muesli_bar', amount: '2 bars' },
+			{ foodId: 'kiwi', amount: '100 g' },
+		],
+	},
+	{
+		name: 'Pre-workout',
+		ingredients: [
+			{ foodId: 'puffed_rice', amount: '90 g' },
+			{ foodId: 'wpi_choc', amount: '20 g' },
+			{ foodId: 'banana', amount: '50 g' },
+			{ foodId: 'peanut_butter', amount: '10 g' },
+			{ foodId: 'coconut_water', amount: '1000 ml' },
+		],
+	},
+	{
+		...MEAL_SPAG_DEF,
+		ingredients: [
+			{ foodId: 'lean_mince_5', amount: '120 g' },
+			{ foodId: 'pasta_dry', amount: '80 g' },
+			{ foodId: 'passata', amount: '100 ml' },
+			{ foodId: 'zucchini', amount: '75 g' },
+			{ foodId: 'mushrooms', amount: '75 g' },
+		],
+	},
+	MEAL_DESSERT_DEF,
+];
+
+function round1(n: number): number {
+	return Math.round(n * 10) / 10;
+}
+
+/** Materialise a meal template: each line from food DB; meal totals = sum of lines. */
+export function materializeMeal(def: MealTemplateDef): CoachMealSlot {
+	const ingredients: CoachIngredient[] = def.ingredients.map((ing) => {
+		const food = getFood(ing.foodId);
+		const macros = macrosForFoodAmount(ing.foodId, ing.amount);
+		return {
+			foodId: ing.foodId,
+			name: food.name,
+			amount: ing.amount,
+			note: ing.note ?? food.note,
+			kcal: macros.kcal,
+			proteinG: macros.proteinG,
+			carbsG: macros.carbsG,
+			fatG: macros.fatG,
+			fibreG: macros.fibreG,
+		};
+	});
+	const kcal = Math.round(ingredients.reduce((s, i) => s + (i.kcal ?? 0), 0));
+	const proteinG = round1(ingredients.reduce((s, i) => s + (i.proteinG ?? 0), 0));
+	const carbsG = round1(ingredients.reduce((s, i) => s + (i.carbsG ?? 0), 0));
+	const fatG = round1(ingredients.reduce((s, i) => s + (i.fatG ?? 0), 0));
+	const fibreG = round1(ingredients.reduce((s, i) => s + (i.fibreG ?? 0), 0));
+	return {
+		name: def.name,
+		intra: def.intra,
+		kcal,
+		proteinG,
+		carbsG,
+		fatG,
+		fibreG,
+		ingredients,
+	};
+}
+
+function materializeDay(
+	id: CoachDayPlan['id'],
+	title: string,
+	when: string,
+	defs: MealTemplateDef[],
+): CoachDayPlan {
+	const meals = defs.map(materializeMeal);
+	const proteinG = round1(meals.reduce((s, m) => s + m.proteinG, 0));
+	const carbsG = round1(meals.reduce((s, m) => s + m.carbsG, 0));
+	const fatG = round1(meals.reduce((s, m) => s + m.fatG, 0));
+	const calories = Math.round(meals.reduce((s, m) => s + m.kcal, 0));
+	const fibreG = round1(meals.reduce((s, m) => s + (m.fibreG ?? 0), 0));
+	const pcts = macroPcts(calories, proteinG, carbsG, fatG);
+	return {
+		id,
+		title,
+		when,
+		calories,
+		proteinG,
+		carbsG,
+		fatG,
+		fibreG,
+		...pcts,
+		recipesReady: true,
+		meals,
+	};
+}
+
+function macroPcts(calories: number, proteinG: number, carbsG: number, fatG: number) {
+	const pK = proteinG * 4;
+	const cK = carbsG * 4;
+	const fK = fatG * 9;
+	const sum = pK + cK + fK;
+	if (sum <= 0) return { proteinPct: 0, carbsPct: 0, fatPct: 0 };
+	return {
+		proteinPct: Math.round((pK / sum) * 100),
+		carbsPct: Math.round((cK / sum) * 100),
+		fatPct: Math.round((fK / sum) * 100),
+	};
+}
 
 /**
- * Recommended coach day templates from founder screenshots.
- * Scale via calculator + judgment — totals are for the example profile above.
+ * Baseline day templates materialised from the food DB.
+ * Primary prescription is a single daily plan (id: training) with coconut water
+ * inside Pre-workout. Diet-break remains an optional alternate week structure.
  */
 export const COACH_DAY_PLANS: CoachDayPlan[] = [
-	{
-		id: 'non-training',
-		title: 'Non-training day',
-		when: 'Rest days / no hard lifting. Skip Intra.',
-		calories: 2216,
-		proteinG: 164.2,
-		carbsG: 290.1,
-		fatG: 44.3,
-		fibreG: 33.6,
-		proteinPct: 30,
-		carbsPct: 52,
-		fatPct: 18,
-		recipesReady: true,
-		meals: COACH_BASE_MEALS,
-	},
-	{
-		id: 'training',
-		title: 'Training day',
-		when: 'Lift / hard session days. Same base meals as non-training + Intra (carbs only).',
-		calories: 2364,
-		proteinG: 164.2,
-		carbsG: 327.1,
-		fatG: 44.3,
-		fibreG: 33.6,
-		proteinPct: 28,
-		carbsPct: 55,
-		fatPct: 17,
-		recipesReady: true,
-		meals: [...COACH_BASE_MEALS, INTRA_WORKOUT],
-	},
-	{
-		id: 'diet-break',
-		title: 'Diet break',
-		when: '~Maintenance calories for the example profile. Run 1–2 weeks when flat / glycogen depleted — not a forever surplus. Bigger carb portions + Intra daily.',
-		calories: 2738,
-		proteinG: 172.3,
-		carbsG: 401.2,
-		fatG: 49.4,
-		fibreG: 38.4,
-		proteinPct: 25,
-		carbsPct: 59,
-		fatPct: 16,
-		recipesReady: true,
-		meals: [
-			MEAL_OATS,
-			{
-				name: 'Peri Chicken & Mexican Rice',
-				kcal: 655,
-				proteinG: 49.7,
-				carbsG: 80.9,
-				fatG: 14.8,
-				ingredients: [
-					{ name: 'Chicken Breast Cooked', amount: '120 g' },
-					{ name: "Express Mexican Style Rice By Uncle Ben's", amount: '225 g' },
-					{ name: 'Australian Carrots Peas & Corn', amount: '100 g' },
-					{ name: "Perinaise By Nando's", amount: '15 ml' },
-				],
-			},
-			{
-				name: 'Snack',
-				kcal: 277,
-				proteinG: 4.8,
-				carbsG: 46.7,
-				fatG: 7.9,
-				ingredients: [
-					{ name: 'Uncle Tobys Kit Kat Muesli Bar', amount: '2 bars' },
-					{ name: 'Kiwi', amount: '100 g' },
-				],
-			},
-			{
-				name: 'Pre Workout',
-				kcal: 521,
-				proteinG: 25.0,
-				carbsG: 91.4,
-				fatG: 6.2,
-				ingredients: [
-					{ name: "Rice Bubbles by Kellogg's", amount: '90 g' },
-					{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '20 g' },
-					{ name: 'Banana', amount: '50 g' },
-					{ name: "Smooth Peanut Butter by Mayver's", amount: '10 g' },
-				],
-			},
-			{
-				name: 'Spag Bowl',
-				kcal: 511,
-				proteinG: 40.9,
-				carbsG: 68.5,
-				fatG: 8.2,
-				ingredients: [
-					{ name: '5% Fat Extra Lean Mince Beef', amount: '120 g' },
-					{ name: 'Spirals Pasta By Woolworths', amount: '80 g' },
-					{ name: 'Italian Tomato Passata By Woolworths', amount: '100 ml' },
-					{ name: 'Zucchini', amount: '75 g' },
-					{ name: 'Mushrooms', amount: '75 g' },
-				],
-			},
-			MEAL_DESSERT,
-			INTRA_WORKOUT,
-		],
-	},
+	materializeDay(
+		'training',
+		'Daily meal plan',
+		'One complete day. Coconut water (1 L) is prescribed inside Pre-workout — counted once in that meal and the day totals.',
+		COACH_DAILY_MEAL_DEFS,
+	),
+	materializeDay(
+		'diet-break',
+		'Diet break (optional week)',
+		'Optional 1–2 weeks at estimated maintenance when flat or depleted — not the default day. Still one structure; coconut water stays inside Pre-workout.',
+		DIET_BREAK_MEAL_DEFS,
+	),
 ];
 
-/** Default shopping week: 4 training + 3 non-training (rest). */
+/** Default shopping week: 7 × daily plan. */
 export const SHOPPING_WEEK_TRAINING_DAYS = 4;
 export const SHOPPING_WEEK_REST_DAYS = 3;
 
-/**
- * Typical week Woolworths list (4 lift / 3 rest). Phone-copyable totals.
- * No invented SKUs — product names as listed on the templates.
- */
-export const SHOPPING_LIST_TYPICAL_WEEK: ShoppingListLine[] = [
-	{ name: 'Oats', amount: '420 g', note: '60 g × 7 days' },
-	{ name: 'Whey Protein Isolate Vanilla Creamy', amount: '210 g', note: '30 g × 7' },
-	{ name: 'Walnuts', amount: '70 g', note: '10 g × 7' },
-	{ name: 'Sugar Free Maple Syrup By Queen', amount: '105 ml', note: '15 ml × 7 (oats)' },
-	{ name: 'Strawberries', amount: '700 g', note: '100 g × 7' },
-	{ name: 'Chicken Breast Cooked', amount: '840 g', note: '120 g × 7' },
-	{
-		name: "Express Mexican Style Rice By Uncle Ben's",
-		amount: '1225 g',
-		note: '175 g × 7 (base days)',
-	},
-	{ name: 'Australian Carrots Peas & Corn', amount: '700 g', note: '100 g × 7' },
-	{ name: "Perinaise By Nando's", amount: '105 ml', note: '15 ml × 7' },
-	{ name: 'Uncle Tobys Kit Kat Muesli Bar', amount: '7 bars', note: '1 × 7' },
-	{ name: 'Kiwi', amount: '700 g', note: '100 g × 7' },
-	{ name: "Rice Bubbles by Kellogg's", amount: '420 g', note: '60 g × 7' },
-	{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '140 g', note: '20 g × 7' },
-	{ name: 'Banana', amount: '350 g', note: '50 g × 7' },
-	{ name: "Smooth Peanut Butter by Mayver's", amount: '70 g', note: '10 g × 7' },
-	{ name: '5% Fat Extra Lean Mince Beef', amount: '840 g', note: '120 g × 7' },
-	{ name: 'Spirals Pasta By Woolworths', amount: '420 g', note: '60 g × 7' },
-	{ name: 'Italian Tomato Passata By Woolworths', amount: '700 ml', note: '100 ml × 7' },
-	{ name: 'Zucchini', amount: '525 g', note: '75 g × 7' },
-	{ name: 'Mushrooms', amount: '525 g', note: '75 g × 7' },
-	{ name: 'Yopro Salted Caramel Yoghurt By Danone', amount: '1050 g', note: '150 g × 7' },
-	{ name: 'Frozen Mixed Berries', amount: '1050 g', note: '150 g × 7' },
-	{ name: 'Maple Syrup Sugar Free', amount: '105 g', note: '15 g × 7 (dessert)' },
-	{
-		name: '100% Pure Coconut Water By Woolworths',
-		amount: '4 L',
-		note: '1000 ml × 4 training days — skip rest days',
-	},
-];
+function shoppingFromDefs(
+	defs: MealTemplateDef[],
+	times: number,
+	notes?: Record<string, string>,
+): ShoppingListLine[] {
+	type Acc = { name: string; value: number; unit: 'g' | 'ml' | 'bar' | 'L'; note?: string };
+	const map = new Map<string, Acc>();
+	for (let t = 0; t < times; t++) {
+		for (const meal of defs) {
+			for (const ing of meal.ingredients) {
+				const food = getFood(ing.foodId);
+				const parsed = parseFoodAmount(ing.amount);
+				if (!parsed) continue;
+				const key = food.name.toLowerCase();
+				const existing = map.get(key);
+				if (existing) {
+					existing.value += parsed.qty;
+				} else {
+					map.set(key, {
+						name: food.name,
+						value: parsed.qty,
+						unit: parsed.kind,
+						note: notes?.[ing.foodId] ?? food.note,
+					});
+				}
+			}
+		}
+	}
+	return [...map.values()]
+		.sort((a, b) => a.name.localeCompare(b.name))
+		.map((acc) => ({
+			name: acc.name,
+			amount: formatShopAmount({ value: acc.value, unit: acc.unit }),
+			note: acc.note,
+		}));
+}
 
-/**
- * Diet-break week (7× diet-break day). Intra every day. Swap in when running the 1–2 week break.
- */
-export const SHOPPING_LIST_DIET_BREAK_WEEK: ShoppingListLine[] = [
-	{ name: 'Oats', amount: '420 g', note: '60 g × 7' },
-	{ name: 'Whey Protein Isolate Vanilla Creamy', amount: '210 g', note: '30 g × 7' },
-	{ name: 'Walnuts', amount: '70 g', note: '10 g × 7' },
-	{ name: 'Sugar Free Maple Syrup By Queen', amount: '105 ml', note: '15 ml × 7 (oats)' },
-	{ name: 'Strawberries', amount: '700 g', note: '100 g × 7' },
-	{ name: 'Chicken Breast Cooked', amount: '840 g', note: '120 g × 7' },
-	{
-		name: "Express Mexican Style Rice By Uncle Ben's",
-		amount: '1575 g',
-		note: '225 g × 7 (diet-break portion)',
-	},
-	{ name: 'Australian Carrots Peas & Corn', amount: '700 g', note: '100 g × 7' },
-	{ name: "Perinaise By Nando's", amount: '105 ml', note: '15 ml × 7' },
-	{ name: 'Uncle Tobys Kit Kat Muesli Bar', amount: '14 bars', note: '2 × 7' },
-	{ name: 'Kiwi', amount: '700 g', note: '100 g × 7' },
-	{ name: "Rice Bubbles by Kellogg's", amount: '630 g', note: '90 g × 7' },
-	{ name: 'Whey Protein Isolate Smooth Milk Chocolate', amount: '140 g', note: '20 g × 7' },
-	{ name: 'Banana', amount: '350 g', note: '50 g × 7' },
-	{ name: "Smooth Peanut Butter by Mayver's", amount: '70 g', note: '10 g × 7' },
-	{ name: '5% Fat Extra Lean Mince Beef', amount: '840 g', note: '120 g × 7' },
-	{ name: 'Spirals Pasta By Woolworths', amount: '560 g', note: '80 g × 7' },
-	{ name: 'Italian Tomato Passata By Woolworths', amount: '700 ml', note: '100 ml × 7' },
-	{ name: 'Zucchini', amount: '525 g', note: '75 g × 7' },
-	{ name: 'Mushrooms', amount: '525 g', note: '75 g × 7' },
-	{ name: 'Yopro Salted Caramel Yoghurt By Danone', amount: '1050 g', note: '150 g × 7' },
-	{ name: 'Frozen Mixed Berries', amount: '1050 g', note: '150 g × 7' },
-	{ name: 'Maple Syrup Sugar Free', amount: '105 g', note: '15 g × 7 (dessert)' },
-	{
-		name: '100% Pure Coconut Water By Woolworths',
-		amount: '7 L',
-		note: '1000 ml × 7 — Intra every diet-break day',
-	},
-];
+/** Static baseline lists (example profile portions × 7 days). Prefer buildWeekShoppingFromPlans for PDFs. */
+export const SHOPPING_LIST_TYPICAL_WEEK: ShoppingListLine[] = shoppingFromDefs(
+	COACH_DAILY_MEAL_DEFS,
+	7,
+);
+
+export const SHOPPING_LIST_DIET_BREAK_WEEK: ShoppingListLine[] = shoppingFromDefs(DIET_BREAK_MEAL_DEFS, 7);
 
 /** @deprecated Use SHOPPING_LIST_TYPICAL_WEEK — kept as alias for older imports. */
 export const SHOPPING_LIST_PARTIAL = SHOPPING_LIST_TYPICAL_WEEK;
@@ -566,7 +566,7 @@ export function formatShoppingListPlain(
 	opts?: { title?: string; blurb?: string },
 ): string {
 	const header = [
-		opts?.title ?? 'Food Bro — Woolworths week (4 training / 3 rest)',
+		opts?.title ?? 'Woolworths week (4 training / 3 rest)',
 		opts?.blurb ??
 			'Baseline template 36 / 80 kg / 178 cm. Scale days if your split differs. No invented SKUs.',
 		'',
@@ -580,41 +580,60 @@ export function formatShoppingListPlain(
 
 export function formatDietBreakShoppingPlain(): string {
 	return formatShoppingListPlain(SHOPPING_LIST_DIET_BREAK_WEEK, {
-		title: 'Food Bro — diet-break week (7× diet-break day)',
+		title: 'Diet-break week (7× diet-break day)',
 		blurb:
 			'Use for 1–2 weeks when flat / glycogen depleted (~maintenance for example profile). Then return to the typical week list.',
 	});
 }
 
-/** Baseline day kcal the founder templates were logged at. */
+/** Baseline day kcal from food-DB materialisation (example-profile portions). */
 export const COACH_BASELINE_KCAL = {
-	'non-training': 2216,
-	training: 2364,
-	'diet-break': 2738,
+	training: COACH_DAY_PLANS.find((p) => p.id === 'training')!.calories,
+	'diet-break': COACH_DAY_PLANS.find((p) => p.id === 'diet-break')!.calories,
 } as const;
 
-const INTRA_KCAL = INTRA_WORKOUT.kcal;
+/** Prescribed coconut water kcal (fixed 1000 ml inside Pre-workout — counted once). */
+export const COCONUT_WATER_KCAL = macrosForFoodAmount('coconut_water', '1000 ml').kcal;
 
 export interface CoachScaleFactors {
-	/** Applied to non-training + training base meals (Intra stays fixed). */
+	/** Applied to daily-plan meals (coconut water amount stays fixed). */
 	work: number;
-	/** Applied to diet-break non-Intra meals (Intra stays fixed). */
+	/** Applied to diet-break meals (coconut water amount stays fixed). */
 	dietBreak: number;
 	workTargetKcal: number;
 	dietBreakTargetKcal: number;
 }
 
+function coconutKcalInPlan(plan: CoachDayPlan): number {
+	return Math.round(
+		plan.meals.reduce(
+			(s, m) =>
+				s +
+				(m.ingredients ?? [])
+					.filter((i) => i.foodId === 'coconut_water' || /coconut water/i.test(i.name))
+					.reduce((ss, i) => ss + (i.kcal ?? 0), 0),
+			0,
+		),
+	);
+}
+
 /**
  * Map calculator output → day-type scales.
- * Work days (non-training / training) track goal calories; diet-break tracks TDEE (maintenance).
- * Intra coconut water stays a practical 1 L / ~148 kcal so training = scaled rest + Intra.
+ * Daily plan tracks goal calories; diet-break tracks TDEE (maintenance).
+ * Coconut water stays a fixed 1 L serve inside Pre-workout (macros counted once),
+ * so the scale factor applies only to the variable (non-coconut) portion.
  */
 export function coachScaleFactors(result: Pick<FoodOsResult, 'calories' | 'tdee'>): CoachScaleFactors {
 	const workTargetKcal = Math.max(1200, Math.round(result.calories));
 	const dietBreakTargetKcal = Math.max(1200, Math.round(result.tdee));
-	const work = workTargetKcal / COACH_BASELINE_KCAL['non-training'];
-	const dietBreakBase = COACH_BASELINE_KCAL['diet-break'] - INTRA_KCAL;
-	const dietBreak = Math.max(0.35, (dietBreakTargetKcal - INTRA_KCAL) / dietBreakBase);
+	const dailyBase = COACH_DAY_PLANS.find((p) => p.id === 'training')!;
+	const dietBase = COACH_DAY_PLANS.find((p) => p.id === 'diet-break')!;
+	const dailyCoconut = coconutKcalInPlan(dailyBase);
+	const dietCoconut = coconutKcalInPlan(dietBase);
+	const workVar = Math.max(1, COACH_BASELINE_KCAL.training - dailyCoconut);
+	const dietVar = Math.max(1, COACH_BASELINE_KCAL['diet-break'] - dietCoconut);
+	const work = Math.max(0.35, (workTargetKcal - dailyCoconut) / workVar);
+	const dietBreak = Math.max(0.35, (dietBreakTargetKcal - dietCoconut) / dietVar);
 	return { work, dietBreak, workTargetKcal, dietBreakTargetKcal };
 }
 
@@ -658,56 +677,35 @@ export function scalePortionAmount(amount: string, scale: number): string {
 	return trimmed;
 }
 
-function scaleIngredient(ing: CoachIngredient, scale: number, fixedIntra: boolean): CoachIngredient {
-	if (fixedIntra) return { ...ing };
-	return {
-		...ing,
-		amount: scalePortionAmount(ing.amount, scale),
-	};
-}
-
+/**
+ * Scale a materialised meal by adjusting portion amounts, then re-materialise
+ * macros from the food DB. Prescribed coconut water stays a fixed 1000 ml.
+ */
 function scaleMeal(meal: CoachMealSlot, scale: number): CoachMealSlot {
-	if (meal.intra) {
-		// Keep 1 L coconut water as a practical fixed serve.
-		return {
-			...meal,
-			ingredients: meal.ingredients?.map((ing) => ({ ...ing })),
-		};
-	}
-	const kcal = Math.round(meal.kcal * scale);
-	const proteinG = Math.round(meal.proteinG * scale * 10) / 10;
-	const carbsG = Math.round(meal.carbsG * scale * 10) / 10;
-	const fatG = Math.round(meal.fatG * scale * 10) / 10;
-	return {
-		...meal,
-		kcal,
-		proteinG,
-		carbsG,
-		fatG,
-		ingredients: meal.ingredients?.map((ing) => scaleIngredient(ing, scale, false)),
+	const def: MealTemplateDef = {
+		name: meal.name,
+		intra: meal.intra,
+		ingredients: (meal.ingredients ?? [])
+			.filter((ing): ing is CoachIngredient & { foodId: string } => !!ing.foodId)
+			.map((ing) => ({
+				foodId: ing.foodId,
+				amount:
+					ing.foodId === 'coconut_water'
+						? ing.amount
+						: scalePortionAmount(ing.amount, scale),
+				note: ing.note,
+			})),
 	};
-}
-
-function macroPcts(calories: number, proteinG: number, carbsG: number, fatG: number) {
-	const pK = proteinG * 4;
-	const cK = carbsG * 4;
-	const fK = fatG * 9;
-	const sum = pK + cK + fK;
-	if (sum <= 0) return { proteinPct: 0, carbsPct: 0, fatPct: 0 };
-	return {
-		proteinPct: Math.round((pK / sum) * 100),
-		carbsPct: Math.round((cK / sum) * 100),
-		fatPct: Math.round((fK / sum) * 100),
-	};
+	return materializeMeal(def);
 }
 
 function scaleDayPlan(plan: CoachDayPlan, scale: number): CoachDayPlan {
 	const meals = plan.meals.map((m) => scaleMeal(m, scale));
-	const proteinG = Math.round(meals.reduce((s, m) => s + m.proteinG, 0) * 10) / 10;
-	const carbsG = Math.round(meals.reduce((s, m) => s + m.carbsG, 0) * 10) / 10;
-	const fatG = Math.round(meals.reduce((s, m) => s + m.fatG, 0) * 10) / 10;
+	const proteinG = round1(meals.reduce((s, m) => s + m.proteinG, 0));
+	const carbsG = round1(meals.reduce((s, m) => s + m.carbsG, 0));
+	const fatG = round1(meals.reduce((s, m) => s + m.fatG, 0));
 	const calories = Math.round(meals.reduce((s, m) => s + m.kcal, 0));
-	const fibreG = Math.round(plan.fibreG * scale * 10) / 10;
+	const fibreG = round1(meals.reduce((s, m) => s + (m.fibreG ?? 0), 0));
 	const pcts = macroPcts(calories, proteinG, carbsG, fatG);
 	return {
 		...plan,
@@ -754,7 +752,40 @@ function coachProfileCopy(
 	};
 }
 
-/** Scale all three recommended day templates from a calculator result + body inputs. */
+/**
+ * Scale a baseline day toward a calorie target.
+ * Coconut water stays fixed. Binary-search the scale so discrete items
+ * (bars) don’t oscillate past the target on a single correction pass.
+ */
+function scaleDayTowardTarget(plan: CoachDayPlan, targetKcal: number, baseScale: number): CoachDayPlan {
+	const fixedCoconut = coconutKcalInPlan(plan);
+	const variableTarget = Math.max(400, targetKcal - fixedCoconut);
+	const variableBase = Math.max(1, plan.calories - fixedCoconut);
+	const seed = Math.max(0.35, variableTarget / variableBase);
+	let lo = Math.max(0.3, Math.min(seed, baseScale) * 0.7);
+	let hi = Math.max(seed, baseScale) * 1.35;
+	let best = scaleDayPlan(plan, seed);
+	let bestDelta = Math.abs(best.calories - targetKcal);
+	for (let i = 0; i < 14; i++) {
+		const mid = (lo + hi) / 2;
+		const scaled = scaleDayPlan(plan, mid);
+		const delta = scaled.calories - targetKcal;
+		const abs = Math.abs(delta);
+		if (abs < bestDelta) {
+			best = scaled;
+			bestDelta = abs;
+		}
+		if (abs <= 35) return scaled;
+		if (delta > 0) hi = mid;
+		else lo = mid;
+	}
+	return best;
+}
+
+/**
+ * Build the personalised nutrition pack: ONE daily meal plan (default) plus an
+ * optional diet-break week structure. No duplicated rest/training meal trees.
+ */
 export function scaleCoachDayPlans(
 	result: Pick<FoodOsResult, 'calories' | 'tdee' | 'goal'>,
 	profile: { weightKg: number; heightCm: number; age?: number },
@@ -762,89 +793,67 @@ export function scaleCoachDayPlans(
 	const factors = coachScaleFactors(result);
 	const plans = COACH_DAY_PLANS.map((plan) => {
 		const scale = plan.id === 'diet-break' ? factors.dietBreak : factors.work;
-		const scaled = scaleDayPlan(plan, scale);
-		if (plan.id === 'non-training') {
-			scaled.when = 'Rest / no hard lifting. Skip Intra.';
-		} else if (plan.id === 'training') {
-			scaled.when = 'Lift days — same base meals as rest, plus 1 L coconut water Intra.';
+		const target =
+			plan.id === 'diet-break' ? factors.dietBreakTargetKcal : factors.workTargetKcal;
+		const scaled = scaleDayTowardTarget(plan, target, scale);
+		if (plan.id === 'training') {
+			scaled.title = 'Daily meal plan';
+			scaled.when =
+				'One complete day at your calorie target. 1 L coconut water is prescribed inside Pre-workout (macros counted once).';
 		} else {
 			scaled.when =
 				result.goal === 'maintain'
-					? 'Settle week at estimated maintenance. Bigger carb portions + Intra daily — not a forever surplus.'
-					: '1–2 weeks at estimated maintenance when flat / glycogen depleted, then return to your cut or training week.';
+					? 'Optional settle week at estimated maintenance. Bigger carb portions — not a forever surplus. Coconut water stays inside Pre-workout.'
+					: 'Optional 1–2 weeks at estimated maintenance when flat or depleted, then return to your daily plan. Coconut water stays inside Pre-workout.';
 		}
 		return scaled;
 	});
 
 	const { age, weightKg, heightCm } = COACH_PLAN_EXAMPLE_PROFILE;
 	const { profileLine, profileNote } = coachProfileCopy(result, factors, profile);
-	const lede = `Day structures from the coach templates (baseline ${age} / ${weightKg} kg / ${heightCm} cm). Portions scale to your calorie target — training, rest, and diet-break days below.`;
+	const lede = `One complete daily meal plan scaled to your calorie target (baseline portions for ${age} / ${weightKg} kg / ${heightCm} cm). Food line macros come from a real food database — meal and day totals are the sum of those lines. Coconut water is prescribed inside Pre-workout. Diet-break week is optional.`;
 
 	const reconciled = plans.map((p) => reconcileDayPlan(p));
 	return { plans: reconciled, factors, profileLine, profileNote, lede };
 }
 
-/** Weight heuristic for distributing meal macros across ingredient lines (not a lab assay). */
+/**
+ * @deprecated Portion-weight heuristic removed — kept as a thin parser for any legacy callers.
+ * Prefer macrosForFoodAmount from the food DB.
+ */
 export function estimateIngredientWeight(amount: string): number {
-	const trimmed = amount.trim();
-	const bar = trimmed.match(/^(\d+(?:\.\d+)?)\s*bars?$/i);
-	if (bar) return Math.max(1, Number(bar[1])) * 40;
-	const litre = trimmed.match(/^(\d+(?:\.\d+)?)\s*L$/i);
-	if (litre) return Math.max(1, Number(litre[1])) * 1000;
-	const unit = trimmed.match(/^(\d+(?:\.\d+)?)\s*(g|ml)$/i);
-	if (unit) return Math.max(1, Number(unit[1]));
-	return 1;
-}
-
-function round1(n: number): number {
-	return Math.round(n * 10) / 10;
+	const parsed = parseFoodAmount(amount);
+	if (!parsed) return 1;
+	if (parsed.kind === 'bar') return Math.max(1, parsed.qty) * 40;
+	if (parsed.kind === 'L') return Math.max(1, parsed.qty) * 1000;
+	return Math.max(1, parsed.qty);
 }
 
 /**
- * Ensure every ingredient line has macros that sum exactly to the meal
- * (within 0.1 g / 1 kcal). Distributes by portion weight when lines lack macros.
- * Meal totals stay authoritative.
+ * Re-materialise meal macros from the food DB using each line's foodId + amount.
+ * Meal totals are always the sum of food lines — never the reverse.
  */
 export function reconcileMealMacros(meal: CoachMealSlot): CoachMealSlot {
 	const ingredients = meal.ingredients;
 	if (!ingredients?.length) return { ...meal };
-
-	const weights = ingredients.map((ing) => estimateIngredientWeight(ing.amount));
-	const totalW = weights.reduce((s, w) => s + w, 0) || ingredients.length;
-
-	const out: CoachIngredient[] = [];
-	let accK = 0;
-	let accP = 0;
-	let accC = 0;
-	let accF = 0;
-
-	for (let i = 0; i < ingredients.length; i++) {
-		const ing = ingredients[i];
-		const isLast = i === ingredients.length - 1;
-		const share = weights[i] / totalW;
-		let kcal: number;
-		let proteinG: number;
-		let carbsG: number;
-		let fatG: number;
-		if (isLast) {
-			kcal = Math.round(meal.kcal - accK);
-			proteinG = round1(meal.proteinG - accP);
-			carbsG = round1(meal.carbsG - accC);
-			fatG = round1(meal.fatG - accF);
-		} else {
-			kcal = Math.round(meal.kcal * share);
-			proteinG = round1(meal.proteinG * share);
-			carbsG = round1(meal.carbsG * share);
-			fatG = round1(meal.fatG * share);
-			accK += kcal;
-			accP += proteinG;
-			accC += carbsG;
-			accF += fatG;
-		}
-		out.push({ ...ing, kcal, proteinG, carbsG, fatG });
+	if (ingredients.every((ing) => ing.foodId)) {
+		return materializeMeal({
+			name: meal.name,
+			intra: meal.intra,
+			ingredients: ingredients.map((ing) => ({
+				foodId: ing.foodId!,
+				amount: ing.amount,
+				note: ing.note,
+			})),
+		});
 	}
-
-	return { ...meal, ingredients: out };
+	// Legacy fallback: lines already carry macros — recompute meal as sum.
+	const kcal = Math.round(ingredients.reduce((s, i) => s + (i.kcal ?? 0), 0));
+	const proteinG = round1(ingredients.reduce((s, i) => s + (i.proteinG ?? 0), 0));
+	const carbsG = round1(ingredients.reduce((s, i) => s + (i.carbsG ?? 0), 0));
+	const fatG = round1(ingredients.reduce((s, i) => s + (i.fatG ?? 0), 0));
+	const fibreG = round1(ingredients.reduce((s, i) => s + (i.fibreG ?? 0), 0));
+	return { ...meal, kcal, proteinG, carbsG, fatG, fibreG };
 }
 
 export interface NutritionAuditIssue {
@@ -852,13 +861,14 @@ export interface NutritionAuditIssue {
 	message: string;
 }
 
-/** Recompute day totals from meals and reconcile ingredient lines. */
+/** Recompute day totals from meals and reconcile ingredient lines from the food DB. */
 export function reconcileDayPlan(plan: CoachDayPlan): CoachDayPlan {
 	const meals = plan.meals.map((m) => reconcileMealMacros(m));
 	const proteinG = round1(meals.reduce((s, m) => s + m.proteinG, 0));
 	const carbsG = round1(meals.reduce((s, m) => s + m.carbsG, 0));
 	const fatG = round1(meals.reduce((s, m) => s + m.fatG, 0));
 	const calories = Math.round(meals.reduce((s, m) => s + m.kcal, 0));
+	const fibreG = round1(meals.reduce((s, m) => s + (m.fibreG ?? 0), 0));
 	const pcts = macroPcts(calories, proteinG, carbsG, fatG);
 	return {
 		...plan,
@@ -867,6 +877,7 @@ export function reconcileDayPlan(plan: CoachDayPlan): CoachDayPlan {
 		proteinG,
 		carbsG,
 		fatG,
+		fibreG,
 		...pcts,
 	};
 }
@@ -941,6 +952,35 @@ export function auditDayPlan(plan: CoachDayPlan, label = plan.id): NutritionAudi
 				message: `Meal “${meal.name}” fat ${meal.fatG} ≠ ingredients ${f}`,
 			});
 		}
+		// Food-DB source check: each line must match quantity × DB (no portion-weighted fakes).
+		ings.forEach((ing, ii) => {
+			if (!ing.foodId) {
+				issues.push({
+					path: `${label}.meals[${mi}].ingredients[${ii}]`,
+					message: `“${ing.name}” missing foodId — cannot verify against food DB`,
+				});
+				return;
+			}
+			try {
+				const expected = macrosForFoodAmount(ing.foodId, ing.amount);
+				if (
+					Math.abs(expected.kcal - (ing.kcal ?? 0)) > 1 ||
+					Math.abs(expected.proteinG - (ing.proteinG ?? 0)) > 0.15 ||
+					Math.abs(expected.carbsG - (ing.carbsG ?? 0)) > 0.15 ||
+					Math.abs(expected.fatG - (ing.fatG ?? 0)) > 0.15
+				) {
+					issues.push({
+						path: `${label}.meals[${mi}].ingredients[${ii}]`,
+						message: `“${ing.name}” ${ing.amount} macros ${ing.kcal}/${ing.proteinG}/${ing.carbsG}/${ing.fatG} ≠ food DB ${expected.kcal}/${expected.proteinG}/${expected.carbsG}/${expected.fatG}`,
+					});
+				}
+			} catch (err) {
+				issues.push({
+					path: `${label}.meals[${mi}].ingredients[${ii}]`,
+					message: err instanceof Error ? err.message : String(err),
+				});
+			}
+		});
 	});
 
 	return issues;
@@ -984,25 +1024,22 @@ export interface PlanShoppingList {
 }
 
 /**
- * Build a weekly shopping list from the actual scaled meal plans
- * (training days × training template + rest days × non-training).
+ * Build a weekly shopping list from the one daily meal plan × 7.
+ * Coconut water is included once per day (prescribed in Pre-workout).
  */
 export function buildWeekShoppingFromPlans(
 	plans: CoachDayPlan[],
 	trainingDays: TrainingDaysPref,
 ): PlanShoppingList {
-	const days = trainingDays === 4 ? 4 : 3;
-	const restDays = 7 - days;
-	const training = plans.find((p) => p.id === 'training');
-	const rest = plans.find((p) => p.id === 'non-training');
+	const days = ([3, 4, 5, 6] as TrainingDaysPref[]).includes(trainingDays) ? trainingDays : 3;
+	const daily = plans.find((p) => p.id === 'training') ?? plans[0];
 	const orphans: string[] = [];
 
 	type Acc = { name: string; value: number; unit: ParsedAmount['unit']; note?: string };
 	const map = new Map<string, Acc>();
 
-	function addPlan(plan: CoachDayPlan | undefined, times: number) {
-		if (!plan || times <= 0) return;
-		for (const meal of plan.meals) {
+	if (daily) {
+		for (const meal of daily.meals) {
 			for (const ing of meal.ingredients ?? []) {
 				const parsed = parseShopAmount(ing.amount);
 				if (!parsed) {
@@ -1016,11 +1053,11 @@ export function buildWeekShoppingFromPlans(
 						orphans.push(`${ing.name} (unit clash)`);
 						continue;
 					}
-					existing.value += parsed.value * times;
+					existing.value += parsed.value * 7;
 				} else {
 					map.set(key, {
 						name: ing.name,
-						value: parsed.value * times,
+						value: parsed.value * 7,
 						unit: parsed.unit,
 						note: ing.note,
 					});
@@ -1029,19 +1066,18 @@ export function buildWeekShoppingFromPlans(
 		}
 	}
 
-	addPlan(rest, restDays);
-	addPlan(training, days);
-
 	const lines: ShoppingListLine[] = [...map.values()]
 		.sort((a, b) => a.name.localeCompare(b.name))
 		.map((acc) => ({
 			name: acc.name,
 			amount: formatShopAmount({ value: acc.value, unit: acc.unit }),
-			note: acc.note,
+			note: /coconut water/i.test(acc.name)
+				? `1000 ml × 7 days (prescribed in Pre-workout)`
+				: acc.note,
 		}));
 
-	const title = `Weekly shopping list (${days} training / ${restDays} rest)`;
-	const blurb = `Aggregated from your personalised training + rest day meals · Woolworths-friendly weights · phone-copyable.`;
+	const title = `Weekly shopping list (7 × daily plan · ${days} lift days)`;
+	const blurb = `Aggregated from your one daily meal plan × 7 · coconut water included once per day inside Pre-workout · Woolworths-friendly weights · phone-copyable.`;
 	const plain = formatShoppingListPlain(lines, { title, blurb });
 	return { title, blurb, lines, plain, orphans: [...new Set(orphans)] };
 }
@@ -1067,40 +1103,28 @@ export interface ScaledShoppingBundle {
 	restDays: number;
 }
 
-function withTrainingDayCoconut(
-	lines: ShoppingListLine[],
-	trainingDays: TrainingDaysPref,
-): ShoppingListLine[] {
-	const rest = 7 - trainingDays;
-	return lines.map((line) => {
-		if (!/coconut water/i.test(line.name)) return { ...line };
-		return {
-			...line,
-			amount: `${trainingDays} L`,
-			note: `1000 ml × ${trainingDays} training days — skip ${rest} rest day${rest === 1 ? '' : 's'}`,
-		};
-	});
-}
-
 /** Scale Woolworths weekly lists with the same factors as the day templates. */
 export function scaleShoppingLists(
 	result: Pick<FoodOsResult, 'calories' | 'tdee'>,
 	profile: { weightKg: number; heightCm: number },
 	opts?: { trainingDays?: TrainingDaysPref },
 ): ScaledShoppingBundle {
-	const trainingDays: TrainingDaysPref = opts?.trainingDays === 4 ? 4 : opts?.trainingDays === 3 ? 3 : 4;
+	const trainingDays: TrainingDaysPref = ([3, 4, 5, 6] as number[]).includes(
+		opts?.trainingDays ?? 0,
+	)
+		? (opts!.trainingDays as TrainingDaysPref)
+		: 4;
 	const restDays = 7 - trainingDays;
 	const factors = coachScaleFactors(result);
-	const typicalBase = withTrainingDayCoconut(SHOPPING_LIST_TYPICAL_WEEK, trainingDays);
-	const typical = typicalBase.map((line) =>
+	const typical = SHOPPING_LIST_TYPICAL_WEEK.map((line) =>
 		scaleShoppingLine(line, factors.work, { skipCoconut: true }),
 	);
 	const dietBreak = SHOPPING_LIST_DIET_BREAK_WEEK.map((line) =>
 		scaleShoppingLine(line, factors.dietBreak, { skipCoconut: true }),
 	);
-	const blurb = `${profile.weightKg} kg · ${profile.heightCm} cm · ${trainingDays} train / ${restDays} rest · portions ×${factors.work.toFixed(2)} (work week) / ×${factors.dietBreak.toFixed(2)} (diet-break). Baseline ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg template. Coconut water stays 1 L per Intra day.`;
+	const blurb = `${profile.weightKg} kg · ${profile.heightCm} cm · ${trainingDays} lift days · portions ×${factors.work.toFixed(2)} (daily plan week) / ×${factors.dietBreak.toFixed(2)} (diet-break). Baseline ${COACH_PLAN_EXAMPLE_PROFILE.weightKg} kg template. Coconut water is 1 L / day inside Pre-workout.`;
 	const typicalPlain = formatShoppingListPlain(typical, {
-		title: `Woolworths week (${trainingDays} training / ${restDays} rest)`,
+		title: `Woolworths week (7 × daily plan · ${trainingDays} lift days)`,
 		blurb,
 	});
 	const dietBreakPlain = formatShoppingListPlain(dietBreak, {
@@ -1108,4 +1132,47 @@ export function scaleShoppingLists(
 		blurb: `${blurb} Use for 1–2 weeks when flat / glycogen depleted (~your maintenance), then return to the typical week list.`,
 	});
 	return { typical, dietBreak, typicalPlain, dietBreakPlain, blurb, trainingDays, restDays };
+}
+
+/** Pre-PDF / QA: unique meal names, coconut once in Pre-workout, day totals reconcile. */
+export function auditDailyMealPrescription(plan: CoachDayPlan): NutritionAuditIssue[] {
+	const issues = auditDayPlan(plan);
+	const names = plan.meals.map((m) => m.name.trim().toLowerCase());
+	const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+	if (dupes.length) {
+		issues.push({
+			path: `${plan.id}.meals.duplicate`,
+			message: `Duplicate meal structures: ${[...new Set(dupes)].join(', ')}`,
+		});
+	}
+	const coconutMeals = plan.meals.filter((m) =>
+		(m.ingredients ?? []).some((i) => i.foodId === 'coconut_water' || /coconut water/i.test(i.name)),
+	);
+	if (coconutMeals.length === 0) {
+		issues.push({
+			path: `${plan.id}.coconut`,
+			message: 'Coconut water missing from the daily plan',
+		});
+	} else if (coconutMeals.length > 1) {
+		issues.push({
+			path: `${plan.id}.coconut`,
+			message: `Coconut water appears in ${coconutMeals.length} meals — must be once inside Pre-workout`,
+		});
+	} else if (!/pre-workout/i.test(coconutMeals[0].name)) {
+		issues.push({
+			path: `${plan.id}.coconut`,
+			message: `Coconut water is in “${coconutMeals[0].name}” — must be prescribed inside Pre-workout`,
+		});
+	} else {
+		const lines = (coconutMeals[0].ingredients ?? []).filter(
+			(i) => i.foodId === 'coconut_water' || /coconut water/i.test(i.name),
+		);
+		if (lines.length !== 1) {
+			issues.push({
+				path: `${plan.id}.coconut`,
+				message: `Coconut water line count ${lines.length} in Pre-workout — expected exactly 1`,
+			});
+		}
+	}
+	return issues;
 }

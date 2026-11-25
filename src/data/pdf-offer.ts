@@ -5,9 +5,9 @@ export const PDF_OFFER_PRICE_LABEL = '$4.99';
 export const PDF_OFFER_CURRENCY = 'AUD';
 
 /** Single primary CTA verb — reuse everywhere gold. */
-export const PDF_CTA_LABEL = `Get my ${PDF_OFFER_PRICE_LABEL} plan`;
+export const PDF_CTA_LABEL = `BUILD MY PLAN — ${PDF_OFFER_PRICE_LABEL}`;
 
-export const PDF_OFFER_NAME = 'Personalised training + nutrition PDF';
+export const PDF_OFFER_NAME = 'The Personalised Yeh Bro Training & Nutrition Plan';
 
 export const PDF_UNLOCK_STORAGE_KEY = 'yehbro-pdf-unlock-v1';
 

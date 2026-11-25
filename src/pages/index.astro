@@ -51,43 +51,75 @@ const homeLd = [
 
 const failReasons = [
 	{
-		title: 'Random programs',
-		body: 'You bounce between PPL, bro-splits, and whatever the algorithm pushed this week. No progression. No finish line.',
+		title: 'Too much guessing',
+		body: 'Changing programs every few weeks makes progress hard to track. You need a repeatable routine and a way to progress.',
 	},
 	{
-		title: 'Calories that aren’t yours',
-		body: 'Someone else’s cut macros. A calculator you never finish. Or “eat clean” with zero numbers that match your body.',
+		title: 'No nutrition plan',
+		body: '“Healthy” can mean anything. A useful plan gives calorie and protein targets — and meals that make those targets practical.',
+	},
+	{
+		title: 'Life gets in the way',
+		body: 'Miss a session or have a rough weekend and the whole plan gets binned. Better habits survive ordinary weeks.',
 	},
 	{
 		title: 'Info overload',
-		body: 'Guides, reels, conflicting advice. You know more than you execute — so you stall when the plan isn’t personal.',
-	},
-	{
-		title: 'Quit when it’s generic',
-		body: 'A PDF that could belong to anyone dies in your downloads. When it doesn’t fit your days, you stop.',
+		body: 'Reels, conflicting advice, calculators you never finish. You know more than you execute — because nothing was built for you.',
 	},
 ];
 
 const pdfIncludes = [
 	{
-		title: 'Training block',
-		body: '3-day PPL or 4-day PPLU — sets, reps, and a schedule you can actually run.',
+		title: 'Training plan',
+		body: '3–6 day splits (PPL, PPLU, 5-day, or PPL×2) — exercises, sets, reps, and progression guidance matched to the days you can train.',
 	},
 	{
 		title: 'Calories & macros',
-		body: 'Numbers from your height, weight, age, sex, activity, and goal — cut, maintain, or lean bulk. Line → meal → day maths checked.',
+		body: 'Estimated targets from your height, weight, age, sex, activity, and goal. Starting point — adjust from real-world progress.',
 	},
 	{
-		title: 'Day templates',
-		body: 'Training-day, rest-day, and diet-break meals with food lines, kcal, and macros — scaled to your targets.',
+		title: 'Meal templates',
+		body: 'Training-day, rest-day, and diet-break meals with food lines, quantities, kcal, and macros that add up.',
 	},
 	{
 		title: 'Shopping list',
-		body: 'Weekly Woolworths-friendly list aggregated from your actual meals — phone-copyable weights.',
+		body: 'Ingredients combined into a weekly list — AU supermarket-friendly weights you can use on your phone.',
 	},
 	{
-		title: '12-week framing',
-		body: 'Goal + timeframe, a simple block map, and a next-phase note so you’re not guessing after week four.',
+		title: 'Clear starting point',
+		body: '12-week framing, practical guidance, and a next-phase note so you’re not guessing after week four.',
+	},
+];
+
+const whoFor = [
+	'Fat loss or structured weight loss without turning food into punishment',
+	'Building muscle and strength with a routine you can actually repeat',
+	'Getting back into training after a restart cycle',
+	'First-timers who want a practical plan, not jargon',
+	'People who train already but need nutrition that matches their week',
+	'Anyone tired of program-hopping and wanting one clear starting point',
+];
+
+const faqItems = [
+	{
+		q: 'Is the PDF actually personalised?',
+		a: 'Yes. It’s built from the details you enter — body stats, goal, activity, and training days — not a generic template with your name stuck on top.',
+	},
+	{
+		q: 'Is coaching required?',
+		a: 'No. The $4.99 PDF is a standalone product. Coaching is optional and only offered at checkout if you want deeper accountability.',
+	},
+	{
+		q: 'Can I use it if I’m a beginner?',
+		a: 'Yes. The plan is meant to help you establish a straightforward training routine, improve nutrition habits, and build consistency. You don’t need to already “speak gym”.',
+	},
+	{
+		q: 'Does the calorie target guarantee weight loss?',
+		a: 'No calculator can guarantee an outcome. Calorie estimates are starting points. Real-world progress, recovery, hunger, and adherence should guide sensible adjustments.',
+	},
+	{
+		q: 'What do I get after I pay?',
+		a: 'Your personalised training + nutrition plan page — training, calories, macros, meals, and shopping list — ready to save as PDF or print.',
 	},
 ];
 ---
@@ -125,24 +157,27 @@ const pdfIncludes = [
 			</p>
 			<p class="hero-eyebrow anim-rise">{SITE_EYEBROW}</p>
 			<h1 id="hero-headline" class="hero-tagline anim-rise-delay">
-				Your plan. Your stats. Not someone else’s PDF.
+				Stop guessing.<br /><em>Start building.</em>
 			</h1>
 			<p class="hero-sub anim-rise-delay">
-				Personalised training + nutrition built from your numbers — for {PDF_OFFER_PRICE_LABEL}.{' '}
-				{SITE_TAGLINE}
+				A personalised training and nutrition plan built around your body, your goal, and the days
+				you can actually get to the gym. No crash course. No random program. Just a plan you can
+				follow — {PDF_OFFER_PRICE_LABEL} AUD.
 			</p>
 			<div class="cta-row anim-rise-delay-2">
 				<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
+				<span class="hero-micro">One payment · Personalised PDF · No subscription</span>
 			</div>
 		</div>
 	</section>
 
 	<section class="section wrap" id="fail" aria-labelledby="fail-heading">
-		<p class="eyebrow">Why people fail on their own</p>
-		<h2 id="fail-heading">Hard truth.</h2>
+		<p class="eyebrow">The real problem</p>
+		<h2 id="fail-heading">You don’t need more information. You need a plan you can stick to.</h2>
 		<p class="lede">
-			Most lifters don’t fail because they’re lazy. They fail because the plan was never built for
-			them — so consistency dies the second life gets messy.
+			Most people already know they should train, eat better, and be consistent. The wheels come off
+			when the plan is confusing, unrealistic — or built for someone else. You’re not necessarily
+			lacking discipline. You may just lack a clear practical system.
 		</p>
 		<ul class="fail-grid">
 			{
@@ -158,12 +193,15 @@ const pdfIncludes = [
 
 	<section class="section shift" id="shift" aria-labelledby="shift-heading">
 		<div class="wrap shift-inner">
-			<p class="eyebrow">The shift</p>
-			<h2 id="shift-heading">When the plan matches you.</h2>
+			<p class="eyebrow">A better start</p>
+			<h2 id="shift-heading">Make the plan fit your life. Then get to work.</h2>
 			<p class="lede">
-				Height, weight, age, sex, goal, training days, activity — turned into a plan that fits
-				your week and your body. Training + calories that match you. One PDF you can print and
-				follow.
+				Your plan starts with your details — not a stranger’s routine from social media. Goal, body
+				stats, activity, and training availability become a sensible starting point for training,
+				calories, protein, meals, and shopping.
+			</p>
+			<p class="manifesto">
+				The goal isn’t a perfect week. It’s a plan you can come back to when the week isn’t perfect.
 			</p>
 			<div class="cta-row">
 				<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
@@ -171,12 +209,24 @@ const pdfIncludes = [
 		</div>
 	</section>
 
-	<section class="section wrap" id="whats-inside" aria-labelledby="inside-heading">
-		<p class="eyebrow">What’s in the PDF</p>
-		<h2 id="inside-heading">Real deliverables. Nothing invented.</h2>
+	<section class="section wrap" id="who" aria-labelledby="who-heading">
+		<p class="eyebrow">Who it’s for</p>
+		<h2 id="who-heading">Beginners welcome. Experienced lifters still covered.</h2>
 		<p class="lede">
-			Real training and nutrition deliverables built from your stats. No fake catalogue. No filler
-			workbook.
+			Not only for people who already live in the gym. If you want fat loss, muscle, strength,
+			fitness, or better habits — this is a practical starting point.
+		</p>
+		<ul class="who-list">
+			{whoFor.map((line) => <li>{line}</li>)}
+		</ul>
+	</section>
+
+	<section class="section wrap" id="whats-inside" aria-labelledby="inside-heading">
+		<p class="eyebrow">What you get</p>
+		<h2 id="inside-heading">Everything you need to start. Nothing you don’t.</h2>
+		<p class="lede">
+			A practical plan designed to take the guesswork out of your next 12 weeks. Only real,
+			functioning deliverables.
 		</p>
 		<ul class="include-list">
 			{
@@ -193,19 +243,19 @@ const pdfIncludes = [
 	<section class="section how" id="how" aria-labelledby="how-heading">
 		<div class="wrap">
 			<p class="eyebrow">How it works</p>
-			<h2 id="how-heading">Three steps. Done.</h2>
+			<h2 id="how-heading">Three steps. Simple enough to actually do.</h2>
 			<ol class="how-steps">
 				<li>
-					<strong>Enter your stats</strong>
-					<span>Compact intake — height, weight, age, goal, training days, activity.</span>
+					<strong>Tell us about you</strong>
+					<span>Stats, goal, activity, and how many days you can train.</span>
 				</li>
 				<li>
-					<strong>We build the plan</strong>
-					<span>Training split + calories/macros + day templates scaled to you.</span>
+					<strong>Your plan is built</strong>
+					<span>Training, calories, macros, meal templates, and a shopping list.</span>
 				</li>
 				<li>
-					<strong>{PDF_OFFER_PRICE_LABEL} → PDF</strong>
-					<span>Pay once. Open your personalised plan. Save as PDF / print.</span>
+					<strong>Purchase → PDF</strong>
+					<span>Pay {PDF_OFFER_PRICE_LABEL} once. Open your plan. Save as PDF / print.</span>
 				</li>
 			</ol>
 		</div>
@@ -221,6 +271,30 @@ const pdfIncludes = [
 
 		<form id="funnel-form" class="funnel-form" novalidate>
 			<div class="funnel-fields">
+				<label class="ff">
+					<span>First name</span>
+					<input
+						type="text"
+						name="firstName"
+						id="firstName"
+						autocomplete="given-name"
+						required
+						maxlength="40"
+						placeholder="Alex"
+					/>
+				</label>
+				<label class="ff">
+					<span>Email</span>
+					<input
+						type="email"
+						name="email"
+						id="email"
+						autocomplete="email"
+						required
+						maxlength="120"
+						placeholder="you@email.com"
+					/>
+				</label>
 				<label class="ff">
 					<span>Current weight (kg)</span>
 					<input
@@ -291,9 +365,19 @@ const pdfIncludes = [
 			</fieldset>
 
 			<label class="ff ff-full">
-				<span>Activity</span>
+				<span>Activity / lifestyle</span>
 				<select name="activity" id="activity" required>
 					{activities.map(([value, label]) => <option value={value}>{label}</option>)}
+				</select>
+			</label>
+
+			<label class="ff ff-full">
+				<span>Typical daily steps right now</span>
+				<select name="stepsBand" id="stepsBand">
+					<option value="under-5k">Under 5,000</option>
+					<option value="5-8k">5,000–8,000</option>
+					<option value="8-10k" selected>8,000–10,000</option>
+					<option value="10k-plus">10,000+</option>
 				</select>
 			</label>
 
@@ -312,6 +396,49 @@ const pdfIncludes = [
 				}
 			</fieldset>
 
+			<fieldset class="funnel-seg" id="experience-field">
+				<legend>Training experience</legend>
+				<label class="seg-opt">
+					<input type="radio" name="experience" value="beginner" checked />
+					<span>
+						<strong>Beginner</strong>
+						<small>Under ~1 year consistent lifting</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="experience" value="intermediate" />
+					<span>
+						<strong>Intermediate</strong>
+						<small>1–3 years</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="experience" value="experienced" />
+					<span>
+						<strong>Experienced</strong>
+						<small>3+ years</small>
+					</span>
+				</label>
+			</fieldset>
+
+			<fieldset class="funnel-seg" id="equipment-field">
+				<legend>Gym / equipment</legend>
+				<label class="seg-opt">
+					<input type="radio" name="equipment" value="full-gym" checked />
+					<span>
+						<strong>Full gym</strong>
+						<small>Machines, cables, free weights</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="equipment" value="limited" />
+					<span>
+						<strong>Limited / home</strong>
+						<small>Dumbbells + bodyweight</small>
+					</span>
+				</label>
+			</fieldset>
+
 			<fieldset class="funnel-seg" id="training-field">
 				<legend>Training days / week</legend>
 				<label class="seg-opt">
@@ -328,7 +455,42 @@ const pdfIncludes = [
 						<small>Add Upper</small>
 					</span>
 				</label>
+				<label class="seg-opt">
+					<input type="radio" name="trainingDays" value="5" />
+					<span>
+						<strong>5-day</strong>
+						<small>PPL + Upper + Legs B</small>
+					</span>
+				</label>
+				<label class="seg-opt">
+					<input type="radio" name="trainingDays" value="6" />
+					<span>
+						<strong>6-day</strong>
+						<small>PPL × 2</small>
+					</span>
+				</label>
 			</fieldset>
+
+			<label class="ff ff-full">
+				<span>Typical sleep</span>
+				<select name="sleepHours" id="sleepHours">
+					<option value="under-6">Under 6 hours</option>
+					<option value="6-7">6–7 hours</option>
+					<option value="7-9" selected>7–9 hours</option>
+					<option value="over-9">Over 9 hours</option>
+				</select>
+			</label>
+
+			<label class="ff ff-full">
+				<span>Injuries / limitations — optional</span>
+				<input
+					type="text"
+					name="limitations"
+					id="limitations"
+					maxlength="200"
+					placeholder="e.g. left shoulder flare-ups, bad knee"
+				/>
+			</label>
 
 			<p class="funnel-preview muted" id="calc-preview" aria-live="polite">
 				Enter body stats to preview calculated calories.
@@ -343,12 +505,12 @@ const pdfIncludes = [
 
 	<section class="section offer" id="offer" aria-labelledby="offer-heading">
 		<div class="wrap offer-inner">
-			<p class="eyebrow">The offer</p>
-			<h2 id="offer-heading">{PDF_OFFER_PRICE_LABEL}. Coach-grade output for a coffee.</h2>
+			<p class="eyebrow">One-time purchase</p>
+			<h2 id="offer-heading">A plan you can start today.</h2>
 			<p class="lede">
 				People often pay hundreds for a custom training + nutrition write-up. You’re getting
 				coach-grade personalisation for {PDF_OFFER_PRICE_LABEL} AUD — honest price, no fake “was
-				$X” strikethrough.
+				$X” strikethrough, no countdown timers.
 			</p>
 			<p class="price-line">
 				<span class="price">{PDF_OFFER_PRICE_LABEL}</span>
@@ -417,19 +579,45 @@ const pdfIncludes = [
 		<p class="funnel-note muted" id="checkout-note" aria-live="polite"></p>
 	</section>
 
+	<section class="section wrap" id="coaching-note" aria-labelledby="coaching-note-heading">
+		<p class="eyebrow">Optional support</p>
+		<h2 id="coaching-note-heading">Some people need a plan. Others need someone in their corner.</h2>
+		<p class="lede">
+			The PDF is yours to run independently. If you want deeper accountability, check-ins, and
+			adjustments, coaching is offered as an optional add-on at checkout — not a requirement.
+			Weekly {COACHING_WEEKLY_LABEL}, or {COACHING_PAID_IN_FULL_TOTAL_LABEL} paid upfront (
+			{COACHING_PAID_IN_FULL_WEEKLY_LABEL} × {COACHING_UPSELL.weeks}).
+		</p>
+	</section>
+
 	<section class="section-tight wrap" id="reassure" aria-labelledby="reassure-heading">
 		<p class="eyebrow">Straight talk</p>
-		<h2 id="reassure-heading">Who this is for</h2>
+		<h2 id="reassure-heading">Education, not medical advice.</h2>
 		<p class="lede">
-			For lifters who want a clear training + food plan matched to their stats — not another tip
-			pile. Education, not medical advice. If you want deeper week-to-week accountability, that’s an
-			optional add-on at checkout — the PDF stands alone.
+			Calorie and training estimates are a starting point. Adjust from how you feel, how training
+			goes, and your scale trend. Under 18 or clinical conditions — talk to a clinician. The PDF
+			stands alone; coaching is optional at checkout only.
 		</p>
+	</section>
+
+	<section class="section wrap faq" id="faq" aria-labelledby="faq-heading">
+		<p class="eyebrow">Straight answers</p>
+		<h2 id="faq-heading">Before you start.</h2>
+		<div class="faq-list">
+			{
+				faqItems.map((item) => (
+					<details>
+						<summary>{item.q}</summary>
+						<p>{item.a}</p>
+					</details>
+				))
+			}
+		</div>
 	</section>
 
 	<section class="section-tight wrap final-cta" id="final" aria-labelledby="final-heading">
 		<p class="eyebrow">Ready?</p>
-		<h2 id="final-heading">Lock in your numbers.</h2>
+		<h2 id="final-heading">Don’t wait for another Monday.</h2>
 		<p class="lede">
 			Enter your stats, pay {PDF_OFFER_PRICE_LABEL}, open the PDF. Same Yeh Bro metal. Built for you.
 		</p>
@@ -437,6 +625,11 @@ const pdfIncludes = [
 			<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
 		</div>
 	</section>
+
+	<div class="sticky-cta" id="sticky-cta" hidden>
+		<span class="sticky-copy">Personalised plan · <strong>{PDF_OFFER_PRICE_LABEL} AUD</strong></span>
+		<a class="btn btn-primary" href="#intake">{PDF_CTA_LABEL}</a>
+	</div>
 </BaseLayout>
 
 <script>
@@ -456,6 +649,7 @@ const pdfIncludes = [
 	import {
 		EXAMPLE_PROFILE_HINT,
 		calcFromProfile,
+		isPlanIntakeReady,
 		isProfileReady,
 		readProfile,
 		writeProfile,
@@ -491,17 +685,32 @@ const pdfIncludes = [
 		return Number.isFinite(n) ? n : undefined;
 	}
 
+	function text(name: string): string | undefined {
+		const el = form?.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null;
+		const v = el?.value?.trim();
+		return v || undefined;
+	}
+
 	function collectPartial(): Partial<YehBroProfile> {
 		const sex = selectedRadio('sex') as Sex | null;
 		const goal = selectedRadio('goal') as Goal | null;
 		const trainingRaw = selectedRadio('trainingDays');
-		const trainingDays = (trainingRaw === '4' ? 4 : 3) as TrainingDaysPref;
+		const trainingParsed = Number(trainingRaw);
+		const trainingDays = ([3, 4, 5, 6].includes(trainingParsed)
+			? trainingParsed
+			: 3) as TrainingDaysPref;
 		const activity = (activitySelect?.value || undefined) as Activity | undefined;
+		const experience = selectedRadio('experience') as YehBroProfile['experience'];
+		const equipment = selectedRadio('equipment') as YehBroProfile['equipment'];
+		const stepsBand = text('stepsBand') as YehBroProfile['stepsBand'];
+		const sleepHours = text('sleepHours') as YehBroProfile['sleepHours'];
 		const cutPct = goal === 'cut' ? Math.round(Math.abs(GOAL_DEFAULTS.cut.defaultAdj) * 100) : 18;
 		const bulkPct =
 			goal === 'lean-bulk' ? Math.round(Math.abs(GOAL_DEFAULTS['lean-bulk'].defaultAdj) * 100) : 10;
 
 		return {
+			firstName: text('firstName'),
+			email: text('email'),
 			weightKg: num('weightKg'),
 			heightCm: num('heightCm'),
 			age: num('age'),
@@ -510,6 +719,11 @@ const pdfIncludes = [
 			goal: goal ?? undefined,
 			activity,
 			trainingDays,
+			experience: experience ?? undefined,
+			equipment: equipment ?? undefined,
+			stepsBand,
+			sleepHours,
+			limitations: text('limitations'),
 			cutPct,
 			bulkPct,
 			targets: { source: 'calculated' },
@@ -552,10 +766,15 @@ const pdfIncludes = [
 	function hydrate() {
 		const p = readProfile();
 		if (!form) return;
+		const firstName = document.getElementById('firstName') as HTMLInputElement | null;
+		const email = document.getElementById('email') as HTMLInputElement | null;
 		const weight = document.getElementById('weightKg') as HTMLInputElement | null;
 		const height = document.getElementById('heightCm') as HTMLInputElement | null;
 		const age = document.getElementById('age') as HTMLInputElement | null;
 		const goalW = document.getElementById('goalWeightKg') as HTMLInputElement | null;
+		const stepsBand = document.getElementById('stepsBand') as HTMLSelectElement | null;
+		const sleepHours = document.getElementById('sleepHours') as HTMLSelectElement | null;
+		const limitations = document.getElementById('limitations') as HTMLInputElement | null;
 		if (weight) weight.placeholder = String(EXAMPLE_PROFILE_HINT.weightKg);
 		if (height) height.placeholder = String(EXAMPLE_PROFILE_HINT.heightCm);
 		if (age) age.placeholder = String(EXAMPLE_PROFILE_HINT.age);
@@ -565,6 +784,8 @@ const pdfIncludes = [
 			syncPreview();
 			return;
 		}
+		if (firstName && p.firstName) firstName.value = p.firstName;
+		if (email && p.email) email.value = p.email;
 		if (weight && p.weightKg != null) weight.value = String(p.weightKg);
 		if (height && p.heightCm != null) height.value = String(p.heightCm);
 		if (age && p.age != null) age.value = String(p.age);
@@ -577,6 +798,18 @@ const pdfIncludes = [
 			const goalEl = form.querySelector<HTMLInputElement>(`input[name="goal"][value="${p.goal}"]`);
 			if (goalEl) goalEl.checked = true;
 		}
+		if (p.experience) {
+			const exp = form.querySelector<HTMLInputElement>(
+				`input[name="experience"][value="${p.experience}"]`,
+			);
+			if (exp) exp.checked = true;
+		}
+		if (p.equipment) {
+			const eq = form.querySelector<HTMLInputElement>(
+				`input[name="equipment"][value="${p.equipment}"]`,
+			);
+			if (eq) eq.checked = true;
+		}
 		if (p.trainingDays) {
 			const td = form.querySelector<HTMLInputElement>(
 				`input[name="trainingDays"][value="${p.trainingDays}"]`,
@@ -584,6 +817,9 @@ const pdfIncludes = [
 			if (td) td.checked = true;
 		}
 		if (activitySelect && p.activity) activitySelect.value = p.activity;
+		if (stepsBand && p.stepsBand) stepsBand.value = p.stepsBand;
+		if (sleepHours && p.sleepHours) sleepHours.value = p.sleepHours;
+		if (limitations && p.limitations) limitations.value = p.limitations;
 		syncPreview();
 	}
 
@@ -593,14 +829,20 @@ const pdfIncludes = [
 		checkoutPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
-	function unlockLocal(coaching: CoachingTier) {
+	function unlockLocal(
+		coaching: CoachingTier,
+		mode: 'stub' | 'stripe' | 'local-preview',
+		sessionId?: string,
+	) {
 		localStorage.setItem(
 			PDF_UNLOCK_STORAGE_KEY,
 			JSON.stringify({
 				at: new Date().toISOString(),
 				priceAud: 4.99,
 				coaching,
-				mode: 'stub',
+				mode,
+				sessionId: sessionId || undefined,
+				verified: mode === 'stripe' || mode === 'stub' || mode === 'local-preview',
 			}),
 		);
 	}
@@ -608,8 +850,8 @@ const pdfIncludes = [
 	async function runCheckout() {
 		if (!checkoutNote || !payBtn) return;
 		const profile = readProfile();
-		if (!isProfileReady(profile)) {
-			checkoutNote.textContent = 'Finish your stats above first.';
+		if (!isPlanIntakeReady(profile)) {
+			checkoutNote.textContent = 'Finish your name, email, and stats above first.';
 			form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 			return;
 		}
@@ -638,16 +880,16 @@ const pdfIncludes = [
 			};
 
 			if (data.mode === 'stripe' && data.url) {
-				unlockLocal(coaching);
+				// Do NOT unlock before payment — /plan verifies session_id server-side.
 				location.href = data.url;
 				return;
 			}
 
 			if (data.mode === 'stub') {
-				unlockLocal(coaching);
+				unlockLocal(coaching, 'stub');
 				checkoutNote.textContent =
 					data.message ||
-					`Live Stripe secrets not bound yet — unlocking your personalised plan for preview. Required later: ${(data.requiredSecrets || []).join(', ')}.`;
+					`Live Stripe secrets not bound yet — stub unlock for preview. Required for live charges: ${(data.requiredSecrets || []).join(', ')}.`;
 				payBtn.textContent = PDF_CTA_LABEL;
 				payBtn.disabled = false;
 				window.setTimeout(() => {
@@ -660,9 +902,9 @@ const pdfIncludes = [
 			payBtn.disabled = false;
 			payBtn.textContent = PDF_CTA_LABEL;
 		} catch {
-			// Dev / static preview without Functions — still unlock PDF path for sample data.
-			unlockLocal(coaching);
-			checkoutNote.textContent = `Checkout API unavailable in this preview — unlocking the ${PDF_OFFER_PRICE_LABEL} plan path locally. Bind Stripe secrets for live charges.`;
+			// Dev / static preview without Functions — stub unlock clearly marked.
+			unlockLocal(coaching, 'local-preview');
+			checkoutNote.textContent = `Checkout API unavailable in this preview — local stub unlock only. Bind Stripe secrets for live charges.`;
 			payBtn.disabled = false;
 			payBtn.textContent = PDF_CTA_LABEL;
 			window.setTimeout(() => {
@@ -678,12 +920,14 @@ const pdfIncludes = [
 		e.preventDefault();
 		if (!form.checkValidity()) {
 			form.reportValidity();
-			if (funnelNote) funnelNote.textContent = 'Fill the required stats first.';
+			if (funnelNote) funnelNote.textContent = 'Fill the required fields first.';
 			return;
 		}
 		const next = writeProfile(collectPartial());
-		if (!isProfileReady(next)) {
-			if (funnelNote) funnelNote.textContent = 'Something’s missing — check weight, height, age, sex, activity, and goal.';
+		if (!isPlanIntakeReady(next)) {
+			if (funnelNote)
+				funnelNote.textContent =
+					'Something’s missing — check first name, email, weight, height, age, sex, activity, and goal.';
 			return;
 		}
 		if (funnelNote) {
@@ -694,10 +938,10 @@ const pdfIncludes = [
 
 	document.getElementById('offer-cta')?.addEventListener('click', (e) => {
 		const profile = readProfile();
-		if (!isProfileReady(profile)) {
+		if (!isPlanIntakeReady(profile)) {
 			e.preventDefault();
 			form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			if (funnelNote) funnelNote.textContent = 'Enter your stats first — then checkout.';
+			if (funnelNote) funnelNote.textContent = 'Enter your name, email, and stats first — then checkout.';
 			return;
 		}
 		showCheckout();
@@ -709,9 +953,23 @@ const pdfIncludes = [
 
 	hydrate();
 
-	if (location.hash === '#checkout' && isProfileReady(readProfile())) {
+	if (location.hash === '#checkout' && isPlanIntakeReady(readProfile())) {
 		showCheckout();
 	}
+
+	const sticky = document.getElementById('sticky-cta');
+	const intake = document.getElementById('intake');
+	const heroEl = document.querySelector('.hero');
+	function syncSticky() {
+		if (!sticky || !intake || !heroEl) return;
+		const pastHero = window.scrollY > heroEl.getBoundingClientRect().height * 0.65;
+		const intakeRect = intake.getBoundingClientRect();
+		const intakeInView = intakeRect.top < window.innerHeight * 0.75 && intakeRect.bottom > 80;
+		sticky.hidden = !pastHero || intakeInView;
+	}
+	sticky && (sticky.hidden = true);
+	window.addEventListener('scroll', syncSticky, { passive: true });
+	window.addEventListener('resize', syncSticky, { passive: true });
 </script>
 
 <style>
@@ -783,16 +1041,21 @@ const pdfIncludes = [
 		font-weight: 700;
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
-		color: var(--yb-lime);
+		color: var(--yb-gold);
 		margin: 0 0 0.85rem;
 	}
 	.hero-tagline {
 		margin: 0 0 1.1rem;
-		font-size: clamp(1.65rem, 4.6vw, 2.85rem);
-		line-height: 1.08;
-		letter-spacing: 0.02em;
-		max-width: 18ch;
+		font-size: clamp(1.85rem, 5.2vw, 3.4rem);
+		line-height: 1.02;
+		letter-spacing: -0.02em;
+		max-width: 14ch;
 		text-wrap: balance;
+		text-transform: uppercase;
+	}
+	.hero-tagline em {
+		font-style: normal;
+		color: var(--yb-gold);
 	}
 	.hero-sub {
 		margin: 0;
@@ -800,6 +1063,88 @@ const pdfIncludes = [
 		line-height: 1.55;
 		color: rgba(242, 242, 240, 0.88);
 		max-width: 34rem;
+	}
+	.hero-micro {
+		font-size: 0.78rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--yb-muted);
+	}
+	.manifesto {
+		margin: 1.25rem 0 0;
+		padding: 1rem 1.15rem;
+		border-left: 3px solid var(--yb-gold);
+		background: rgba(20, 23, 23, 0.85);
+		font-size: 1.08rem;
+		max-width: 36rem;
+		color: rgba(242, 242, 240, 0.92);
+	}
+	.who-list {
+		list-style: none;
+		margin: 1.75rem 0 0;
+		padding: 0;
+		border-top: 1px solid var(--yb-edge);
+		max-width: 42rem;
+	}
+	.who-list li {
+		margin: 0;
+		padding: 0.95rem 0;
+		border-bottom: 1px solid var(--yb-edge);
+		color: rgba(242, 242, 240, 0.86);
+	}
+	.faq-list {
+		max-width: 44rem;
+		margin-top: 1.5rem;
+	}
+	.faq-list details {
+		border-bottom: 1px solid var(--yb-edge);
+		padding: 1rem 0;
+	}
+	.faq-list summary {
+		cursor: pointer;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+	}
+	.faq-list p {
+		margin: 0.65rem 0 0;
+		color: var(--yb-muted);
+		max-width: 40rem;
+	}
+	.sticky-cta {
+		position: fixed;
+		bottom: 12px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 50;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.55rem 0.7rem 0.55rem 1rem;
+		background: #111b18;
+		border: 1px solid #61502a;
+		border-radius: 999px;
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55);
+		width: min(calc(100% - 1.5rem), 34rem);
+		justify-content: space-between;
+	}
+	.sticky-cta .sticky-copy {
+		font-size: 0.78rem;
+		color: #ddd;
+	}
+	.sticky-cta .btn {
+		padding: 0.65rem 0.9rem;
+		font-size: 0.72rem;
+		border-radius: 999px;
+		white-space: nowrap;
+	}
+	@media (max-width: 520px) {
+		.sticky-cta .sticky-copy {
+			font-size: 0.7rem;
+		}
+		.sticky-cta .btn {
+			font-size: 0.65rem;
+			padding: 0.55rem 0.7rem;
+		}
 	}
 
 	.fail-grid {
@@ -824,7 +1169,7 @@ const pdfIncludes = [
 		font-size: 1.15rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: var(--yb-lime);
+		color: var(--yb-gold);
 		font-weight: 400;
 	}
 	.fail-grid span {
@@ -908,7 +1253,7 @@ const pdfIncludes = [
 		content: counter(step);
 		font-family: var(--font-display);
 		font-size: 2rem;
-		color: var(--yb-lime);
+		color: var(--yb-gold);
 		line-height: 1;
 		letter-spacing: 0.04em;
 	}
@@ -1025,7 +1370,7 @@ const pdfIncludes = [
 		font-family: var(--font-display);
 		font-size: clamp(2.4rem, 6vw, 3.4rem);
 		letter-spacing: 0.02em;
-		color: var(--yb-lime);
+		color: var(--yb-gold);
 		line-height: 1;
 	}
 	.price-meta {
@@ -1049,7 +1394,7 @@ const pdfIncludes = [
 	}
 	.checkout-price {
 		font-family: var(--font-display);
-		color: var(--yb-lime);
+		color: var(--yb-gold);
 		letter-spacing: 0.04em;
 	}
 	.upsell {
