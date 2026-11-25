@@ -1,6 +1,8 @@
 ## Development
 
-When starting the dev server, use background mode:
+Cloud Agents boot with the dev server already listening on http://127.0.0.1:4321 (`npm run dev -- --host 0.0.0.0 --port 4321`). Check it with `astro dev status` and reuse it when it is up.
+
+When you need to start the dev server yourself, use background mode:
 
 ```
 astro dev --background
